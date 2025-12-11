@@ -1,0 +1,41 @@
+{
+	"folders": [
+		{
+			"name": "olcPGE3 (xcode_macos)",
+			"path": "."
+		},
+		{
+			"name": "Source Files",
+			"path": "../src"
+		},
+		{
+			"name": "Tests",
+			"path": "../tests"
+		},
+		{
+			"name": "Include Files", 
+			"path": "../include"
+		}
+	],
+	"settings": {
+		"terminal.integrated.cwd": "${workspaceFolder}",
+		"files.associations": {
+			"*.h": "cpp",
+			"*.hpp": "cpp", 
+			"*.cpp": "cpp",
+			"*.c": "c"
+		},
+		"C_Cpp.default.compilerPath": "/usr/bin/clang++",
+		"C_Cpp.default.cppStandard": "c++20",
+		"C_Cpp.default.cStandard": "c17",
+		"C_Cpp.default.intelliSenseMode": "macos-clang-x64",
+		"C_Cpp.errorSquiggles": "enabled"
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools",
+			"vadimcn.vscode-lldb",
+			"ms-vscode.makefile-tools"
+		]
+	}
+}
