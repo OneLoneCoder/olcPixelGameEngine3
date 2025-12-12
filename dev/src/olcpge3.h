@@ -11,6 +11,7 @@
 #include "image.h"
 #include "imload_iface.h"
 #include "imload_wingdi.h"
+#include "imload_macos.h"
 
 #include "gputask.h"
 #include "gpu_iface.h"

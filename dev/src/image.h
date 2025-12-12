@@ -99,7 +99,9 @@ namespace olc
 
 		ImageRegion& operator=(ImageRegion& o)
 		{
-
+            // Johnngy63: Keep the compiler happy
+            image = o.image;
+            return *this;
 		}
 	};
 

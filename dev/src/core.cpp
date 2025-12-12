@@ -1,8 +1,17 @@
 #include "core.h"
 
 #include "gpu_opengl33.h"
+
+#if OLC_HOST == OLC_HOST_WINDOWS
 #include "host_win_winapi.h"
 #include "imload_wingdi.h"
+#endif
+
+// Johnnyg63: Added define for MACOS
+#if OLC_HOST == OLC_HOST_MACOS
+#include "host_apple_macos.h"
+#include "imload_macos.h"
+#endif
 
 //! START IMPLEMENTATION
 namespace olc
@@ -204,8 +213,13 @@ namespace olc
 	bool PixelGameEngine::Start()
 	{
 		// Initialise Host Interface
+		#if OLC_HOST == OLC_HOST_WINDOWS
 		host = std::make_unique<olc::host::Host_Windows_WinAPI>();
-		
+		#endif
+		// Johnnyg63: Added MacOS Host Initialisation
+		#if OLC_HOST == OLC_HOST_MACOS
+		host = std::make_unique<olc::host::Host_Apple_MacOS>();
+		#endif
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_NO
 		// Create OS window on this thread
 		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
@@ -263,8 +277,14 @@ namespace olc
 #endif
 		
 		// Initialise ImageLoader Interface
+		#if OLC_HOST == OLC_HOST_WINDOWS
 		imageloader = std::make_unique<olc::imload::ImageLoader_WinGDI>();
-		
+		#endif
+
+		// Initialise ImageLoader Interface
+		#if OLC_HOST == OLC_HOST_MACOS
+		imageloader = std::make_unique<olc::imload::ImageLoader_MacOS>();
+		#endif
 
 		// Initialise GPU Interface	- This thread is the context
 		olc::gpu::RendererConfig cfgRenderer;

@@ -39,6 +39,7 @@ CORE_SOURCES = $(SRC_DIR)/core.cpp \
                $(SRC_DIR)/window.cpp \
                $(SRC_DIR)/image.cpp \
                $(SRC_DIR)/draw2d.cpp \
+               $(SRC_DIR)/font.cpp \
                $(SRC_DIR)/hw_mouse.cpp \
                $(SRC_DIR)/gpu_iface.cpp \
                $(SRC_DIR)/gpu_opengl33.cpp \

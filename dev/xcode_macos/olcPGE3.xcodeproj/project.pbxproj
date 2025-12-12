@@ -12,6 +12,7 @@
 		462680A42E69D03800799C36 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495EC2E300E000047E223 /* image.cpp */; };
 		462680A52E69D15C00799C36 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF82E39135B00B74FA3 /* OpenGL.framework */; };
 		462680D12E6C3C4500799C36 /* gpu_iface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680D02E6C3C4500799C36 /* gpu_iface.cpp */; };
+		467318BA2EEC213700714D4C /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467318B92EEC213700714D4C /* font.cpp */; };
 		46964CE82EE5C23300B7BCF1 /* api_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46964CE62EE5C23300B7BCF1 /* api_macos.cpp */; };
 		469A92132E79B0F1007BB460 /* hw_mouse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 469A92122E79B0F1007BB460 /* hw_mouse.cpp */; };
 		46B1E5932E40F8A6009734EC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5922E40F8A6009734EC /* AppKit.framework */; };
@@ -69,6 +70,8 @@
 		460495FB2E300E0F0047E223 /* test_mh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_mh.cpp; sourceTree = "<group>"; };
 		462680A22E69CDED00799C36 /* draw2d.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw2d.cpp; sourceTree = "<group>"; };
 		462680D02E6C3C4500799C36 /* gpu_iface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gpu_iface.cpp; sourceTree = "<group>"; };
+		467318B82EEC213700714D4C /* font.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = font.h; sourceTree = "<group>"; };
+		467318B92EEC213700714D4C /* font.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = font.cpp; sourceTree = "<group>"; };
 		46964CE52EE5C23300B7BCF1 /* api_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = api_macos.h; sourceTree = "<group>"; };
 		46964CE62EE5C23300B7BCF1 /* api_macos.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = api_macos.cpp; sourceTree = "<group>"; };
 		46964CE72EE5C23300B7BCF1 /* api_macos_wrapper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = api_macos_wrapper.hpp; sourceTree = "<group>"; };
@@ -79,7 +82,6 @@
 		469A92122E79B0F1007BB460 /* hw_mouse.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_mouse.cpp; sourceTree = "<group>"; };
 		46B1E5922E40F8A6009734EC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		46B1E5942E40F8B0009734EC /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
-		46B34CB62EBFB9E900571E1F /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		46C8F5B72E7DA67900C11019 /* imload_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imload_macos.h; sourceTree = "<group>"; };
 		46C8F5B82E7DA67900C11019 /* imload_macos.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imload_macos.cpp; sourceTree = "<group>"; };
 		46E85DF62E39135300B74FA3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -130,7 +132,6 @@
 		8998CE172E057F4E007DDD96 = {
 			isa = PBXGroup;
 			children = (
-				46B34CB62EBFB9E900571E1F /* stb_image.h */,
 				8998CE322E057F92007DDD96 /* src */,
 				8998CE2A2E057F85007DDD96 /* tests */,
 				46E85DF52E39135300B74FA3 /* Frameworks */,
@@ -163,6 +164,8 @@
 		8998CE322E057F92007DDD96 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				467318B82EEC213700714D4C /* font.h */,
+				467318B92EEC213700714D4C /* font.cpp */,
 				46964CE52EE5C23300B7BCF1 /* api_macos.h */,
 				46964CE62EE5C23300B7BCF1 /* api_macos.cpp */,
 				46964CE72EE5C23300B7BCF1 /* api_macos_wrapper.hpp */,
@@ -272,6 +275,7 @@
 				462680A32E69CDED00799C36 /* draw2d.cpp in Sources */,
 				46E85E0A2E39252200B74FA3 /* window.cpp in Sources */,
 				46E85E092E3924FB00B74FA3 /* core.cpp in Sources */,
+				467318BA2EEC213700714D4C /* font.cpp in Sources */,
 				46E85E072E3924D900B74FA3 /* host_apple_macos.cpp in Sources */,
 				469A92132E79B0F1007BB460 /* hw_mouse.cpp in Sources */,
 				46E85E062E3924CC00B74FA3 /* api_opengl.cpp in Sources */,

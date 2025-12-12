@@ -25,6 +25,10 @@
 	#define FRIENDLY_HOST Host_Windows_WinAPI
 #endif
 
+#if OLC_HOST == OLC_HOST_MACOS
+    #define FRIENDLY_HOST Host_Apple_MacOS
+#endif
+
 namespace olc
 {
 	namespace host

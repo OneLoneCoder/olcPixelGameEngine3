@@ -1,6 +1,7 @@
 #include "imload_wingdi.h"
 
 //! START IMPLEMENTATION
+#if OLC_HOST == OLC_HOST_WINDOWS
 namespace olc::imload
 {
 	namespace internals
@@ -87,4 +88,5 @@ namespace olc::imload
 		return false;
 	}
 }
+#endif // OLC_HOST == OLC_HOST_WINDOWS
 //! END IMPLEMENTATION
