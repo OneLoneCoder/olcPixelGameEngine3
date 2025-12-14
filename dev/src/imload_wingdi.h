@@ -9,6 +9,7 @@
 //! END STDHEADER
 
 //! START WINAPI_CONFIG 
+#if OLC_HOST == OLC_HOST_WINDOWS	// Johnnyg63: Add guard for Windows only
 #if defined(UNICODE) || defined(_UNICODE)
 	#define olcT(s) L##s
 #else
@@ -42,9 +43,11 @@
 #include <gdiplusinit.h>
 #include <shlwapi.h>
 #undef _WINSOCKAPI_
+#endif
 //! END WINAPI_CONFIG
 
 //! START DECLARATION
+#if OLC_HOST == OLC_HOST_WINDOWS
 #if !defined(PGE_IMAGELOADER_WINGDI_DECLARED)
 namespace olc
 {
@@ -75,5 +78,6 @@ namespace olc
 
 #define PGE_IMAGELOADER_WINGDI_DECLARED 1
 #endif
+#endif // OLC_HOST == OLC_HOST_WINDOWS
 //! END DECLARATION
 

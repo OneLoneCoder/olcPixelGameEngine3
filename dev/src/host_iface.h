@@ -21,10 +21,19 @@ namespace olc
 	{
 		inline static size_t uuid = 0;
 
+		#if OLC_HOST == OLC_HOST_WINDOWS
 		inline constexpr size_t CreateUID()
 		{
 			return uuid++;
-		}	
+		}
+		#endif
+		#if OLC_HOST == OLC_HOST_MACOS
+		// Clang compiler on MacOS requires constexpr to be removed
+		inline size_t CreateUID()
+		{
+			return uuid++;
+		}
+		#endif	
 	}
 
 	namespace host

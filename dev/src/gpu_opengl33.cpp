@@ -93,6 +93,17 @@ namespace olc::gpu
 
 #endif
 
+#if OLC_HOST == OLC_HOST_MACOS
+        
+		// os_win_id[0] is the OLC OpenGL Device Context      
+        glRenderContext = (olc::apis::opengl::glRenderContext_t)os_win_id[0];
+        if (!glRenderContext) {
+            lastError = RendererError::FailedToCreateRenderContext;
+            return false;
+        }
+
+#endif
+
 		// Can't load OpenGL API until context is loaded
 		auto& gl = olc::apis::opengl::gl::Get();
 		if (!gl.HasLoaded())
@@ -288,6 +299,9 @@ namespace olc::gpu
 #if OLC_HOST == OLC_HOST_WINDOWS
 		wglDeleteContext(glRenderContext);
 #endif
+#if OLC_HOST == OLC_HOST_MACOS
+        //TODO: Add MacOS destroy context code
+#endif
 		return false;
 	}
 
@@ -304,7 +318,16 @@ namespace olc::gpu
 		}
 		ReleaseDC((HWND)(os_win_id[0]), glDeviceContext);
 #endif
+#if OLC_HOST == OLC_HOST_MACOS
 
+		CGLContextObj cglContext = (CGLContextObj)glRenderContext;
+		if (!CGLSetCurrentContext(cglContext))
+		{
+			lastError = RendererError::FailedToSwitchRenderContext;
+			return false;
+		}
+#endif
+		
 		return true;
 	}
 
@@ -335,7 +358,16 @@ namespace olc::gpu
 		}
 		ReleaseDC((HWND)(os_win_id[0]), glDeviceContext);
 #endif
+#if OLC_HOST == OLC_HOST_MACOS
+        
+		// params[0] is the OLC OpenGL Device Context      
+        glRenderContext = (olc::apis::opengl::glRenderContext_t)os_win_id[0];
+        if (!glRenderContext) {
+            lastError = RendererError::FailedToCreateRenderContext;
+            return false;
+        }
 
+#endif
 		return true;
 	}
 
@@ -374,7 +406,9 @@ namespace olc::gpu
 		}
 
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_MACOS
 		gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+#endif
 #endif
 
 		return id;
@@ -625,6 +659,12 @@ namespace olc::gpu
 		SwapBuffers(glDeviceContext);
 		ReleaseDC((HWND)(os_win_id[0]), glDeviceContext);
 #endif	
+
+#if OLC_HOST == OLC_HOST_MACOS
+        glFlushRenderAPPLE();
+        glSwapAPPLE();
+       
+#endif
 
 		return true;
 	}

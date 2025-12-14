@@ -36,10 +36,17 @@
 #endif
 
 #if OLC_HOST == OLC_HOST_MACOS
-	#define GL_SILENCE_DEPRECATION
-	#include <OpenGL/OpenGL.h>
-	#include <OpenGL/gl.h>
-	#include <OpenGL/glu.h>
+		#define GL_SILENCE_DEPRECATION // Stops MacOS & iOS whining about OpenGL is deprecated and we should use Metal
+        #define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED // Stops MacOS & iOS whining about OpenGL even more
+        #define CALLSTYLE
+        #define OGL_LOAD(t) &::t
+        #define GL_GLEXT_PROTOTYPES
+        #define GL_CLAMP GL_CLAMP_TO_EDGE
+        #include <stddef.h>                         // Correct issue with Unknown type name 'ptrdiff_t'
+        #include <OpenGL/OpenGL.h>
+        #include <OpenGL/gl3.h>
+        #include <OpenGL/gl3ext.h>
+        #include <OpenGL/glu.h>
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
@@ -63,19 +70,28 @@ namespace olc
 {
 	namespace apis::opengl
 	{
-#if OLC_HOST == OLC_HOST_WINDOWS
-		// "Target Host Window Handle"
-		typedef HDC glDeviceContext_t;
-		// "State of OpenGL Machinary"
-		typedef HGLRC glRenderContext_t;
-#endif
 
 		typedef char GLchar;
-		typedef ptrdiff_t GLsizeiptr;
+    	typedef ptrdiff_t GLsizeiptr;
+    
+#if OLC_HOST == OLC_HOST_WINDOWS
+        // "Target Host Window Handle"
+        typedef HDC glDeviceContext_t;
+        // "State of OpenGL Machinary"
+        typedef HGLRC glRenderContext_t;
+        // Johnnyg63: moved glShaderSource_t definition for Windows, as it does not match macOS and android signatures
+        typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
+#endif
+
+#if OLC_HOST == OLC_HOST_MACOS
+        typedef void* glDeviceContext_t;
+        typedef CGLContextObj glRenderContext_t;
+        typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei count, const GLchar* const *string, const GLint *length);
+#endif
 
 		typedef GLuint CALLSTYLE glCreateShader_t(GLenum type);
 		typedef GLuint CALLSTYLE glCreateProgram_t(void);
-		typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
+		
 		typedef void CALLSTYLE glDeleteShader_t(GLuint shader);
 		typedef void CALLSTYLE glCompileShader_t(GLuint shader);
 		typedef void CALLSTYLE glLinkProgram_t(GLuint program);
