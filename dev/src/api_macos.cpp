@@ -1,22 +1,7 @@
-#define GL_SILENCE_DEPRECATION
-//! START DECLARATION
-#if OLC_HOST == OLC_HOST_MACOS
-#include <objc/runtime.h>
-#include <objc/message.h>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <memory>
-#include <string>
-#include <string_view>
-#include <functional>
-#include <type_traits>
-#include <concepts>
-#include <mutex>
-#include <OpenGL/gl.h>
-#include <OpenGL/OpenGL.h>
 
-namespace macos_api {
+#include "api_macos.h"
+
+//! START IMPLEMENTATION
 
 // Application consts selectors
 static constexpr const char* kNSApplicationClass                = "NSApplication";
@@ -409,19 +394,6 @@ using NSPoint = CGPoint;
 using NSInteger = long;
 using NSUInteger = unsigned long;
 
-// NSRect structure for window and view frames
-struct NSRect {
-    double x{kMinValidDimension}, y{kMinValidDimension};
-    double width{kDefaultWindowWidth}, height{kDefaultWindowHeight};
-    
-    constexpr NSRect() = default;
-    constexpr NSRect(double x_val, double y_val, double w, double h) noexcept
-                    : x(x_val), y(y_val), width(w), height(h) {}
-
-    // Method to check if the NSRect is valid (non-zero dimensions)
-    [[nodiscard]] constexpr bool is_valid() const noexcept { return width > kMinValidDimension && height > kMinValidDimension; }
-};
-
 // Forward declarations
 struct Application;
 struct Window;
@@ -674,15 +646,15 @@ struct Window {
     void (*show)            (struct Window* self){nullptr};
     void (*destroy)         (struct Window* self){nullptr};
     void (*setDelegate)     (struct Window* self, id delegate){nullptr};
-    const char* (*getTitle) (struct Window* self){nullptr};
+    const char* (*getTitle) (const struct Window* self){nullptr};
     void (*setTitle)        (struct Window* self, const char* title){nullptr};
 
     void (*setWindowSize)     (struct Window* self, double width, double height){nullptr};
-    void (*getWindowSize)     (struct Window* self, double* width, double* height){nullptr};
+    void (*getWindowSize)     (const struct Window* self, double* width, double* height){nullptr};
     void (*setWindowPosition) (struct Window* self, double x, double y){nullptr};
-    void (*getWindowPosition) (struct Window* self, double* x, double* y){nullptr};
+    void (*getWindowPosition) (const struct Window* self, double* x, double* y){nullptr};
     void (*setWindowFrame)    (struct Window* self, double x, double y, double width, double height){nullptr};
-    void (*getWindowFrame)    (struct Window* self, double* x, double* y, double* width, double* height){nullptr};
+    void (*getWindowFrame)    (const struct Window* self, double* x, double* y, double* width, double* height){nullptr};
     void (*getCurrentFrame)   (struct Window* self){nullptr};
 };
 
@@ -698,8 +670,8 @@ struct OpenGLRenderer {
     void (*setupContext)          (struct OpenGLRenderer* self){nullptr};
     void (*renderYellowBackground)(struct OpenGLRenderer* self){nullptr};
     void (*renderTexturedQuad)    (struct OpenGLRenderer* self, unsigned int textureID){nullptr};
-    id (*getOpenGLContext)        (struct OpenGLRenderer* self){nullptr};
-    CGLContextObj (*getCGLContextObj)(struct OpenGLRenderer* self){nullptr};
+    void* (*getOpenGLContext)     (const struct OpenGLRenderer* self){nullptr};
+    void* (*getCGLContextObj)(struct OpenGLRenderer* self){nullptr};
     void* (*getCGLContextObjPtr)  (struct OpenGLRenderer* self){nullptr};
     void (*makeCurrentContext)    (struct OpenGLRenderer* self){nullptr};
     void (*setVsync)              (struct OpenGLRenderer* self, BOOL enabled){nullptr};
@@ -718,12 +690,12 @@ struct ImageLoader {
     // Method function pointers with nullptr initialization
     BOOL (*loadFromFile)           (struct ImageLoader* self, const char* filePath){nullptr};
     void (*destroy)                (struct ImageLoader* self){nullptr};
-    unsigned char* (*getPixelData) (struct ImageLoader* self){nullptr};
-    void (*getImageInfo)           (struct ImageLoader* self, int* width, int* height, int* bytesPerPixel){nullptr};
-    void (*getDetailedInfo)        (struct ImageLoader* self, int* width, int* height, int* bytesPerPixel, int* bytesPerRow, BOOL* hasAlpha){nullptr};
-    BOOL (*isLoaded)               (struct ImageLoader* self){nullptr};
-    BOOL (*getPixel)               (struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha){nullptr};
-    unsigned int (*createOpenGLTexture)(struct ImageLoader* self){nullptr};
+    unsigned char* (*getPixelData) (const struct ImageLoader* self){nullptr};
+    void (*getImageInfo)           (const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel){nullptr};
+    void (*getDetailedInfo)        (const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel, int* bytesPerRow, BOOL* hasAlpha){nullptr};
+    BOOL (*isLoaded)               (const struct ImageLoader* self){nullptr};
+    BOOL (*getPixel)               (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha){nullptr};
+    unsigned int (*createOpenGLTexture)(const struct ImageLoader* self){nullptr};
 };
 
 
@@ -1354,7 +1326,7 @@ extern "C" {
     }
 
     // Window title getter and setter
-    const char* window_getTitle(Window* self) {
+    const char* window_getTitle(const Window* self) {
         return self->title;
     }
 
@@ -1382,7 +1354,7 @@ extern "C" {
     }
 
     // Get Window frame (x, y, width, height)
-    void window_getWindowFrame(Window* self, double* x, double* y, double* width, double* height) {
+    void window_getWindowFrame(const Window* self, double* x, double* y, double* width, double* height) {
         auto posX = self ? self->frame.x : kMinValidDimension;
         auto posY = self ? self->frame.y : kMinValidDimension;
         auto w = self ? self->frame.width : kDefaultWindowWidth;
@@ -1394,17 +1366,16 @@ extern "C" {
     }
 
     // Get window position (x, y)
-    void window_getWindowPosition(Window* self, double* x, double* y) {
+    void window_getWindowPosition(const struct Window* self, double* x, double* y) {
         window_getWindowFrame(self, x, y, nullptr, nullptr);
     }
 
     // Get Window size (width, height)
-    void window_getWindowSize(Window* self, double* width, double* height) {
+    void window_getWindowSize(const Window* self, double* width, double* height) {
         window_getWindowFrame(self, nullptr, nullptr, width, height);
     }
-    
 
-     // Set window frame (x, y, width, height)
+    // Set window frame (x, y, width, height)
     void window_setWindowFrame(Window* self, double x, double y, double width, double height) {
         if (self) {
             // Update internal frame representation
@@ -1499,27 +1470,27 @@ extern "C" {
 
 
     // Get the underlying OpenGL context
-    id opengl_getOpenGLContext(OpenGLRenderer* self) {
-            return self->glContext;
+    void* opengl_getOpenGLContext(const struct OpenGLRenderer* self) {
+            return (void*)self->glContext;
     }
 
     // Get the underlying CGLContextObj from the OpenGL renderer
-    CGLContextObj opengl_getCGLContextObj(OpenGLRenderer* self) {
+    void* opengl_getCGLContextObj(struct OpenGLRenderer* self) {
         if (!self || !self->glContext) {
             return nullptr;
         }
         
         // Get the CGLContextObj from the NSOpenGLContext
-        return (CGLContextObj)((void*(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::CGLContextObjSel);
+        return (void*)((void*(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::CGLContextObjSel);
     }
     
     // Get the underlying CGLContextObj (C API version)
-    void* opengl_getCGLContextObjPtr(OpenGLRenderer* self) {
+    void* opengl_getCGLContextObjPtr(struct OpenGLRenderer* self) {
         return (void*)opengl_getCGLContextObj(self);
     }
 
     // Make the OpenGL context current
-    void opengl_makeCurrentContext(OpenGLRenderer* self) {
+    void opengl_makeCurrentContext(struct OpenGLRenderer* self) {
         if (self && self->glContext) {
             ((void(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::makeCurrentContextSel);
         }
@@ -1673,19 +1644,19 @@ extern "C" {
     }
 
     // Get raw pixel data pointer
-    unsigned char* imageloader_getPixelData(struct ImageLoader* self) {
+    unsigned char* imageloader_getPixelData(const struct ImageLoader* self) {
         return self->pixelData;
     }
 
     // Get image information
-    void imageloader_getImageInfo(struct ImageLoader* self, int* width, int* height, int* bytesPerPixel) {
+    void imageloader_getImageInfo(const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel) {
         if (width) *width                 = self->width;
         if (height) *height               = self->height;
         if (bytesPerPixel) *bytesPerPixel = self->bytesPerPixel;
     }
 
     // Get detailed image format information
-    void imageloader_getDetailedInfo(struct ImageLoader* self, int* width, int* height, int* bytesPerPixel, int* bytesPerRow, BOOL* hasAlpha) {
+    void imageloader_getDetailedInfo(const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel, int* bytesPerRow, BOOL* hasAlpha) {
         if (width) *width                 = self->width;
         if (height) *height               = self->height;
         if (bytesPerPixel) *bytesPerPixel = self->bytesPerPixel;
@@ -1694,12 +1665,12 @@ extern "C" {
     }
 
     // Check if image is loaded
-    BOOL imageloader_isLoaded(struct ImageLoader* self) {
+    BOOL imageloader_isLoaded(const struct ImageLoader* self) {
         return (self->pixelData != NULL && self->width > kMinValidDimension && self->height > kMinValidDimension);
     }
 
     // Get pixel at specific coordinates
-    BOOL imageloader_getPixel(struct ImageLoader* self, int x, int y,
+    BOOL imageloader_getPixel(const struct ImageLoader* self, int x, int y,
                             unsigned char* red, unsigned char* green,
                             unsigned char* blue, unsigned char* alpha) {
         if (!imageloader_isLoaded(self) || x < kMinValidDimension || x >= self->width || y < kMinValidDimension || y >= self->height) {
@@ -1734,8 +1705,8 @@ extern "C" {
     }
 
     // Create OpenGL texture from ImageLoader
-    unsigned int imageloader_createOpenGLTexture(struct ImageLoader* loader) {
-        if (!loader->isLoaded(loader)) {
+    unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* loader) {
+        if (!loader->isLoaded(const_cast<struct ImageLoader*>(loader))) {
             return 0;
         }
         
@@ -1988,8 +1959,5 @@ extern "C" {
 
 } // extern "C"
 
-
-} // namespace macos_api
-#endif// OLC_HOST == OLC_HOST_MACOS
-//! END DECLARATION
+//! END IMPLEMENTATION
 

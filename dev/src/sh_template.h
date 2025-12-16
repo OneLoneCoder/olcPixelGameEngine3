@@ -131,6 +131,16 @@
 //! GRAB host_win_winapi.h DECLARATION
 #endif
 
+#if OLC_HOST == OLC_HOST_MACOS
+//! GRAB api_macos.h DECLARATION
+
+//! GRAB api_macos_wrapper.hpp DECLARATION
+
+//! GRAB host_apple_macos.h MACOS_CONFIG
+
+//! GRAB host_apple_macos.h DECLARATION
+#endif
+
 #if OLC_GPU == OLC_GPU_OPENGL33
 //! GRAB api_opengl.h OPENGL_CONFIG
 
@@ -145,6 +155,10 @@
 //! GRAB imload_wingdi.h DECLARATION
 #endif
 
+#if OLC_IMAGELOADER == OLC_IMAGELOADER_MACOS
+//! GRAB imload_macos.h DECLARATION
+#endif
+
 
 
 
@@ -155,6 +169,12 @@
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HOST_IMPLEMENTED)
 #if OLC_HOST == OLC_HOST_WINDOWS
 //! GRAB host_win_winapi.cpp IMPLEMENTATION
+#endif
+#if OLC_HOST == OLC_HOST_MACOS
+//! GRAB host_apple_macos.cpp IMPLEMENTATION
+
+//! GRAB api_macos.cpp IMPLEMENTATION
+
 #endif
 #define PGE_HOST_IMPLEMENTED 1
 #endif
@@ -201,6 +221,9 @@
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_IMAGELOADER_IMPLEMENTED)
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_WINGDI
 //! GRAB imload_wingdi.cpp IMPLEMENTATION 
+#endif
+#if OLC_IMAGELOADER == OLC_IMAGELOADER_MACOS
+//! GRAB imload_macos.cpp IMPLEMENTATION 
 #endif
 #define PGE_IMAGELOADER_IMPLEMENTED 1
 #endif

@@ -99,7 +99,7 @@ namespace olc
 
 		ImageRegion& operator=(ImageRegion& o)
 		{
-
+            return *this; // TODO: Johnngy63 implement properly if needed temp code to get Macos to compile
 		}
 	};
 

@@ -11,11 +11,10 @@
 //! END STDHEADER
 
 //! START CUSTOMHEADER
+#include "api_macos.h"
 //! END CUSTOMHEADER
 
 //! START DECLARATION
-#if OLC_HOST == OLC_HOST_MACOS
-#include "api_macos.h"
 namespace olc {
     namespace apis {
         namespace macos {
@@ -828,5 +827,4 @@ namespace olc {
     } // namespace apis
 } // namespace olc
 
-#endif // OLC_HOST == OLC_HOST_MACOS
 //! END DECLARATION

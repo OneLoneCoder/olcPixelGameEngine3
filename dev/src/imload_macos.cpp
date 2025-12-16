@@ -2,7 +2,6 @@
 #include "imload_macos.h"
 
 //! START IMPLEMENTATION
-#if OLC_HOST == OLC_HOST_MACOS
 namespace olc::imload
 {
     
@@ -76,5 +75,4 @@ namespace olc::imload
         return false;
     }
 }
-#endif // OLC_HOST == OLC_HOST_MACOS
 //! END IMPLEMENTATION

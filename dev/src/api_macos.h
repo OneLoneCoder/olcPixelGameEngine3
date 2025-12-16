@@ -2,19 +2,42 @@
 
 #pragma once
 #include "config.h"
-//! START DECLARATION
-#if OLC_HOST == OLC_HOST_MACOS
-extern "C" {
-    
-    #ifndef BOOL
-    #define BOOL int
-    #endif
 
+//! START STDHEADER GLOBAL
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <functional>
+#include <type_traits>
+#include <concepts>
+#include <mutex>
+//! END STDHEADER
+
+//! START DECLARATION
+#include <objc/objc.h>
+#include <objc/NSObjCRuntime.h>
+#include <objc/runtime.h>
+#include <objc/message.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/OpenGL.h>
+
+extern "C" {
     // NSRect (OSX rectangle structure same as GCRect C structure)
-    typedef struct NSRect {
-        double x, y;
-        double width, height;
-    } NSRect;
+    // NSRect structure for window and view frames
+    struct NSRect {
+        double x{0.0}, y{0.0};
+        double width{800.0}, height{600.0};
+        
+        constexpr NSRect() = default;
+        constexpr NSRect(double x_val, double y_val, double w, double h) noexcept
+                        : x(x_val), y(y_val), width(w), height(h) {}
+
+        // Method to check if the NSRect is valid (non-zero dimensions)
+        [[nodiscard]] constexpr bool is_valid() const noexcept { return width > 0.0 && height > 0.0; }
+    };
     
     // Forward declarations
     struct Application;
@@ -130,8 +153,4 @@ extern "C" {
     void window_setWindowDidDeminiaturizeCallback   (struct Window* self, WindowDelegateCallback callback, void* userData);
 }
 
-// C++ only function that returns C++ NSRect (not C-linkage compatible)
-NSRect window_getSize(struct Window* self) noexcept;
-
-#endif // OLC_HOST == OLC_HOST_MACOS
 //! END DECLARATION

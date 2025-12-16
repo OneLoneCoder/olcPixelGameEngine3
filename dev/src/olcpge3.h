@@ -10,8 +10,13 @@
 
 #include "image.h"
 #include "imload_iface.h"
+#if OLC_HOST == OLC_HOST_WINDOWS
 #include "imload_wingdi.h"
+#endif
+
+#if OLC_HOST == OLC_HOST_MACOS
 #include "imload_macos.h"
+#endif
 
 #include "gputask.h"
 #include "gpu_iface.h"
