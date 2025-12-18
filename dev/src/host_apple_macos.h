@@ -1,30 +1,32 @@
 #pragma once
 #include "config.h"
-#if OLC_HOST == OLC_HOST_MACOS
+
 
 //! START STDHEADER GLOBAL
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <iostream>
+#include <exception>
+#include <thread>
+#include <chrono>
 //! END STDHEADER
 
 //! START CUSTOMHEADER
 #include "host_iface.h"
 #include "api_macos_wrapper.hpp"
 #include "window.h"
-#include <iostream>
-#include <exception>
-#include <thread>
-#include <chrono>
+
 //! END CUSTOMHEADER
 
 //! START MACOS_CONFIG
-#include <dispatch/dispatch.h>  // Grand Central Dispatch:  Apple's C-based API for managing concurrent operations on macOS and iOS.
-#include <pthread.h>            // POSIX threads: Used for pthread_main_np() to check if current thread is the main thread
+
 //! END MACOS_CONFIG
 
-
+#if OLC_HOST == OLC_HOST_MACOS
 //! START DECLARATION
+#include <dispatch/dispatch.h>  // Grand Central Dispatch:  Apple's C-based API for managing concurrent operations on macOS and iOS.
+#include <pthread.h>            // POSIX threads: Used for pthread_main_np() to check if current thread is the main thread
 namespace olc
 {
     namespace host
@@ -74,12 +76,7 @@ namespace olc
 
             void* pMacGLConextObj = nullptr;
             std::once_flag intialAppFlag;
-        
-            // TODO: Should these be private?
-            void MacApplicationEventsHandler();
-            void MacWindowEventsHandler();
-            void MacEventsHandler();
-            void MacOpenGLContextEventsHandler();
+    
             
         private:
                         
@@ -98,10 +95,17 @@ namespace olc
                 double width = 800.0;
                 double height = 600.0;
             } frameBounds;
+
+             // TODO: Should these be private?
+            void MacApplicationEventsHandler();
+            void MacWindowEventsHandler();
+            void MacEventsHandler();
+            void MacOpenGLContextEventsHandler();
             
         };
     }
 }
+
 //! END DECLARATION
 #endif /* olc_HOST == olc_HOST_MACOS */
 

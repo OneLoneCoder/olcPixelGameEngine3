@@ -114,9 +114,11 @@ extern "C" {
     void window_setMouseMovedCallback       (struct Window* self, MouseEventCallback callback, void* userData);
     void window_setMouseDraggedCallback     (struct Window* self, MouseEventCallback callback, void* userData);
     void window_setRightMouseDownCallback   (struct Window* self, MouseEventCallback callback, void* userData);
+    void window_setRightMouseDraggedCallback (struct Window* self, MouseEventCallback callback, void* userData);
     void window_setRightMouseUpCallback     (struct Window* self, MouseEventCallback callback, void* userData);
     void window_setOtherMouseDownCallback   (struct Window* self, MouseEventCallback callback, void* userData);
     void window_setOtherMouseUpCallback     (struct Window* self, MouseEventCallback callback, void* userData);
+    void window_setOtherMouseDraggedCallback(struct Window* self, MouseEventCallback callback, void* userData);
     void window_setScrollWheelCallback      (struct Window* self, void (*callback)(double, double, double, double, unsigned int, void*), void* userData);
 
     // Event system management

@@ -69,6 +69,7 @@ static constexpr const char* kRightMouseUpSel                   = "rightMouseUp:
 static constexpr const char* kRightMouseDraggedSel              = "rightMouseDragged:";
 static constexpr const char* kOtherMouseDownSel                 = "otherMouseDown:";
 static constexpr const char* kOtherMouseUpSel                   = "otherMouseUp:";
+static constexpr const char* kOtherMouseDraggedSel              = "otherMouseDragged:";
 static constexpr const char* kScrollWheelSel                    = "scrollWheel:";
 static constexpr const char* kDeltaXSel                         = "deltaX";
 static constexpr const char* kDeltaYSel                         = "deltaY";
@@ -194,6 +195,7 @@ namespace ObjectiveCSEL {
     static SEL rightMouseDraggedSel             = nullptr;
     static SEL otherMouseDownSel                = nullptr;
     static SEL otherMouseUpSel                  = nullptr;
+    static SEL otherMouseDraggedSel             = nullptr;
     static SEL scrollWheelSel                   = nullptr;
     static SEL deltaXSel                        = nullptr;
     static SEL deltaYSel                        = nullptr;
@@ -294,6 +296,7 @@ namespace ObjectiveCSEL {
         rightMouseDraggedSel                = sel_registerName(kRightMouseDraggedSel);
         otherMouseDownSel                   = sel_registerName(kOtherMouseDownSel);
         otherMouseUpSel                     = sel_registerName(kOtherMouseUpSel);
+        otherMouseDraggedSel                = sel_registerName(kOtherMouseDraggedSel);
         scrollWheelSel                      = sel_registerName(kScrollWheelSel);
         deltaXSel                           = sel_registerName(kDeltaXSel);
         deltaYSel                           = sel_registerName(kDeltaYSel);
@@ -622,6 +625,7 @@ struct Window {
     void (*rightMouseDraggedCallback)(double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
     void (*otherMouseDownCallback)   (double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
     void (*otherMouseUpCallback)     (double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
+    void (*otherMouseDraggedCallback)(double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
     void (*scrollWheelCallback)      (double x, double y, double deltaX, double deltaY, unsigned int modifierFlags, void* userData){nullptr};
     void* eventUserData{nullptr};   // User data for event callbacks
     BOOL acceptsInputEvents{NO};    // Whether the window accepts input events
@@ -956,6 +960,16 @@ void view_otherMouseUp(id self, SEL _cmd, id event) {
     }
 }
 
+void view_otherMouseDragged(id self, SEL _cmd, id event) {
+    (void)self;(void)_cmd;
+
+    MouseEventData data = extractMouseEventData(event);
+
+    if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDraggedCallback) [[likely]] {
+        gptrNSWindowEvents->otherMouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
+    }
+}
+
 // Handle scroll wheel events
 void view_scrollWheel(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
@@ -1048,6 +1062,7 @@ Class createCustomOpenGLViewClass() {
     class_addMethod(CustomViewClass, ObjectiveCSEL::rightMouseDraggedSel, (IMP)view_rightMouseDragged, kEventHandlerMethodTypeEncoding);
     class_addMethod(CustomViewClass, ObjectiveCSEL::otherMouseDownSel,    (IMP)view_otherMouseDown,    kEventHandlerMethodTypeEncoding);
     class_addMethod(CustomViewClass, ObjectiveCSEL::otherMouseUpSel,      (IMP)view_otherMouseUp,      kEventHandlerMethodTypeEncoding);
+    class_addMethod(CustomViewClass, ObjectiveCSEL::otherMouseDraggedSel, (IMP)view_otherMouseDragged, kEventHandlerMethodTypeEncoding);
     class_addMethod(CustomViewClass, ObjectiveCSEL::scrollWheelSel,       (IMP)view_scrollWheel,       kEventHandlerMethodTypeEncoding);
 
     // First responder methods
@@ -1857,6 +1872,11 @@ extern "C" {
         self->eventUserData = userData;
     }
 
+    void window_setRightMouseDraggedCallback(Window* self, void (*callback)(double, double, int, unsigned int, void*), void* userData) {
+        self->rightMouseDraggedCallback = callback;
+        self->eventUserData = userData;
+    }
+
     void window_setRightMouseUpCallback(Window* self, void (*callback)(double, double, int, unsigned int, void*), void* userData) {
         self->rightMouseUpCallback = callback;
         self->eventUserData = userData;
@@ -1869,6 +1889,11 @@ extern "C" {
 
     void window_setOtherMouseUpCallback(Window* self, void (*callback)(double, double, int, unsigned int, void*), void* userData) {
         self->otherMouseUpCallback = callback;
+        self->eventUserData = userData;
+    }
+
+    void window_setOtherMouseDraggedCallback(Window* self, void (*callback)(double, double, int, unsigned int, void*), void* userData) {
+        self->otherMouseDraggedCallback = callback;
         self->eventUserData = userData;
     }
 

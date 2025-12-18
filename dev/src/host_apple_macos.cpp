@@ -1,8 +1,7 @@
 #include "config.h"
-#if OLC_HOST == OLC_HOST_MACOS
 #include "host_apple_macos.h"
-
-
+#include <dispatch/queue.h>
+#if OLC_HOST == OLC_HOST_MACOS
 
 //! START IMPLEMENTATION
 namespace olc::host {
@@ -248,7 +247,6 @@ namespace olc::host {
         // Set up mouse event handlers
         pMacOSEventHandler->onMouseDown([&](const olc::apis::macos::MouseEvent& event) {
                 pPGEwindow->olc_OnMouseButton(event.buttonNumber, true);
-
         });
         
         pMacOSEventHandler->onMouseUp([&](const olc::apis::macos::MouseEvent& event) {
@@ -256,28 +254,43 @@ namespace olc::host {
         });
         
         pMacOSEventHandler->onMouseMoved([&](const olc::apis::macos::MouseEvent& event) {
-            pPGEwindow->olc_OnMouseMove({static_cast<int>(event.x), static_cast<int>(event.y)});
+            pPGEwindow->olc_OnMouseMove({static_cast<int>(event.x), static_cast<int>(event.y)});            
         });
         
         pMacOSEventHandler->onMouseDragged([&](const olc::apis::macos::MouseEvent& event) {
             pPGEwindow->olc_OnMouseMove({static_cast<int>(event.x), static_cast<int>(event.y)});
         });
-        
+
+        pMacOSEventHandler->onRightMouseDragged([&](const olc::apis::macos::MouseEvent& event) {
+            pPGEwindow->olc_OnMouseMove({static_cast<int>(event.x), static_cast<int>(event.y)});
+        });
+
+        pMacOSEventHandler->onOtherMouseUp([&](const olc::apis::macos::MouseEvent& event) {
+            pPGEwindow->olc_OnMouseButton(event.buttonNumber, false);
+        });
+
         pMacOSEventHandler->onRightMouseDown([&](const olc::apis::macos::MouseEvent& event) {
             pPGEwindow->olc_OnMouseButton(event.buttonNumber, true);
         });
         
         pMacOSEventHandler->onRightMouseUp([&](const olc::apis::macos::MouseEvent& event) {
             pPGEwindow->olc_OnMouseButton(event.buttonNumber, false);
+            
         });
 
         pMacOSEventHandler->onOtherMouseDown([&](const olc::apis::macos::MouseEvent& event) {
             pPGEwindow->olc_OnMouseButton(event.buttonNumber, true);
         });
 
-        pMacOSEventHandler->onOtherMouseUp([&](const olc::apis::macos::MouseEvent& event) {
-            pPGEwindow->olc_OnMouseButton(event.buttonNumber, false)    ;
+         pMacOSEventHandler->onOtherMouseUp([&](const olc::apis::macos::MouseEvent& event) {
+            pPGEwindow->olc_OnMouseButton(event.buttonNumber, false);
         });
+
+        pMacOSEventHandler->onOtherMouseDragged([&](const olc::apis::macos::MouseEvent& event) {
+            pPGEwindow->olc_OnMouseMove({static_cast<int>(event.x), static_cast<int>(event.y)});
+        });
+
+       
 
         pMacOSEventHandler->onScrollWheel([&](const olc::apis::macos::ScrollWheelEvent& event) {
             // Although MacOS provides both deltaX and deltaY, we will only use deltaY for vertical scrolling

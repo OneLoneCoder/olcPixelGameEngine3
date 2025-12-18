@@ -44,7 +44,8 @@
 		#define OLC_HOST OLC_HOST_LINUX_X11
 	#endif
 
-	#if defined(__APPLE__)	
+	#if defined(__APPLE__)
+		#define GL_SILENCE_DEPRECATION	
 		#define OLC_HOST OLC_HOST_MACOS
 	#endif
 	
@@ -74,6 +75,12 @@
 
 #define OLC_IMAGELOADER_NONE 1
 #define OLC_IMAGELOADER_WINGDI 2
+#define OLC_IMAGELOADER_MACOS 3
+
+#if OLC_HOST == OLC_HOST_MACOS
+	#undef OLC_IMAGELOADER
+	#define OLC_IMAGELOADER OLC_IMAGELOADER_MACOS
+#endif
 
 #if !defined(OLC_IMAGELOADER)
 	#define OLC_IMAGELOADER OLC_IMAGELOADER_WINGDI

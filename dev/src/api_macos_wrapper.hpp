@@ -660,8 +660,10 @@ namespace olc {
                 std::function<void(const MouseEvent&)>  mouseDraggedHandler_;
                 std::function<void(const MouseEvent&)>  rightMouseDownHandler_;
                 std::function<void(const MouseEvent&)>  rightMouseUpHandler_;
+                std::function<void(const MouseEvent&)>  rightMouseDraggedHandler_;
                 std::function<void(const MouseEvent&)>  otherMouseDownHandler_;
                 std::function<void(const MouseEvent&)>  otherMouseUpHandler_;
+                std::function<void(const MouseEvent&)>  otherMouseDraggedHandler_;
                 std::function<void(const ScrollWheelEvent&)> scrollWheelHandler_;
                
                 // Template helpers for static callbacks to reduce code duplication
@@ -720,12 +722,26 @@ namespace olc {
                     mouseCallback<MouseEvent>(x, y, buttonNumber, modifierFlags, userData, &EventHandler::rightMouseUpHandler_);
                 }
 
+                static void rightMouseDraggedCallback(double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData) {
+                    auto* eventHandler = static_cast<EventHandler*>(userData);
+                    if (eventHandler && eventHandler->rightMouseDraggedHandler_) {
+                        eventHandler->rightMouseDraggedHandler_(MouseEvent(x, y, buttonNumber, modifierFlags));
+                    }
+                }
+
                 static void otherMouseDownCallback(double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData) {
                     mouseCallback<MouseEvent>(x, y, buttonNumber, modifierFlags, userData, &EventHandler::otherMouseDownHandler_);
                 }
 
                 static void otherMouseUpCallback(double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData) {
                     mouseCallback<MouseEvent>(x, y, buttonNumber, modifierFlags, userData, &EventHandler::otherMouseUpHandler_);
+                }
+
+                static void otherMouseDraggedCallback(double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData) {
+                    auto* eventHandler = static_cast<EventHandler*>(userData);
+                    if (eventHandler && eventHandler->otherMouseDraggedHandler_) {
+                        eventHandler->otherMouseDraggedHandler_(MouseEvent(x, y, buttonNumber, modifierFlags));
+                    }
                 }
 
                 static void scrollWheelCallback(double x, double y, double deltaX, double deltaY, unsigned int modifierFlags, void* userData) {
@@ -784,6 +800,11 @@ namespace olc {
                     rightMouseDownHandler_ = std::move(handler);
                     window_setRightMouseDownCallback(window_.getCHandle(), rightMouseDownCallback, this);
                 }
+
+                void onRightMouseDragged(std::function<void(const MouseEvent&)> handler) {
+                    rightMouseDraggedHandler_ = std::move(handler);
+                    window_setRightMouseDraggedCallback(window_.getCHandle(), rightMouseDraggedCallback, this);
+                }
                 
                 void onRightMouseUp(std::function<void(const MouseEvent&)> handler) {
                     rightMouseUpHandler_ = std::move(handler);
@@ -798,6 +819,11 @@ namespace olc {
                 void onOtherMouseUp(std::function<void(const MouseEvent&)> handler) {
                     otherMouseUpHandler_ = std::move(handler);
                     window_setOtherMouseUpCallback(window_.getCHandle(), otherMouseUpCallback, this);
+                }
+
+                void onOtherMouseDragged(std::function<void(const MouseEvent&)> handler) {
+                    otherMouseDraggedHandler_ = std::move(handler);
+                    window_setOtherMouseDraggedCallback(window_.getCHandle(), otherMouseDraggedCallback, this);
                 }
 
                 void onScrollWheel(std::function<void(const ScrollWheelEvent&)> handler) {
