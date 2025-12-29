@@ -168,7 +168,7 @@ namespace olc::host {
         pMacOSWindow->setWindowDidResizeCallback([&]() {
             double width, height;
             pMacOSWindow->getWindowSize(width, height);
-            pPGEwindow->olc_OnWindowSize({static_cast<int>(width), static_cast<int>(height)});
+            //pPGEwindow->olc_OnWindowSize({static_cast<int>(width), static_cast<int>(height)});
 
         });
 
