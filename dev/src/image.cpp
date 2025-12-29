@@ -54,6 +54,13 @@ namespace olc
 		return pixels;
 	}
 
+	olc::Pixel Image::Sample(const olc::vf2d& uv)
+	{
+		return Pixel({ 
+			int(std::round(uv.x * dimensions.x)) % dimensions.x, 
+			int(std::round(uv.y * dimensions.y)) % dimensions.y });
+	}
+
 	void Image::Resize(const olc::vi2d& size)
 	{
 		dimensions = size;

@@ -411,6 +411,7 @@ namespace olc::gpu
 #endif
 #endif
 
+		std::cout << "Created Texture ID: " << id << " Size: " << vSize.x << "x" << vSize.y << "\n";
 		return id;
 	}
 
@@ -446,15 +447,15 @@ namespace olc::gpu
 		// unbind the framebuffer to avoid sampling from a texture that's being written to.
 		if (texid == nCurrentTextureTarget && texid != 0)
 		{
-#if defined(OLC_GPU_DEBUG)
+#if defined(OLC_GPU_ERRORCHECK) && OLC_GPU_ERRORCHECK == 1
 			std::cout << "Warning ATS: Requested source is currently attached as target (" << texid << ") - unbinding FBO\n";
 #endif
 			gl.glBindFramebuffer(36160U, 0);
 			nCurrentTextureTarget = 0;
 		}
 
-		if (nCurrentTextureSource == texid)
-			return true;
+		//if (nCurrentTextureSource == texid)
+		//	return true;
 
 		gl.glActiveTexture(0x84C0 + slot); // GL_TEXTURE0
 		gl.glBindTexture(GL_TEXTURE_2D, texid);
@@ -472,7 +473,7 @@ namespace olc::gpu
 		// attached to the FBO (undefined behavior).
 		if (texid != 0 && texid == nCurrentTextureSource)
 		{
-#if defined(OLC_GPU_DEBUG)
+#if defined(OLC_GPU_ERRORCHECK) && OLC_GPU_ERRORCHECK == 1
 			std::cout << "Warning ATT: Requested target is currently bound as source (" << texid << ") - unbinding texture units\n";
 #endif
 			// Unbind from a reasonable number of texture units (0..7) used by this renderer
@@ -481,6 +482,8 @@ namespace olc::gpu
 				gl.glActiveTexture(0x84C0 + i);
 				gl.glBindTexture(GL_TEXTURE_2D, 0);
 			}
+			// Reset to texture unit 0
+			gl.glActiveTexture(0x84C0);
 			nCurrentTextureSource = 0;
 		}
 
@@ -493,6 +496,9 @@ namespace olc::gpu
 		
 		// Bind FBO
 		gl.glBindFramebuffer(36160U, nDefaultFBO);
+
+		//gl.glEnable(GL_BLEND);
+		//gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		// Allocate target buffers - pick the single attachment corresponding to 'slot'
 		std::array<GLenum, 8> attachments =
 		{ { 36064U, 36065U, 36066U, 36067U, 36068U, 36069U, 36070U, 36071U } };
@@ -500,6 +506,9 @@ namespace olc::gpu
 		gl.glDrawBuffers(1, &draw);
 		// Bind buffers to texture
 		gl.glFramebufferTexture2D(36160U, 36064U + slot, GL_TEXTURE_2D, texid, 0);
+
+		//glReadBuffer(36064U + slot);  // GL_COLOR_ATTACHMENT0 + slot
+		
 
 		nCurrentTextureTarget = texid;
 		
@@ -586,6 +595,9 @@ namespace olc::gpu
 				//if (task.bDepth)
 				//	gl.glEnable(GL_DEPTH_TEST);
 
+				gl.glEnable(GL_BLEND);
+				//gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				gl.glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 				// Draw the thing!
 				if (task.bWireframe)
 				{

@@ -93,6 +93,9 @@ public:
 
 	std::shared_ptr<SecondWindow> win2;
 
+	olc::Image imBlend;
+	olc::Image imTempBuffer;
+
 public:
 	bool OnUserCreate() override
 	{
@@ -102,7 +105,9 @@ public:
 
 		//CreateImage(imTest, { 64,64 });
 		CreateImageFromFile(imLogo, "../tests/olc.png");
+		CreateImageFromFile(imBlend, "../tests/blend.png");
 
+		CreateImage(imTempBuffer, { 128, 128 });
 
 		CreateSampleTestImage(imSampleTest, { 32, 32 });
 
@@ -146,6 +151,10 @@ public:
 		//draw.FilledRect({ 0,0 }, imgPrimary.Size() * olc::vf2d(0.5f, 1.0f), olc::Pixel(0, 0, 0, 1));
 
 
+		draw.SetTarget(imTempBuffer);
+		draw.Clear(olc::Colour::WHITE);
+		draw.Image(imBlend, { 0,0 });
+
 
 		draw.SetTarget(GetDefaultImage());
 		draw.WorldReset();
@@ -160,9 +169,9 @@ public:
 		if (mouse.GetButton(1).bHeld)
 		{		
 			fAngle += 0.2f * fElapsedTime;
-			draw.WorldRotate(fAngle, imLowRes.Size() / 2.0f);
 		}
 
+		draw.WorldRotate(fAngle, { 0,0 });// imLowRes.Size() / 2.0f);
 		if (mouse.GetButton(2).bPressed)
 		{
 			auto w = std::make_shared<SecondWindow>();
@@ -217,55 +226,90 @@ public:
 		if (mouse.GetButton(0).bReleased)
 			nSelectedVert = -1;
 
-		draw.ImageQuad(imLogo.region({ 0,0 }, { 10,10 }), vecVerts);
+	//	draw.ImageQuad(imLogo.region({ 0,0 }, { 10,10 }), vecVerts);
 
-		draw.Line(vecVerts[0], vecVerts[1], olc::Colour::MAGENTA);
-		draw.Line(vecVerts[1], vecVerts[2], olc::Colour::MAGENTA);
-		draw.Line(vecVerts[2], vecVerts[3], olc::Colour::MAGENTA);
-		draw.Line(vecVerts[3], vecVerts[0], olc::Colour::MAGENTA);
+	//	draw.Line(vecVerts[0], vecVerts[1], olc::Colour::MAGENTA);
+	//	draw.Line(vecVerts[1], vecVerts[2], olc::Colour::MAGENTA);
+	//	draw.Line(vecVerts[2], vecVerts[3], olc::Colour::MAGENTA);
+	//	draw.Line(vecVerts[3], vecVerts[0], olc::Colour::MAGENTA);
 
-		//draw.Image(imTemp, vMouse, { 4,4 });
+	//	//draw.Image(imTemp, vMouse, { 4,4 });
 
-		draw.Image(imSampleTest, vMouse);
+	//	
 
-		draw.Image(olc::fontClassicPGE.imgFont, vMouse);
+	////draw.Image(olc::fontClassicPGE.imgFont, vMouse);
 
-		std::string sTest = "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...";
-		olc::vf2d vSizeMono = draw.GetTextSize(sTest, false, { 1, 2 });
-		olc::vf2d vSizeProp = draw.GetTextSize(sTest, true, { 1, 2 });
+	//	
+
+	//	std::string sTest = "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...";
+	//	olc::vf2d vSizeMono = draw.GetTextSize(sTest, false, { 1, 2 });
+	//	olc::vf2d vSizeProp = draw.GetTextSize(sTest, true, { 1, 2 });
 
 
-		draw.String({ 10.0f, 10.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::Colour::WHITE, { 1, 2 });
-		draw.Rect({ 10.0f, 10.0f }, vSizeMono, olc::Colour::GREEN);
+	//	draw.String({ 10.0f, 10.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::Colour::WHITE, { 1, 2 });
+	//	draw.Rect({ 10.0f, 10.0f }, vSizeMono, olc::Colour::GREEN);
 
-		draw.StringProp({ 10.0f, 100.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::Colour::BLUE, { 1, 2 });
-		draw.Rect({ 10.0f, 100.0f }, vSizeProp, olc::Colour::GREEN);
+	//	draw.StringProp({ 10.0f, 100.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::Colour::BLUE, { 1, 2 });
+	//	draw.Rect({ 10.0f, 100.0f }, vSizeProp, olc::Colour::GREEN);
 
-		draw.StringProp({ 10.0f, 200.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::PixelF(0.5f, 0.0f, 0.0f, 0.25f), {1, 2});
-		draw.Rect({ 10.0f, 200.0f }, vSizeProp, olc::Colour::GREEN);
+	//	draw.StringProp({ 10.0f, 200.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::PixelF(0.5f, 0.0f, 0.0f, 0.25f), {1, 2});
+	//	draw.Rect({ 10.0f, 200.0f }, vSizeProp, olc::Colour::GREEN);
 
-		//draw.Pixel(vMouse, olc::Colour::GREEN);
-		//draw.Line(vMouse, vMouse + 1,  olc::Colour::GREEN);
+	//	//draw.Pixel(vMouse, olc::Colour::GREEN);
+	//	//draw.Line(vMouse, vMouse + 1,  olc::Colour::GREEN);
+	//	
+	//	draw.FilledRect({ 5, 100 }, { 100,100 }, olc::Colour::TANGERINE, olc::Colour::DARK_CYAN, olc::Colour::RED, olc::Colour::GREEN);
+	//	
+	//	draw.FilledRect({ 5,5 }, { 10,10 }, olc::Colour::YELLOW);
+
+
+
+	////	draw.Rect({ 8,8 }, { 20,20 }, olc::Colour::RED);
+
+	//	if(mouse.GetButton(0).bHeld)
+	//		draw.Line({ 1.0f, 1.0f }, { 25.5f, 25.5f });
+
+
+
+	//	//draw.Image(imTempBuffer, vMouse);
+	//	draw.Image(imSampleTest, vMouse);
+	//	//draw.SetTarget(imgPrimary);
+	//	//draw.WorldReset();
+	//	//draw.Image(imLowRes, { 0,0 }, { 4, 4 });
+
+
+	//	draw.swLine({ 100,100 }, vMouse, olc::Colour::BLACK, olc::Colour::YELLOW);
+
+
+	//	
+
+	//	draw.Rect({ 8,8, }, { 20,20 }, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE, olc::Colour::WHITE);
+	//	draw.swRect({ 7,7, }, { 22,22 }, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE, olc::Colour::WHITE);
+
+		for (int i = 0; i < 100; i++)
+		{
+			// Draw random triangle
+			draw.swTexturedTriangle(
+				{ float(rand() % GetDefaultImage().Size().x), float(rand() % GetDefaultImage().Size().y) },
+				{ float(rand() % GetDefaultImage().Size().x), float(rand() % GetDefaultImage().Size().y) },
+				{ float(rand() % GetDefaultImage().Size().x), float(rand() % GetDefaultImage().Size().y) },
+				olc::Pixel(rand() % 256, rand() % 256, rand() % 256),
+				olc::Pixel(rand() % 256, rand() % 256, rand() % 256),
+				olc::Pixel(rand() % 256, rand() % 256, rand() % 256), { 0,0 }, { 0,1 }, { 1, 1 }, imLogo
+			);
+		}
+
+
+		//std::cout << "Mouse Fil: " << vMouse << "\n";
+		draw.swFilledTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE);
+		//std::cout << "Mouse Fil: " << vMouse << "\n";
+		draw.swFilledTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::WHITE);
+		//std::cout << "Mouse Tex: " << vMouse << "\n";
+		draw.swTexturedTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE, { 0,0 }, { 0,1 }, { 1, 1 }, imHighResSprite);
+
+		draw.swTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::BLACK);
 		
-		draw.FilledRect({ 5, 100 }, { 100,100 }, olc::Colour::TANGERINE, olc::Colour::DARK_CYAN, olc::Colour::RED, olc::Colour::GREEN);
-		
-		draw.FilledRect({ 5,5 }, { 10,10 }, olc::Colour::YELLOW);
 
-
-
-		draw.Rect({ 8,8 }, { 20,20 }, olc::Colour::RED);
-
-		if(mouse.GetButton(0).bHeld)
-			draw.Line({ 1.0f, 1.0f }, { 25.5f, 25.5f });
-
-
-
-
-
-		//draw.SetTarget(imgPrimary);
-		//draw.WorldReset();
-		//draw.Image(imLowRes, { 0,0 }, { 4, 4 });
-	
 		//draw.Rect(vMouse, { 100,100 });
 
 		/*for (auto& a : vecLogos)
@@ -397,6 +441,9 @@ int main()
 	olc::PGEConfig cfg;
 	cfg.vPixelSize = { 1,1 };
 	cfg.vScreenSize = { 1024, 960 };
+
+	cfg.vPixelSize = { 4,4 };
+	cfg.vScreenSize = { 256, 240 };
 	//cfg.bVSync = true;
 
 	//if (demo.Construct({ 1280, 960 }, { 1, 1 }, cfg))

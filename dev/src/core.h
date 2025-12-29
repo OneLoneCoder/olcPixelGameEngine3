@@ -40,7 +40,7 @@ namespace olc
 		bool bFullScreen = false;
 		// Allow full screen as an option with ALT-ENTER
 		bool bFullScreenable = true;
-		// Allow teh window to be resized by user
+		// Allow the window to be resized by user
 		bool bResizeable = true;
 		// Synchronise rendering with monitor
 		bool bVSync = false;
@@ -54,6 +54,7 @@ namespace olc
 		bool bAllowChildWindows = true;
 	};
 
+	// A PGE Window is a window with drawing and input capabilities a la olc::PixelGameEngine
 	class PGEWindow : public Window
 	{
 	public:
@@ -88,8 +89,11 @@ namespace olc
 
 
 	public:
+		// Returns the image that represents the primary drawing surface
 		olc::Image& GetDefaultImage();
 		olc::Draw2D& GetDraw();
+
+		// Input devices are handled by a regular olc::Window, but for convenience...
 		olc::hw::Mouse& GetMouse();
 		
 
@@ -109,6 +113,7 @@ namespace olc
 		olc::imload::ImageLoader* pImageLoader = nullptr;
 	};
 
+	// The olc::PixelGameEngine3 core, manages the main window, child windows, engine loop, timing and devices
 	class PixelGameEngine : public PGEWindow
 	{
 	public:
@@ -116,19 +121,19 @@ namespace olc
 		virtual ~PixelGameEngine();
 
 	public:
+		// Construct the PGE main engine window with traditional parameters
 		bool Construct(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen = false);
+		// Construct the PGE main engine window with verbose configuration structure
 		bool Construct(const PGEConfig& cfg = PGEConfig{});
-
-	public:
+		
+		// Start the PGE main engine loop (on its own thread)
 		bool Start();
 
 	public: // Child Windows
 		bool AddChildWindow(std::shared_ptr<olc::PGEWindow> window, const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize);
 
 	private:
-		void EngineThread();
-
-	private:
+		// Window Management
 		std::deque<std::shared_ptr<PGEWindow>> deqChildWindows;
 
 		// Frame Timing & Overall Clocking
@@ -138,11 +143,16 @@ namespace olc
 		std::chrono::duration<float> durationFrameCount{ 0 };
 		size_t frameCount = 0;
 
+		// PGE Configuration
 		PGEConfig config;
 
+		// Core Thread
 		std::thread coreThread;
 		std::atomic<bool> coreActive;
+		void EngineThread();
 
+		// These interfaces are created dynamically by the PGE core
+		// after the environment is understood (or specified by config)
 		std::unique_ptr<olc::gpu::Renderer> gpu;
 		std::unique_ptr<olc::host::Host> host;
 		std::unique_ptr<olc::imload::ImageLoader> imageloader;

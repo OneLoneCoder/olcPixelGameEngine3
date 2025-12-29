@@ -190,6 +190,7 @@
 
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_DRAW2D_IMPLEMENTED)
 //! GRAB draw2d.cpp IMPLEMENTATION 
+//! GRAB draw2d_sw.cpp IMPLEMENTATION 
 #define PGE_DRAW2D_IMPLEMENTED 1
 #endif
 

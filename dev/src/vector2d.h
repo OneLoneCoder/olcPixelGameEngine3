@@ -119,6 +119,12 @@ namespace olc
 			return v_2d(std::min(x, v.x), std::min(y, v.y));
 		}
 
+		// Returns 'element-wise' abs of this vector
+		inline constexpr v_2d abs() const
+		{
+			return v_2d(std::abs(x), std::abs(y));
+		}
+
 		// Calculates scalar dot product between this and another vector
 		inline constexpr auto dot(const v_2d& rhs) const
 		{

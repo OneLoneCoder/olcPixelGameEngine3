@@ -53,6 +53,9 @@ void Draw2D::PrepareTargetForSW()
 
 		// Image is now CPU bound
 		pTarget->BindCPU();
+
+		// Create a scanline buffer the height of this target
+		vScanlines.resize(pTarget->Size().y, {});
 	}
 }
 
@@ -89,6 +92,22 @@ void Draw2D::PrepareImageForHW(olc::Image& image)
 	{
 		// Image resource is primed for CPU operations, send it to GPU
 		pRenderer->WriteTexture(image.GetGPUID(), image);
+
+		if (&image == pTarget)
+		{
+			// If this image is also the current target, ensure renderer is updated
+			//SetTarget(image);
+
+			// Store the target image
+			pTarget = &image;
+
+			// Reset Affine transform to unity
+			//WorldReset();
+
+			// Configure default render target
+			pRenderer->AssignTextureTarget(0, pTarget->GetGPUID());
+			//pRenderer->SetViewport({ 0,0 }, pTarget->Size());
+		}
 
 		// Image is now GPU bound
 		image.BindGPU();
@@ -224,6 +243,8 @@ GPUTask olc::Draw2D::TaskTexturedPolygon(GPUTask::Structure structure, const std
 	return task;
 }
 
+
+
 const GPUTask& Draw2D::Line(const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel col)
 {
 	PrepareTargetForHW();
@@ -245,7 +266,7 @@ const GPUTask& Draw2D::Line(const olc::vf2d& p1, const olc::vf2d& p2, const olc:
 			transformAffine.forward<float>({ p1, p2 }),
 			{ c1, c2 },
 			olc::Colour::WHITE
-		));
+		));		
 }
 
 const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
@@ -272,7 +293,23 @@ const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, co
 			col,
 			olc::Colour::WHITE
 		));
+}
 
+const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
+{
+	PrepareTargetForHW();
+	return vecGPUTasks.emplace_back(
+		TaskDrawPolygon(
+			GPUTask::Structure::Fan,
+			transformAffine.forward<float>({
+				olc::vf2d(pos.x + 0.0f, pos.y + 0.0f),
+				olc::vf2d(pos.x + size.x + 0.0f, pos.y + 0.0f),
+				olc::vf2d(pos.x + size.x + 0.0f, pos.y + size.y + 0.0f),
+				olc::vf2d(pos.x + 0.0f, pos.y + size.y + 0.0f),
+				}),
+				{ colTL, colTR, colBR, colBL },
+				olc::Colour::WHITE
+				));
 }
 
 

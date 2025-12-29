@@ -90,6 +90,15 @@ namespace olc
 			const olc::vf2d& size, 
 			const olc::Pixel col = olc::Colour::WHITE);
 
+		// Draws a multiple colour rectangle, with linear colour interpolation
+		const GPUTask& Rect(
+			const olc::vf2d& pos,
+			const olc::vf2d& size,
+			const olc::Pixel colTL,
+			const olc::Pixel colTR,
+			const olc::Pixel colBL,
+			const olc::Pixel colBR);
+
 		// Draws a filled, single colour rectangle
 		const GPUTask& FilledRect(
 			const olc::vf2d& pos, 
@@ -151,6 +160,7 @@ namespace olc
 			const olc::vf2d& scale = { 1.0f, 1.0f },
 			olc::Font& font = olc::fontClassicPGE);
 
+		// Returns the bounding box size of a string in pixels
 		olc::vf2d GetTextSize(
 			const std::string& text,
 			const bool bProportional = false,
@@ -241,6 +251,160 @@ namespace olc
 			olc::Image* const image,
 			const olc::Pixel tint = olc::Colour::WHITE);
 
+
+		public: // Precision drawing functions via software rasteriser
+			// Draws a single pixel wide line of fixed colour
+			void swLine(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::Pixel col = olc::Colour::WHITE);
+
+			// Draws a single pixel wide line with a gradient		
+			void swLine(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::Pixel c1,
+				const olc::Pixel c2);
+
+			// Draws a rectangle outline
+			void swRect(
+				const olc::vf2d& pos,
+				const olc::vf2d& size,
+				const olc::Pixel col = olc::Colour::WHITE);
+
+			// Draws a multiple colour rectangle, with linear colour interpolation
+			void swRect(
+				const olc::vf2d& pos,
+				const olc::vf2d& size,
+				const olc::Pixel colTL,
+				const olc::Pixel colTR,
+				const olc::Pixel colBL,
+				const olc::Pixel colBR);
+
+			// Draws a filled, single colour rectangle
+			void swFilledRect(
+				const olc::vf2d& pos,
+				const olc::vf2d& size,
+				const olc::Pixel col = olc::Colour::WHITE);
+
+			// Draws a filled, multiple colour rectangle, with linear colour interpolation
+			void swFilledRect(
+				const olc::vf2d& pos,
+				const olc::vf2d& size,
+				const olc::Pixel colTL,
+				const olc::Pixel colTR,
+				const olc::Pixel colBL,
+				const olc::Pixel colBR);
+
+			// Draws a triangle outline
+			void swTriangle(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::vf2d& p3,
+				const olc::Pixel col = olc::Colour::WHITE);
+
+			// Draws a multiple colour triangle, with linear colour interpolation
+			void swTriangle(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::vf2d& p3,
+				const olc::Pixel c1,
+				const olc::Pixel c2,
+				const olc::Pixel c3);
+
+			// Draws a filled, single colour triangle
+			void swFilledTriangle(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::vf2d& p3,
+				const olc::Pixel col = olc::Colour::WHITE);
+
+			// Draws a filled, multiple colour triangle, with linear colour interpolation
+			void swFilledTriangle(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::vf2d& p3,
+				const olc::Pixel c1,
+				const olc::Pixel c2,
+				const olc::Pixel c3);
+
+			// Rasterises a textured triangle in integer space
+			void swTexturedTriangle(
+				const olc::vf2d& p1,
+				const olc::vf2d& p2,
+				const olc::vf2d& p3,
+				const olc::Pixel c1,
+				const olc::Pixel c2,
+				const olc::Pixel c3,
+				const olc::vf2d& t1,
+				const olc::vf2d& t2,
+				const olc::vf2d& t3,
+				olc::Image& texture);
+
+
+
+		protected: // Software rasteriser helper functions
+
+			// Clips a line to a rectangular region, returns true if line is visible
+			bool swClipLine(
+				olc::vf2d& v0,
+				olc::vf2d& v1,
+				const olc::vf2d& vMin,
+				const olc::vf2d& vMax);
+
+			// Clips a line to a rectangular region, returns true if line is visible.
+			// The returned weights correspond to distance along the line from v0 to v1
+			bool swClipWeightedLine(
+				olc::vf2d& v0,
+				olc::vf2d& v1,
+				const olc::vf2d& vMin,
+				const olc::vf2d& vMax,
+				float& w0,
+				float& w1);
+
+			/* bool swClipTriangle(
+				olc::vf2d& v1,
+				olc::vf2d& v2,
+				olc::vf2d& v3,
+				const olc::vf2d& vMin,
+				const olc::vf2d& vMax);*/
+				
+			// Rasterises a shaded line in integer space
+			void swRasterShadedLine(
+				const olc::vi2d& v1,
+				const olc::vi2d& v2,
+				const olc::Pixel c1,
+				const olc::Pixel c2);
+
+			// Rasterises a shaded triangle in integer space
+			void swRasterShadedTriangle(
+				const olc::vi2d& v1,
+				const olc::vi2d& v2,
+				const olc::vi2d& v3,
+				const olc::Pixel c1,
+				const olc::Pixel c2,
+				const olc::Pixel c3);
+
+			// Rasterises a textured triangle in integer space
+			void swRasterTexturedTriangle(
+				const olc::vi2d& v1,
+				const olc::vi2d& v2,
+				const olc::vi2d& v3,
+				const olc::Pixel c1,
+				const olc::Pixel c2,
+				const olc::Pixel c3,
+				const olc::vf2d& t1,
+				const olc::vf2d& t2,
+				const olc::vf2d& t3,
+				olc::Image& texture);
+
+
+
+		
+
+
+
+
 		protected:
 			// Checks residency of image resource, and brings it to cpu RAM for r/w
 			void PrepareTargetForSW();
@@ -257,6 +421,25 @@ namespace olc
 			olc::tf2d transformAffine;
 
 			std::vector<olc::GPUTask> vecGPUTasks;
+
+		protected: // SW Rasteriser Helpers
+			struct Scanline
+			{
+				int32_t nMin = std::numeric_limits<int32_t>::max();
+				int32_t nMax = std::numeric_limits<int32_t>::min();
+				std::array<float, 3> fBaryMin;
+				std::array<float, 3> fBaryMax;
+			};
+
+			std::vector<Scanline> vScanlines;
+
+
+			// Fills scanline buffer with visible triangle extents and barycentric coordinates.
+			// Returns vertical, visible extents of triangle scanlines
+			std::pair<int, int> swBaryFillTriangle(
+				const olc::vi2d& v1,
+				const olc::vi2d& v2,
+				const olc::vi2d& v3);
 	
 	};
 }

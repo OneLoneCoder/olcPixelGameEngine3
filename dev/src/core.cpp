@@ -77,7 +77,7 @@ namespace olc
 		pRenderer->ClearViewport(olc::Colour::MAGENTA, true, true);
 		
 		draw.WorldReset();		
-		draw.ImageRect(imgPrimary, { 0.0,0.0 }, GetWindowSize());
+		draw.ImageRect(GetDefaultImage(), { 0.0,0.0 }, GetWindowSize());
 		draw.ProcessGPUTasks();
 
 		// Update Window's primary surface

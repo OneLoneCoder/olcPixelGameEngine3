@@ -86,6 +86,16 @@ namespace olc
 			: n(col)
 		{ }
 
+		// Multiplicatively Blends two colours
+		inline constexpr Pixel blend(const Pixel& p) const
+		{
+			uint8_t nR = uint8_t(std::clamp((int(r) * int(p.r)) >> 8, 0, 255));
+			uint8_t nG = uint8_t(std::clamp((int(g) * int(p.g)) >> 8, 0, 255));
+			uint8_t nB = uint8_t(std::clamp((int(b) * int(p.b)) >> 8, 0, 255));
+			uint8_t nA = uint8_t(std::clamp((int(a) * int(p.a)) >> 8, 0, 255));
+			return Pixel(nR, nG, nB, nA);
+		}
+
 		// Chromatically inverts pixel
 		inline constexpr Pixel inv() const
 		{

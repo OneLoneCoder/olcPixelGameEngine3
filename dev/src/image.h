@@ -55,6 +55,8 @@ namespace olc
 		// Get underlying vector of pixels
 		std::vector<olc::Pixel>& GetPixels();
 
+		olc::Pixel Sample(const olc::vf2d& uv);
+
 		void Resize(const olc::vi2d& size);
 		
 		bool BoundToGPU() const;
