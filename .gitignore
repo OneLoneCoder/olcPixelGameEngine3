@@ -26,6 +26,18 @@
 *.a
 *.lib
 
+# macOS specific files
+.DS_Store
+.DS_Store?
+._*
+
+# IDE and Editor files
+.vscode/
+.vs_code/
+
+# Xcode
+xcuserdata/
+
 # Executables
 *.exe
 *.out
@@ -40,3 +52,5 @@
 /dev/msvc/.vs/CopilotSnapshots/48318E23BE80F04A9ED976A29E9EEE0D
 /dev/msvc/olcPGE3_BuildSH/x64/Release
 /dev/msvc/.vs/CopilotSnapshots/7B23092673724F4A930E627F3C0D78FA
+/dev/xcode_macOS/build
+/dev/xcode_macOS/bin
