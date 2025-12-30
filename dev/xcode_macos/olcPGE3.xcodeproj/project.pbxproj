@@ -57,8 +57,6 @@
 		460495E62E300E000047E223 /* host_lin_wayland.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = host_lin_wayland.h; sourceTree = "<group>"; };
 		460495E72E300E000047E223 /* host_lin_x11.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = host_lin_x11.h; sourceTree = "<group>"; };
 		460495E82E300E000047E223 /* host_web_emscripten.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = host_web_emscripten.h; sourceTree = "<group>"; };
-		460495E92E300E000047E223 /* host_win_winapi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = host_win_winapi.h; sourceTree = "<group>"; };
-		460495EA2E300E000047E223 /* host_win_winapi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = host_win_winapi.cpp; sourceTree = "<group>"; };
 		460495EB2E300E000047E223 /* image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image.h; sourceTree = "<group>"; };
 		460495EC2E300E000047E223 /* image.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image.cpp; sourceTree = "<group>"; };
 		460495ED2E300E000047E223 /* matrix3d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = matrix3d.h; sourceTree = "<group>"; };
@@ -195,8 +193,6 @@
 				460495E62E300E000047E223 /* host_lin_wayland.h */,
 				460495E72E300E000047E223 /* host_lin_x11.h */,
 				460495E82E300E000047E223 /* host_web_emscripten.h */,
-				460495E92E300E000047E223 /* host_win_winapi.h */,
-				460495EA2E300E000047E223 /* host_win_winapi.cpp */,
 				460495EB2E300E000047E223 /* image.h */,
 				460495EC2E300E000047E223 /* image.cpp */,
 				460495ED2E300E000047E223 /* matrix3d.h */,
