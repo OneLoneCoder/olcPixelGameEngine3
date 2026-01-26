@@ -82,6 +82,7 @@ namespace olc::host
                   ANativeWindow_getWidth(app->window),
                   ANativeWindow_getHeight(app->window)
                 });
+                break;
             case APP_CMD_INIT_WINDOW:
                 host->initialized = app->window != nullptr;
                 __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "APP_CMD_INIT_WINDOW received with Window");

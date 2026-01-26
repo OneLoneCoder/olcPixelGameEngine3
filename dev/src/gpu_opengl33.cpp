@@ -1123,6 +1123,7 @@ void main()
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
 		eglSwapInterval(glRenderContext.display, bVerticalSyncNow ? 1 : 0);
+		eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
 #endif
 
 		return true;
