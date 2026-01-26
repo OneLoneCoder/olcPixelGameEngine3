@@ -14257,7 +14257,7 @@ namespace olc::imload
         AAsset* asset = AAssetManager_open(
             assetManager,
             sFileName.c_str(),
-            AASSET_MODE_STREAMING
+            AASSET_MODE_BUFFER
         );
         if (!asset) {
             return false;
@@ -14293,15 +14293,27 @@ namespace olc::imload
         );
         AImageDecoder_setUnpremultipliedRequired(decoder, true);
 
+        std::vector<uint8_t> pixels(image.Size().x * image.Size().y * 4);
+
         status = AImageDecoder_decodeImage(
             decoder,
-            image.GetPixels().data(),
+            pixels.data(),
             image.Size().x * 4,
-            image.GetPixels().size()
+            pixels.size()
         );
 
         AImageDecoder_delete(decoder);
         AAsset_close(asset);
+
+        for (size_t i = 0; i < pixels.size(); i += 4) {
+            int32_t x = static_cast<int32_t>(i / 4) % image.Size().x;
+            int32_t y = static_cast<int32_t>(i / 4) / image.Size().x;
+            uint8_t r = pixels[i];
+            uint8_t g = pixels[i + 1];
+            uint8_t b = pixels[i + 2];
+            uint8_t a = pixels[i + 3];
+            image.Pixel({x, y}) = olc::Pixel(r, g, b, a);
+        }
 
         return status == ANDROID_IMAGE_DECODER_SUCCESS;
     }
@@ -14337,14 +14349,26 @@ namespace olc::imload
         );
         AImageDecoder_setUnpremultipliedRequired(decoder, true);
 
+        std::vector<uint8_t> pixels(image.Size().x * image.Size().y * 4);
+
         status = AImageDecoder_decodeImage(
             decoder,
-            image.GetPixels().data(),
+            pixels.data(),
             image.Size().x * 4,
-            image.GetPixels().size()
+            pixels.size()
         );
 
         AImageDecoder_delete(decoder);
+
+        for (size_t i = 0; i < pixels.size(); i += 4) {
+            int32_t x = static_cast<int32_t>(i / 4) % image.Size().x;
+            int32_t y = static_cast<int32_t>(i / 4) / image.Size().x;
+            uint8_t r = pixels[i];
+            uint8_t g = pixels[i + 1];
+            uint8_t b = pixels[i + 2];
+            uint8_t a = pixels[i + 3];
+            image.Pixel({x, y}) = olc::Pixel(r, g, b, a);
+        }
 
         return status == ANDROID_IMAGE_DECODER_SUCCESS;
     }
