@@ -31,17 +31,23 @@ namespace olc::apis::opengl
 		bLoaded &= (_glVertexAttribPointer = OGL_LOAD(glVertexAttribPointer)) != nullptr;
 		bLoaded &= (_glEnableVertexAttribArray = OGL_LOAD(glEnableVertexAttribArray)) != nullptr;
 		bLoaded &= (_glUseProgram = OGL_LOAD(glUseProgram)) != nullptr;
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
-		bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
-		bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
-		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
-		bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
-		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
-#else
-		bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArrayOES)) != nullptr;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+        bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArrayOES)) != nullptr;
 		bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArraysOES)) != nullptr;
 		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffersEXT)) != nullptr;
 		// bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
+		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
+#elif OLC_HOST == OLC_HOST_ANDROID
+        bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
+        bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
+        bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
+        // bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
+        bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
+#else
+        bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
+		bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
+		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
+		bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
 		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
 #endif
 		bLoaded &= (_glGetShaderInfoLog = OGL_LOAD(glGetShaderInfoLog)) != nullptr;
@@ -131,8 +137,10 @@ namespace olc::apis::opengl
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
+#if OLC_HOST != OLC_HOST_ANDROID
 		::glTexEnvf(target, pname, param);
 		CheckError();
+#endif
 	}
 
 	void gl::glDeleteTextures(GLsizei n, const GLuint* textures)
@@ -209,7 +217,7 @@ namespace olc::apis::opengl
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		::glGetTexImage(target, level, format, type, pixels);
 		CheckError();
 #endif
@@ -223,7 +231,7 @@ namespace olc::apis::opengl
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		::glPolygonMode(face, mode);
 		CheckError();
 #endif
@@ -413,7 +421,7 @@ namespace olc::apis::opengl
 
 	void gl::glTexImage2DMultisample(GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		_glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);
 		CheckError();
 #endif

@@ -185,6 +185,12 @@
 //! GRAB host_web_emscripten.h DECLARATION
 #endif
 
+#if OLC_HOST == OLC_HOST_ANDROID
+//! GRAB host_android.h ANDROID_CONFIG
+
+//! GRAB host_android.h DECLARATION
+#endif
+
 #if OLC_GPU == OLC_GPU_OPENGL33
 //! GRAB api_opengl.h OPENGL_CONFIG
 
@@ -205,6 +211,10 @@
 
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG
 //! GRAB imload_lib_png.h DECLARATION
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+//! GRAB imload_android.h DECLARATION
 #endif
 
 
@@ -234,6 +244,10 @@
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 //! GRAB host_web_emscripten.cpp IMPLEMENTATION
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+//! GRAB host_android.cpp IMPLEMENTATION
 #endif
 
 #define PGE_HOST_IMPLEMENTED 1
@@ -289,6 +303,9 @@
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG
 //! GRAB imload_lib_png.cpp IMPLEMENTATION 
 #endif
+#if OLC_HOST == OLC_HOST_ANDROID
+//! GRAB imload_android.cpp IMPLEMENTATION
+#endif
 #define PGE_IMAGELOADER_IMPLEMENTED 1
 #endif
 
@@ -309,4 +326,3 @@ So you scrolled all this way huh ? In that case:
 */
 
 // Thank you for using olcPixelGameEngine! :)
-

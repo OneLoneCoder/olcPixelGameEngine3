@@ -41,6 +41,10 @@
 	#define FRIENDLY_HOST Host_Web_Emscripten
 #endif
 
+#if OLC_HOST == OLC_HOST_ANDROID
+    #define FRIENDLY_HOST Host_Android
+#endif
+
 namespace olc
 {
 	namespace host

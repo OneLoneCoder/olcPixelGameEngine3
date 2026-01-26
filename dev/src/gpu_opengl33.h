@@ -73,7 +73,7 @@ namespace olc
 		
 		protected: // These may need some thinking about re multiple window
 			//olc::apis::opengl::glDeviceContext_t glDeviceContext = 0;
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 	olc::apis::opengl::glRenderContext_t glRenderContext;
 #else
 	olc::apis::opengl::glRenderContext_t glRenderContext = 0;

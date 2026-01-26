@@ -23,10 +23,14 @@
 #include "imload_lib_png.h"
 #endif
 
-
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 #include "host_web_emscripten.h"
 #include "imload_lib_png.h"
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+#include "host_android.h"
+#include "imload_android.h"
 #endif
 
 //! START IMPLEMENTATION
@@ -273,18 +277,33 @@ namespace olc
 	{
 	}
 
-	bool PixelGameEngine::Construct(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen)
+	bool PixelGameEngine::Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+        struct android_app* app,
+#endif
+        const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen
+    )
 	{
 		config.vScreenSize = vScreenSize;
 		config.vPixelSize = vPixelSize;
 		config.bFullScreen = bFullScreen;
-
+#if OLC_HOST == OLC_HOST_ANDROID
+        androidApp = app;
+#endif
 		return true;
 	}
 
-	bool PixelGameEngine::Construct(const PGEConfig& cfg)
+	bool PixelGameEngine::Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+        struct android_app* app,
+#endif
+        const PGEConfig& cfg
+    )
 	{		
 		config = cfg;
+#if OLC_HOST == OLC_HOST_ANDROID
+        androidApp = app;
+#endif
 		return true;
 	}
 
@@ -306,7 +325,12 @@ namespace olc
 		#endif
 		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
 		host = std::make_unique<olc::host::Host_Web_Emscripten>();
-		#endif
+        #endif
+        #if OLC_HOST == OLC_HOST_ANDROID
+        host = std::make_unique<olc::host::Host_Android>();
+        auto hostPtr = (dynamic_cast<olc::host::Host_Android*>(host.get()));
+        hostPtr->SetAndridApp(androidApp);
+        #endif
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_NO
 		// Create OS window on this thread
 		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
@@ -314,7 +338,8 @@ namespace olc
 		// at least to initialise teh rendering subsystem... sigh.
 		coreActive = true;
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+		// Create EngineThread
 		coreThread = std::thread(&PixelGameEngine::EngineThread, this);
 		// Handle window events on this thread (and block)
 		host->StartSystemEventLoop(true);		
@@ -322,8 +347,32 @@ namespace olc
 		coreActive = false;
 		// Wait for engine thread to terminate
 		coreThread.join();
+#elif OLC_HOST == OLC_HOST_ANDROID
+        // We need to wait for the APP_CMD_INIT_WINDOW command before starting the loop
+        while (!hostPtr->IsInitialized())
+        {
+            __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Waiting window creation...");
+            host->StartSystemEventLoop(false);
+        }
+
+        __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initializing...");
+
+        if (!EngineInit())
+        {
+            return false;
+        }
+
+        __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initialized Successfully");
+
+        while (coreActive)
+        {
+            if (!host->StartSystemEventLoop(false)) {
+                coreActive = false;
+            }
+            PixelGameEngine::CoreUpdate(this);
+        }
 #else
-		EngineThread();
+        EngineThread();
 #endif
 
 #else
@@ -464,99 +513,117 @@ namespace olc
 	
 	void PixelGameEngine::EngineThread()
 	{
-		using namespace std::chrono_literals;
-		timeFrame2 = std::chrono::steady_clock::now();
-		timeFrame1 = std::chrono::steady_clock::now();
+        if (!EngineInit())
+        {
+            return;
+        }
+        EngineLoop();
+	}
+
+    bool PixelGameEngine::EngineInit()
+    {
+        using namespace std::chrono_literals;
+        timeFrame2 = std::chrono::steady_clock::now();
+        timeFrame1 = std::chrono::steady_clock::now();
 
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_YES
-		// Create Primary Window on EngineThread, event loop also exists for all windows
+        // Create Primary Window on EngineThread, event loop also exists for all windows
 		// on this thread, and all windows will be created on this thread
 		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
 #endif
-		
-		// Initialise ImageLoader Interface
-		#if OLC_HOST == OLC_HOST_WINDOWS
-		imageloader = std::make_unique<olc::imload::ImageLoader_WinGDI>();
-		#endif
 
-		// Initialise ImageLoader Interface
-		#if OLC_HOST == OLC_HOST_MACOS
-		imageloader = std::make_unique<olc::imload::ImageLoader_MacOS>();
-		#endif
+        // Initialise ImageLoader Interface
+#if OLC_HOST == OLC_HOST_WINDOWS
+        imageloader = std::make_unique<olc::imload::ImageLoader_WinGDI>();
+#endif
 
-		#if OLC_HOST == OLC_HOST_LINUX_X11
-		imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
-		#endif
+        // Initialise ImageLoader Interface
+#if OLC_HOST == OLC_HOST_MACOS
+        imageloader = std::make_unique<olc::imload::ImageLoader_MacOS>();
+#endif
 
-		#if OLC_HOST == OLC_HOST_LINUX_WAYLAND
-		imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
-		#endif
+#if OLC_HOST == OLC_HOST_LINUX_X11
+        imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
+#endif
 
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
-		imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
-		#endif
+#if OLC_HOST == OLC_HOST_LINUX_WAYLAND
+        imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
+#endif
 
-		// Initialise GPU Interface	- This thread is the context
-		olc::gpu::RendererConfig cfgRenderer;
-		cfgRenderer.VerticalSync = config.bVSync;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+        imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
+#endif
 
-		gpu = std::make_unique<olc::gpu::Renderer_OGL33>();
+#if OLC_HOST == OLC_HOST_ANDROID
+        imageloader = std::make_unique<olc::imload::ImageLoader_NDKImageDecoder>(
+            androidApp->activity->assetManager
+        );
+#endif
 
-		// Link this windows devices
-		LinkToHost(host.get());
-		LinkToRenderer(gpu.get());
-		LinkToImageLoader(imageloader.get());
+        // Initialise GPU Interface	- This thread is the context
+        olc::gpu::RendererConfig cfgRenderer;
+        cfgRenderer.VerticalSync = config.bVSync;
 
-		// The GPU device can be based upon the primary window configuration. This
-		// gives us completed gpu and host objects to pass to other windows as and
-		// when required
-		gpu->CreateDevice(host->GetHostWindowDescriptor(this), cfgRenderer);
-		if (gpu->GetLastError() != olc::gpu::RendererError::NoError)
-		{
-			//const auto e = gpu->GetLastError(); // For debug visibility
-			std::cout << "Error: Could not create Renderer\n";
-			return;
-		}
+        gpu = std::make_unique<olc::gpu::Renderer_OGL33>();
 
+        // Link this windows devices
+        LinkToHost(host.get());
+        LinkToRenderer(gpu.get());
+        LinkToImageLoader(imageloader.get());
 
-		
-		olc::ImageConfig cfg;
-		cfg.MSAA = config.bAntiAliasMainScreen;
-		CreateImage(GetDefaultImage(), config.vScreenSize, cfg);
-		
-
-		// Initialise Font System
-		olc::pgeguts::CreateClassicFont(this);
+        // The GPU device can be based upon the primary window configuration. This
+        // gives us completed gpu and host objects to pass to other windows as and
+        // when required
+        gpu->CreateDevice(host->GetHostWindowDescriptor(this), cfgRenderer);
+        if (gpu->GetLastError() != olc::gpu::RendererError::NoError)
+        {
+            //const auto e = gpu->GetLastError(); // For debug visibility
+            std::cout << "Error: Could not create Renderer\n";
+            return false;
+        }
 
 
-		draw.SetGPU(gpu.get());
-		gpu->ApplyDefaultShader();
-		draw.SetTarget(GetDefaultImage());
 
-		if (!OnUserCreate())
-		{
-			// Creation process signalled abort
-			return;
-		}
+        olc::ImageConfig cfg;
+        cfg.MSAA = config.bAntiAliasMainScreen;
+        CreateImage(GetDefaultImage(), config.vScreenSize, cfg);
 
 
-		
-		draw.ProcessGPUTasks();
-		draw.SetTarget(GetDefaultImage());
-
-		// Initialise Input Devices
+        // Initialise Font System
+        olc::pgeguts::CreateClassicFont(this);
 
 
-		durationFrameCount = 0s;
+        draw.SetGPU(gpu.get());
+        gpu->ApplyDefaultShader();
+        draw.SetTarget(GetDefaultImage());
 
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
-			emscripten_set_main_loop_arg(PixelGameEngine::CoreUpdate, reinterpret_cast<void*>(this), 0, 1);
-		#else
-		while (coreActive)
-		{
-			PixelGameEngine::CoreUpdate(this);
-		}
-		#endif
-	}
+        if (!OnUserCreate())
+        {
+            // Creation process signalled abort
+            return false;
+        }
+
+        draw.ProcessGPUTasks();
+        draw.SetTarget(GetDefaultImage());
+
+        // Initialise Input Devices
+
+
+        durationFrameCount = 0s;
+
+        return true;
+    }
+
+    void PixelGameEngine::EngineLoop()
+    {
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+        emscripten_set_main_loop_arg(PixelGameEngine::CoreUpdate, reinterpret_cast<void*>(this), 0, 1);
+#else
+        while (coreActive)
+        {
+            PixelGameEngine::CoreUpdate(this);
+        }
+#endif
+    }
 }
 //! END IMPLEMENTATION
