@@ -46,8 +46,14 @@ add_custom_target(CopyHeader
     DEPENDS olcPixelGameEngine3.h
 )
 
+# copy to Android project as well
+add_custom_target(CopyHeader_Android
+    COMMAND ${CMAKE_COMMAND} -E copy olcPixelGameEngine3.h ${CMAKE_CURRENT_SOURCE_DIR}/dev/src/android/app/src/main/cpp/olcPixelGameEngine3.h
+    DEPENDS olcPixelGameEngine3.h
+)
+
 add_library(olcPixelGameEngine3 INTERFACE olcPixelGameEngine3.h)
-add_dependencies(olcPixelGameEngine3 CopyHeader)
+add_dependencies(olcPixelGameEngine3 CopyHeader CopyHeader_Android)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

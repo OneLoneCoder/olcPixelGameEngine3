@@ -1,0 +1,3 @@
+/home/diego/Projects/olcPGE3/dev/src/android/app/.cxx/Debug/o5zp425a/arm64-v8a/CMakeFiles/game_native.dir
+/home/diego/Projects/olcPGE3/dev/src/android/app/.cxx/Debug/o5zp425a/arm64-v8a/CMakeFiles/edit_cache.dir
+/home/diego/Projects/olcPGE3/dev/src/android/app/.cxx/Debug/o5zp425a/arm64-v8a/CMakeFiles/rebuild_cache.dir

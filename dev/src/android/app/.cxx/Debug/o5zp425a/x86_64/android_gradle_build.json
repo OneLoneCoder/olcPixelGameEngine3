@@ -1,0 +1,38 @@
+{
+  "buildFiles": [
+    "/home/diego/Projects/olcPGE3/dev/src/android/app/src/main/cpp/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/diego/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/diego/Projects/olcPGE3/dev/src/android/app/.cxx/Debug/o5zp425a/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/diego/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/diego/Projects/olcPGE3/dev/src/android/app/.cxx/Debug/o5zp425a/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "game_native::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "game_native",
+      "output": "/home/diego/Projects/olcPGE3/dev/src/android/app/build/intermediates/cxx/Debug/o5zp425a/obj/x86_64/libgame_native.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/home/diego/Android/Sdk/ndk/28.0.13004108/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/diego/Android/Sdk/ndk/28.0.13004108/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}
