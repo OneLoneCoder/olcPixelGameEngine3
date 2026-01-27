@@ -277,33 +277,17 @@ namespace olc
 	{
 	}
 
-	bool PixelGameEngine::Construct(
-#if OLC_HOST == OLC_HOST_ANDROID
-        struct android_app* app,
-#endif
-        const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen
-    )
+	bool PixelGameEngine::Construct(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen)
 	{
 		config.vScreenSize = vScreenSize;
 		config.vPixelSize = vPixelSize;
 		config.bFullScreen = bFullScreen;
-#if OLC_HOST == OLC_HOST_ANDROID
-        androidApp = app;
-#endif
 		return true;
 	}
 
-	bool PixelGameEngine::Construct(
-#if OLC_HOST == OLC_HOST_ANDROID
-        struct android_app* app,
-#endif
-        const PGEConfig& cfg
-    )
+	bool PixelGameEngine::Construct(const PGEConfig& cfg)
 	{		
 		config = cfg;
-#if OLC_HOST == OLC_HOST_ANDROID
-        androidApp = app;
-#endif
 		return true;
 	}
 
@@ -329,7 +313,6 @@ namespace olc
         #if OLC_HOST == OLC_HOST_ANDROID
         host = std::make_unique<olc::host::Host_Android>();
         auto hostPtr = (dynamic_cast<olc::host::Host_Android*>(host.get()));
-        hostPtr->SetAndroidApp(androidApp);
         #endif
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_NO
 		// Create OS window on this thread
@@ -533,7 +516,7 @@ namespace olc
 
 #if OLC_HOST == OLC_HOST_ANDROID
         imageloader = std::make_unique<olc::imload::ImageLoader_NDKImageDecoder>(
-            androidApp->activity->assetManager
+            olc::host::Host_Android::androidApp->activity->assetManager
         );
 #endif
 

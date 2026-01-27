@@ -5,19 +5,23 @@
 //! END CUSTOMHEADER
 
 //! START STDHEADER GLOBAL
+#include <atomic>
 //! END STDHEADER
 
 //! START DECLARATION
-#include <game-activity/native_app_glue/android_native_app_glue.h>
+#include <android_native_app_glue.h>
 #include <android/log.h>
+
+// We allow users to create a normal main function for android apps
+extern int main(int argc, char** argv);
 
 namespace olc::host
 {
+    using AndroidApp = struct android_app;
     class Host_Android : public olc::host::Host
     {
-    private:
-        struct android_app* olc_App = nullptr;
     public:
+        Host_Android();
         bool StartSystemEventLoop(bool bBlockIfPossible) override;
         bool AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen) override;
         bool CloseWindowFrame(olc::Window* pWindow) override;
@@ -30,10 +34,12 @@ namespace olc::host
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
 
-        void OnAppCmd(struct android_app* app, int32_t cmd);
-        void SetAndroidApp(struct android_app* app);
+        void OnAppCmd(AndroidApp* app, int32_t cmd);
+        int32_t OnInputEvent(AndroidApp* app, AInputEvent* event);
 
         bool IsInitialized() const { return initialized.load(); }
+
+        static AndroidApp* androidApp;
     protected:
         olc::Window* pgeWindow = nullptr;
         std::atomic<bool> initialized{false};

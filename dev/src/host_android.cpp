@@ -3,15 +3,18 @@
 //! START IMPLEMENTATION
 namespace olc::host
 {
+    AndroidApp* Host_Android::androidApp = nullptr;
+
     static void Android_onAppCmd(struct android_app* app, int32_t cmd)
     {
         auto host = reinterpret_cast<olc::host::Host_Android*>(app->userData);
         host->OnAppCmd(app, cmd);
     }
 
-    static bool Android_motionEventFilter(const GameActivityMotionEvent* event)
+    static int32_t Android_onInputEvent(struct android_app* app, AInputEvent* event)
     {
-        return (event->source & AINPUT_SOURCE_TOUCHSCREEN) || (event->source & AINPUT_SOURCE_MOUSE);
+        auto host = reinterpret_cast<olc::host::Host_Android*>(app->userData);
+        return host->OnInputEvent(app, event);
     }
 
     bool Host_Android::StartSystemEventLoop(bool bBlockIfPossible)
@@ -19,53 +22,18 @@ namespace olc::host
         int events;
         struct android_poll_source* source = nullptr;
 
-        while (ALooper_pollOnce(
+        if (ALooper_pollOnce(
             bBlockIfPossible || !initialized ? -1 : 0,
             nullptr,
             &events,
             (void**)&source
         ) >= 0) {
-            if (source) source->process(olc_App, source);
+            if (source) source->process(androidApp, source);
         }
 
-        if (!initialized) return true;
+        if (!androidApp || !initialized) return true;
 
-        android_input_buffer* inputBuffer = android_app_swap_input_buffers(olc_App);
-        if (inputBuffer) {
-            // Process motion events (touch, mouse, joystick)
-            for (int i = 0; i < inputBuffer->motionEventsCount; ++i) {
-                GameActivityMotionEvent* motionEvent = &inputBuffer->motionEvents[i];
-
-                if (motionEvent->pointerCount > 0)
-                {
-                    pgeWindow->olc_OnMouseMove({
-                        static_cast<int32_t>(GameActivityPointerAxes_getX(&motionEvent->pointers[0])),
-                        static_cast<int32_t>(GameActivityPointerAxes_getY(&motionEvent->pointers[0])),
-                    });
-                }
-
-                switch (motionEvent->action & AMOTION_EVENT_ACTION_MASK)
-                {
-                    case AMOTION_EVENT_ACTION_DOWN:
-                    case AMOTION_EVENT_ACTION_POINTER_DOWN:
-                        // Only the first button for now.
-                        pgeWindow->olc_OnMouseButton(motionEvent->actionButton, true);
-                        break;
-                    case AMOTION_EVENT_ACTION_UP:
-                    case AMOTION_EVENT_ACTION_POINTER_UP:
-                        // Only the first button for now.
-                        pgeWindow->olc_OnMouseButton(motionEvent->actionButton, false);
-                        break;
-                }
-            }
-
-            // TODO: Process other input events (keyboard, controller)
-
-            android_app_clear_motion_events(inputBuffer);
-            android_app_clear_key_events(inputBuffer);
-        }
-
-        if (olc_App->destroyRequested != 0) return false;
+        if (androidApp->destroyRequested != 0) return false;
 
         return true;
     }
@@ -104,6 +72,48 @@ namespace olc::host
         }
     }
 
+    int32_t Host_Android::OnInputEvent(AndroidApp *app, AInputEvent *event)
+    {
+        auto host = reinterpret_cast<olc::host::Host_Android*>(app->userData);
+        auto type = AInputEvent_getType(event);
+        auto source = AInputEvent_getSource(event);
+        
+        if (type == AINPUT_EVENT_TYPE_MOTION) {
+            pgeWindow->olc_OnMouseMove({
+                static_cast<int32_t>(AMotionEvent_getX(event, 0)),
+                static_cast<int32_t>(AMotionEvent_getY(event, 0)),
+            });
+
+            auto action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+
+            switch (action) {
+                case AMOTION_EVENT_ACTION_DOWN:
+                case AMOTION_EVENT_ACTION_POINTER_DOWN:
+                    pgeWindow->olc_OnMouseButton(0, true); // Left button
+                    break;
+                case AMOTION_EVENT_ACTION_UP:
+                case AMOTION_EVENT_ACTION_POINTER_UP:
+                    pgeWindow->olc_OnMouseButton(0, false); // Left button
+                    break;
+                case AMOTION_EVENT_AXIS_WHEEL:
+                    // Handle mouse wheel
+                    {
+                        float vScroll = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_VSCROLL, 0);
+                        if (vScroll != 0.0f) {
+                            pgeWindow->olc_OnMouseWheel(static_cast<int32_t>(vScroll * 120.0f));
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            return 1;
+        }
+
+        return 0;
+    }
+
     bool Host_Android::AddWindowFrame(olc::Window *pWindow, const vi2d &vWindowPos,
                                       const vi2d &vWindowSize, const bool bFullScreen)
     {
@@ -123,7 +133,7 @@ namespace olc::host
 
     std::vector<void*> Host_Android::GetHostWindowDescriptor(olc::Window *pWindow)
     {
-        return { reinterpret_cast<void*>(olc_App->window) };
+        return { reinterpret_cast<void*>(androidApp->window) };
     }
 
     bool Host_Android::ConnectHostResourceToRenderer()
@@ -136,13 +146,34 @@ namespace olc::host
         return true;
     }
 
-    void Host_Android::SetAndroidApp(struct android_app *app)
+    Host_Android::Host_Android()
     {
-        olc_App = app;
-        olc_App->userData = this;
-        olc_App->onAppCmd = Android_onAppCmd;
+        androidApp->onAppCmd = Android_onAppCmd;
+        androidApp->onInputEvent = Android_onInputEvent;
+        androidApp->userData = this;
+    }
+}
 
-        android_app_set_motion_event_filter(olc_App, Android_motionEventFilter);
+void android_main(struct android_app* app)
+{
+    char arg0[] = "olcPixelGameEngine 3.0";
+    char* argv[] = { arg0, nullptr };
+    
+    olc::host::Host_Android::androidApp = app;
+
+    (void)main(1, argv);
+
+    ANativeActivity_finish(app->activity);
+
+    while (!app->destroyRequested) {
+        int events;
+        struct android_poll_source* source;
+
+        while (ALooper_pollOnce(0, nullptr, &events, (void**)&source) > ALOOPER_POLL_TIMEOUT) {
+            if (source) {
+                source->process(app, source);
+            }
+        }
     }
 }
 //! END IMPLEMENTATION

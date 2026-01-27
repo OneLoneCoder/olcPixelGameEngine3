@@ -151,7 +151,7 @@ public:
     }
 };
 
-void android_main(struct android_app* app) {
+int main(int argc, char** argv) {
     __android_log_print(ANDROID_LOG_INFO, "PGE3 Game", "Started native_main");
 
     // Construct demo application
@@ -159,7 +159,9 @@ void android_main(struct android_app* app) {
 
     // Create "screen" of 256x240 "pixels"
     // with a pixel size of 4x4 actual screen pixels
-    if (demo.Construct(app, { 256, 240 }, { 4, 4 })) {
+    if (demo.Construct({ 256, 240 }, { 4, 4 })) {
         demo.Start();
     }
+
+    return 0;
 }
