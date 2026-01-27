@@ -34,6 +34,8 @@ namespace olc::host
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
 
+        olc::KeyboardLayout GetKeyboardLayout() const override;
+
         void OnAppCmd(AndroidApp* app, int32_t cmd);
         int32_t OnInputEvent(AndroidApp* app, AInputEvent* event);
 

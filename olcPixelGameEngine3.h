@@ -4835,6 +4835,8 @@ namespace olc::host
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
 
+        olc::KeyboardLayout GetKeyboardLayout() const override;
+
         void OnAppCmd(AndroidApp* app, int32_t cmd);
         int32_t OnInputEvent(AndroidApp* app, AInputEvent* event);
 
@@ -9583,8 +9585,121 @@ namespace olc::host
 #endif
 
 #if OLC_HOST == OLC_HOST_ANDROID
+#include <android/input.h>
+#include <jni.h>
+
 namespace olc::host
 {
+    constexpr size_t ANDROID_KEY_MAX = 163;
+
+    static const std::array<Key, ANDROID_KEY_MAX> AndroidKeyMap = [] {
+        std::array<Key, ANDROID_KEY_MAX> map{};
+        map.fill(Key::NONE);
+
+        // Letters
+        map[AKEYCODE_A] = Key::A;
+        map[AKEYCODE_B] = Key::B;
+        map[AKEYCODE_C] = Key::C;
+        map[AKEYCODE_D] = Key::D;
+        map[AKEYCODE_E] = Key::E;
+        map[AKEYCODE_F] = Key::F;
+        map[AKEYCODE_G] = Key::G;
+        map[AKEYCODE_H] = Key::H;
+        map[AKEYCODE_I] = Key::I;
+        map[AKEYCODE_J] = Key::J;
+        map[AKEYCODE_K] = Key::K;
+        map[AKEYCODE_L] = Key::L;
+        map[AKEYCODE_M] = Key::M;
+        map[AKEYCODE_N] = Key::N;
+        map[AKEYCODE_O] = Key::O;
+        map[AKEYCODE_P] = Key::P;
+        map[AKEYCODE_Q] = Key::Q;
+        map[AKEYCODE_R] = Key::R;
+        map[AKEYCODE_S] = Key::S;
+        map[AKEYCODE_T] = Key::T;
+        map[AKEYCODE_U] = Key::U;
+        map[AKEYCODE_V] = Key::V;
+        map[AKEYCODE_W] = Key::W;
+        map[AKEYCODE_X] = Key::X;
+        map[AKEYCODE_Y] = Key::Y;
+        map[AKEYCODE_Z] = Key::Z;
+
+        // Numbers
+        map[AKEYCODE_0] = Key::K0;
+        map[AKEYCODE_1] = Key::K1;
+        map[AKEYCODE_2] = Key::K2;
+        map[AKEYCODE_3] = Key::K3;
+        map[AKEYCODE_4] = Key::K4;
+        map[AKEYCODE_5] = Key::K5;
+        map[AKEYCODE_6] = Key::K6;
+        map[AKEYCODE_7] = Key::K7;
+        map[AKEYCODE_8] = Key::K8;
+        map[AKEYCODE_9] = Key::K9;
+
+        // Numpad
+        map[AKEYCODE_NUMPAD_0] = Key::NP0;
+        map[AKEYCODE_NUMPAD_1] = Key::NP1;
+        map[AKEYCODE_NUMPAD_2] = Key::NP2;
+        map[AKEYCODE_NUMPAD_3] = Key::NP3;
+        map[AKEYCODE_NUMPAD_4] = Key::NP4;
+        map[AKEYCODE_NUMPAD_5] = Key::NP5;
+        map[AKEYCODE_NUMPAD_6] = Key::NP6;
+        map[AKEYCODE_NUMPAD_7] = Key::NP7;
+        map[AKEYCODE_NUMPAD_8] = Key::NP8;
+        map[AKEYCODE_NUMPAD_9] = Key::NP9;
+        map[AKEYCODE_NUMPAD_ADD] = Key::NP_ADD;
+        map[AKEYCODE_NUMPAD_SUBTRACT] = Key::NP_SUB;
+        map[AKEYCODE_NUMPAD_MULTIPLY] = Key::NP_MUL;
+        map[AKEYCODE_NUMPAD_DIVIDE] = Key::NP_DIV;
+        map[AKEYCODE_NUMPAD_DOT] = Key::NP_DECIMAL;
+
+        // Function keys
+        map[AKEYCODE_F1] = Key::F1;
+        map[AKEYCODE_F2] = Key::F2;
+        map[AKEYCODE_F3] = Key::F3;
+        map[AKEYCODE_F4] = Key::F4;
+        map[AKEYCODE_F5] = Key::F5;
+        map[AKEYCODE_F6] = Key::F6;
+        map[AKEYCODE_F7] = Key::F7;
+        map[AKEYCODE_F8] = Key::F8;
+        map[AKEYCODE_F9] = Key::F9;
+        map[AKEYCODE_F10] = Key::F10;
+        map[AKEYCODE_F11] = Key::F11;
+        map[AKEYCODE_F12] = Key::F12;
+
+        // Arrows
+        map[AKEYCODE_DPAD_UP] = Key::UP;
+        map[AKEYCODE_DPAD_DOWN] = Key::DOWN;
+        map[AKEYCODE_DPAD_LEFT] = Key::LEFT;
+        map[AKEYCODE_DPAD_RIGHT] = Key::RIGHT;
+
+        // Common keys
+        map[AKEYCODE_SPACE] = Key::SPACE;
+        map[AKEYCODE_TAB] = Key::TAB;
+        map[AKEYCODE_ENTER] = Key::ENTER;
+        map[AKEYCODE_ESCAPE] = Key::ESCAPE;
+        map[AKEYCODE_DEL] = Key::BACK;
+        map[AKEYCODE_FORWARD_DEL] = Key::DEL;
+
+        // Modifiers
+        map[AKEYCODE_SHIFT_LEFT] = Key::SHIFT;
+        map[AKEYCODE_SHIFT_RIGHT] = Key::SHIFT;
+        map[AKEYCODE_CTRL_LEFT] = Key::CTRL;
+        map[AKEYCODE_CTRL_RIGHT] = Key::CTRL;
+        map[AKEYCODE_CAPS_LOCK] = Key::CAPS_LOCK;
+
+        // OEM-style punctuation
+        map[AKEYCODE_SEMICOLON] = Key::OEM_1;
+        map[AKEYCODE_SLASH] = Key::OEM_2;
+        map[AKEYCODE_GRAVE] = Key::OEM_3;
+        map[AKEYCODE_LEFT_BRACKET] = Key::OEM_4;
+        map[AKEYCODE_BACKSLASH] = Key::OEM_5;
+        map[AKEYCODE_RIGHT_BRACKET] = Key::OEM_6;
+        map[AKEYCODE_APOSTROPHE] = Key::OEM_7;
+
+        return map;
+    }();
+
     AndroidApp* Host_Android::androidApp = nullptr;
 
     static void Android_onAppCmd(struct android_app* app, int32_t cmd)
@@ -9658,7 +9773,6 @@ namespace olc::host
     {
         auto host = reinterpret_cast<olc::host::Host_Android*>(app->userData);
         auto type = AInputEvent_getType(event);
-        auto source = AInputEvent_getSource(event);
         
         if (type == AINPUT_EVENT_TYPE_MOTION) {
             pgeWindow->olc_OnMouseMove({
@@ -9691,6 +9805,40 @@ namespace olc::host
             }
 
             return 1;
+        }
+        else if (type == AINPUT_EVENT_TYPE_KEY)
+        {
+            int32_t keyCode = AKeyEvent_getKeyCode(event);
+            int32_t action = AKeyEvent_getAction(event);
+
+            if (keyCode >= 0 && keyCode < ANDROID_KEY_MAX && AndroidKeyMap[keyCode] != Key::NONE)
+            {
+                if (action == AKEY_EVENT_ACTION_DOWN)
+                {
+                    pgeWindow->olc_OnKeyPress(AndroidKeyMap[keyCode], true);
+                }
+                else if (action == AKEY_EVENT_ACTION_UP)
+                {
+                    pgeWindow->olc_OnKeyPress(AndroidKeyMap[keyCode], false);
+                }
+            }
+
+            if (keyCode == AKEYCODE_POWER)
+            {
+                // Behaviour: CMD_PAUSE -> CMD_SAVE_STATE -> CMD_STOP -> CMD_CONFIG_CHANGED -> CMD_LOST_FOCUS
+                // Resuming Behaviour: CMD_START -> CMD_RESUME -> CMD_CONFIG_CHANGED -> CMD_CONFIG_CHANGED -> CMD_GAINED_FOCUS
+                return 0;
+            }
+            else if ((keyCode == AKEYCODE_BACK) || (keyCode == AKEYCODE_MENU))
+            {
+                return 1;
+            }
+            else if ((keyCode == AKEYCODE_VOLUME_UP) || (keyCode == AKEYCODE_VOLUME_DOWN))
+            {
+                return 0;
+            }
+
+            return 0;
         }
 
         return 0;
@@ -9728,12 +9876,96 @@ namespace olc::host
         return true;
     }
 
+    olc::KeyboardLayout Host_Android::GetKeyboardLayout() const
+    {
+        ANativeActivity* activity = androidApp->activity;
+        JavaVM* vm = activity->vm;
+        JNIEnv* env = nullptr;
+
+        vm->AttachCurrentThread(&env, nullptr);
+
+        jobject activityObj = activity->clazz;
+        jclass activityClass = env->GetObjectClass(activityObj);
+
+        jmethodID getSystemService = env->GetMethodID(
+            activityClass,
+            "getSystemService",
+            "(Ljava/lang/String;)Ljava/lang/Object;"
+        );
+
+        jstring serviceName = env->NewStringUTF("input_method");
+        jobject immObj = env->CallObjectMethod(activityObj, getSystemService, serviceName);
+
+        std::string result = "unknown";
+
+        if (immObj && !env->ExceptionCheck()) {
+            jclass immClass = env->GetObjectClass(immObj);
+
+            jmethodID getSubtype = env->GetMethodID(
+                immClass,
+                "getCurrentInputMethodSubtype",
+                "()Landroid/view/inputmethod/InputMethodSubtype;"
+            );
+
+            jobject subtypeObj = env->CallObjectMethod(immObj, getSubtype);
+
+            if (subtypeObj && !env->ExceptionCheck()) {
+                jclass subtypeClass = env->GetObjectClass(subtypeObj);
+
+                jmethodID getLocale = env->GetMethodID(
+                    subtypeClass,
+                    "getLocale",
+                    "()Ljava/lang/String;"
+                );
+
+                jstring localeStr = (jstring)env->CallObjectMethod(subtypeObj, getLocale);
+
+                if (localeStr) {
+                    const char* chars = env->GetStringUTFChars(localeStr, nullptr);
+                    result = chars;
+                    env->ReleaseStringUTFChars(localeStr, chars);
+                    env->DeleteLocalRef(localeStr);
+                }
+
+                env->DeleteLocalRef(subtypeClass);
+                env->DeleteLocalRef(subtypeObj);
+            }
+
+            env->DeleteLocalRef(immClass);
+            env->DeleteLocalRef(immObj);
+        }
+
+        env->DeleteLocalRef(serviceName);
+        env->DeleteLocalRef(activityClass);
+
+        vm->DetachCurrentThread();
+
+        auto countryCodePos = result.substr(result.find('_') + 1);
+        if (countryCodePos.find("US") != std::string::npos) {
+            return olc::KeyboardLayout::QWERTY_US;
+        } else if (countryCodePos.find("UK") != std::string::npos ||
+                   countryCodePos.find("GB") != std::string::npos) {
+            return olc::KeyboardLayout::QWERTY_UK;
+        } else if (countryCodePos.find("DE") != std::string::npos) {
+            return olc::KeyboardLayout::QWERTZ;
+        } else if (countryCodePos.find("FR") != std::string::npos) {
+            return olc::KeyboardLayout::AZERTY;
+        }
+
+#ifdef PGE_SPELL_CORRECTLY
+        return olc::KeyboardLayout::QWERTY_UK;
+#else
+        return olc::KeyboardLayout::QWERTY_US;
+#endif
+    }
+
     Host_Android::Host_Android()
     {
         androidApp->onAppCmd = Android_onAppCmd;
         androidApp->onInputEvent = Android_onInputEvent;
         androidApp->userData = this;
     }
+    
 }
 
 void android_main(struct android_app* app)
