@@ -3174,9 +3174,6 @@ namespace olc
 		// Core Thread
 		std::thread coreThread;
 		std::atomic<bool> coreActive;
-
-        bool EngineInit();
-        void EngineLoop();
 		void EngineThread();
 
 		// These interfaces are created dynamically by the PGE core
@@ -4734,12 +4731,12 @@ namespace olc::host
         bool SyncWithDesktopComposite() override;
 
         void OnAppCmd(struct android_app* app, int32_t cmd);
-        void SetAndridApp(struct android_app* app);
+        void SetAndroidApp(struct android_app* app);
 
-        bool IsInitialized() { return initialized; }
+        bool IsInitialized() const { return initialized.load(); }
     protected:
         olc::Window* pgeWindow = nullptr;
-        std::atomic<bool> initialized {false};
+        std::atomic<bool> initialized{false};
     };
 }
 #endif
@@ -9343,7 +9340,7 @@ namespace olc::host
         struct android_poll_source* source = nullptr;
 
         while (ALooper_pollOnce(
-            !initialized ? -1 : 0,
+            bBlockIfPossible || !initialized ? -1 : 0,
             nullptr,
             &events,
             (void**)&source
@@ -9351,13 +9348,22 @@ namespace olc::host
             if (source) source->process(olc_App, source);
         }
 
-        if (!initialized) return false;
+        if (!initialized) return true;
 
         android_input_buffer* inputBuffer = android_app_swap_input_buffers(olc_App);
         if (inputBuffer) {
             // Process motion events (touch, mouse, joystick)
             for (int i = 0; i < inputBuffer->motionEventsCount; ++i) {
                 GameActivityMotionEvent* motionEvent = &inputBuffer->motionEvents[i];
+
+                if (motionEvent->pointerCount > 0)
+                {
+                    pgeWindow->olc_OnMouseMove({
+                        static_cast<int32_t>(GameActivityPointerAxes_getX(&motionEvent->pointers[0])),
+                        static_cast<int32_t>(GameActivityPointerAxes_getY(&motionEvent->pointers[0])),
+                    });
+                }
+
                 switch (motionEvent->action & AMOTION_EVENT_ACTION_MASK)
                 {
                     case AMOTION_EVENT_ACTION_DOWN:
@@ -9369,18 +9375,6 @@ namespace olc::host
                     case AMOTION_EVENT_ACTION_POINTER_UP:
                         // Only the first button for now.
                         pgeWindow->olc_OnMouseButton(motionEvent->actionButton, false);
-                        break;
-                    case AMOTION_EVENT_ACTION_MOVE:
-                    case AMOTION_EVENT_ACTION_HOVER_MOVE:
-                        if (motionEvent->pointerCount > 0)
-                        {
-                            pgeWindow->olc_OnMouseMove({
-                               static_cast<int32_t>(GameActivityPointerAxes_getX(
-                                   &motionEvent->pointers[0])),
-                               static_cast<int32_t>(GameActivityPointerAxes_getY(
-                                   &motionEvent->pointers[0])),
-                           });
-                        }
                         break;
                 }
             }
@@ -9405,10 +9399,17 @@ namespace olc::host
                   ANativeWindow_getWidth(app->window),
                   ANativeWindow_getHeight(app->window)
                 });
+                __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID",
+                                    "APP_CMD_WINDOW_RESIZED received: %dx%d",
+                                    ANativeWindow_getWidth(app->window),
+                                    ANativeWindow_getHeight(app->window));
                 break;
             case APP_CMD_INIT_WINDOW:
-                host->initialized = app->window != nullptr;
-                __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "APP_CMD_INIT_WINDOW received with Window");
+                if (app->window) {
+                    host->initialized = true;
+                    __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID",
+                                        "APP_CMD_INIT_WINDOW received with Window");
+                }
                 break;
             case APP_CMD_TERM_WINDOW: {
                 host->pgeWindow->olc_OnWindowClose();
@@ -9455,7 +9456,7 @@ namespace olc::host
         return true;
     }
 
-    void Host_Android::SetAndridApp(struct android_app *app)
+    void Host_Android::SetAndroidApp(struct android_app *app)
     {
         olc_App = app;
         olc_App->userData = this;
@@ -13281,7 +13282,7 @@ namespace olc
         #if OLC_HOST == OLC_HOST_ANDROID
         host = std::make_unique<olc::host::Host_Android>();
         auto hostPtr = (dynamic_cast<olc::host::Host_Android*>(host.get()));
-        hostPtr->SetAndridApp(androidApp);
+        hostPtr->SetAndroidApp(androidApp);
         #endif
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_NO
 		// Create OS window on this thread
@@ -13301,28 +13302,14 @@ namespace olc
 		coreThread.join();
 #elif OLC_HOST == OLC_HOST_ANDROID
         // We need to wait for the APP_CMD_INIT_WINDOW command before starting the loop
-        while (!hostPtr->IsInitialized())
-        {
-            __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Waiting window creation...");
-            host->StartSystemEventLoop(false);
-        }
-
         __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initializing...");
-
-        if (!EngineInit())
-        {
-            return false;
-        }
+        while (!hostPtr->IsInitialized()) {
+			host->StartSystemEventLoop(false);
+		}
 
         __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initialized Successfully");
 
-        while (coreActive)
-        {
-            if (!host->StartSystemEventLoop(false)) {
-                coreActive = false;
-            }
-            PixelGameEngine::CoreUpdate(this);
-        }
+        EngineThread();
 #else
         EngineThread();
 #endif
@@ -13461,18 +13448,9 @@ namespace olc
 				}
 			}
 		
-	}	
-	
-	void PixelGameEngine::EngineThread()
-	{
-        if (!EngineInit())
-        {
-            return;
-        }
-        EngineLoop();
 	}
 
-    bool PixelGameEngine::EngineInit()
+    void PixelGameEngine::EngineThread()
     {
         using namespace std::chrono_literals;
         timeFrame2 = std::chrono::steady_clock::now();
@@ -13480,8 +13458,8 @@ namespace olc
 
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_YES
         // Create Primary Window on EngineThread, event loop also exists for all windows
-		// on this thread, and all windows will be created on this thread
-		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
+        // on this thread, and all windows will be created on this thread
+        host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
 #endif
 
         // Initialise ImageLoader Interface
@@ -13531,7 +13509,7 @@ namespace olc
         {
             //const auto e = gpu->GetLastError(); // For debug visibility
             std::cout << "Error: Could not create Renderer\n";
-            return false;
+            return;
         }
 
 
@@ -13552,7 +13530,7 @@ namespace olc
         if (!OnUserCreate())
         {
             // Creation process signalled abort
-            return false;
+            return;
         }
 
         draw.ProcessGPUTasks();
@@ -13563,16 +13541,16 @@ namespace olc
 
         durationFrameCount = 0s;
 
-        return true;
-    }
-
-    void PixelGameEngine::EngineLoop()
-    {
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
         emscripten_set_main_loop_arg(PixelGameEngine::CoreUpdate, reinterpret_cast<void*>(this), 0, 1);
 #else
         while (coreActive)
         {
+#if OLC_HOST == OLC_HOST_ANDROID
+            if (!host->StartSystemEventLoop(false)) {
+                coreActive = false;
+            }
+#endif
             PixelGameEngine::CoreUpdate(this);
         }
 #endif

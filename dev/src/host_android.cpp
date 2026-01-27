@@ -20,7 +20,7 @@ namespace olc::host
         struct android_poll_source* source = nullptr;
 
         while (ALooper_pollOnce(
-            !initialized ? -1 : 0,
+            bBlockIfPossible || !initialized ? -1 : 0,
             nullptr,
             &events,
             (void**)&source
@@ -28,13 +28,22 @@ namespace olc::host
             if (source) source->process(olc_App, source);
         }
 
-        if (!initialized) return false;
+        if (!initialized) return true;
 
         android_input_buffer* inputBuffer = android_app_swap_input_buffers(olc_App);
         if (inputBuffer) {
             // Process motion events (touch, mouse, joystick)
             for (int i = 0; i < inputBuffer->motionEventsCount; ++i) {
                 GameActivityMotionEvent* motionEvent = &inputBuffer->motionEvents[i];
+
+                if (motionEvent->pointerCount > 0)
+                {
+                    pgeWindow->olc_OnMouseMove({
+                        static_cast<int32_t>(GameActivityPointerAxes_getX(&motionEvent->pointers[0])),
+                        static_cast<int32_t>(GameActivityPointerAxes_getY(&motionEvent->pointers[0])),
+                    });
+                }
+
                 switch (motionEvent->action & AMOTION_EVENT_ACTION_MASK)
                 {
                     case AMOTION_EVENT_ACTION_DOWN:
@@ -46,18 +55,6 @@ namespace olc::host
                     case AMOTION_EVENT_ACTION_POINTER_UP:
                         // Only the first button for now.
                         pgeWindow->olc_OnMouseButton(motionEvent->actionButton, false);
-                        break;
-                    case AMOTION_EVENT_ACTION_MOVE:
-                    case AMOTION_EVENT_ACTION_HOVER_MOVE:
-                        if (motionEvent->pointerCount > 0)
-                        {
-                            pgeWindow->olc_OnMouseMove({
-                               static_cast<int32_t>(GameActivityPointerAxes_getX(
-                                   &motionEvent->pointers[0])),
-                               static_cast<int32_t>(GameActivityPointerAxes_getY(
-                                   &motionEvent->pointers[0])),
-                           });
-                        }
                         break;
                 }
             }
@@ -82,10 +79,17 @@ namespace olc::host
                   ANativeWindow_getWidth(app->window),
                   ANativeWindow_getHeight(app->window)
                 });
+                __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID",
+                                    "APP_CMD_WINDOW_RESIZED received: %dx%d",
+                                    ANativeWindow_getWidth(app->window),
+                                    ANativeWindow_getHeight(app->window));
                 break;
             case APP_CMD_INIT_WINDOW:
-                host->initialized = app->window != nullptr;
-                __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "APP_CMD_INIT_WINDOW received with Window");
+                if (app->window) {
+                    host->initialized = true;
+                    __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID",
+                                        "APP_CMD_INIT_WINDOW received with Window");
+                }
                 break;
             case APP_CMD_TERM_WINDOW: {
                 host->pgeWindow->olc_OnWindowClose();
@@ -132,7 +136,7 @@ namespace olc::host
         return true;
     }
 
-    void Host_Android::SetAndridApp(struct android_app *app)
+    void Host_Android::SetAndroidApp(struct android_app *app)
     {
         olc_App = app;
         olc_App->userData = this;

@@ -186,9 +186,6 @@ namespace olc
 		// Core Thread
 		std::thread coreThread;
 		std::atomic<bool> coreActive;
-
-        bool EngineInit();
-        void EngineLoop();
 		void EngineThread();
 
 		// These interfaces are created dynamically by the PGE core

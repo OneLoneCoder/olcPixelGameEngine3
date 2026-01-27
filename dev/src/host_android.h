@@ -31,12 +31,12 @@ namespace olc::host
         bool SyncWithDesktopComposite() override;
 
         void OnAppCmd(struct android_app* app, int32_t cmd);
-        void SetAndridApp(struct android_app* app);
+        void SetAndroidApp(struct android_app* app);
 
-        bool IsInitialized() { return initialized; }
+        bool IsInitialized() const { return initialized.load(); }
     protected:
         olc::Window* pgeWindow = nullptr;
-        std::atomic<bool> initialized {false};
+        std::atomic<bool> initialized{false};
     };
 }
 //! END DECLARATION

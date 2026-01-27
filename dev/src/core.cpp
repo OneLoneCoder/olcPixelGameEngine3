@@ -329,7 +329,7 @@ namespace olc
         #if OLC_HOST == OLC_HOST_ANDROID
         host = std::make_unique<olc::host::Host_Android>();
         auto hostPtr = (dynamic_cast<olc::host::Host_Android*>(host.get()));
-        hostPtr->SetAndridApp(androidApp);
+        hostPtr->SetAndroidApp(androidApp);
         #endif
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_NO
 		// Create OS window on this thread
@@ -349,28 +349,14 @@ namespace olc
 		coreThread.join();
 #elif OLC_HOST == OLC_HOST_ANDROID
         // We need to wait for the APP_CMD_INIT_WINDOW command before starting the loop
-        while (!hostPtr->IsInitialized())
-        {
-            __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Waiting window creation...");
-            host->StartSystemEventLoop(false);
-        }
-
         __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initializing...");
-
-        if (!EngineInit())
-        {
-            return false;
-        }
+        while (!hostPtr->IsInitialized()) {
+			host->StartSystemEventLoop(false);
+		}
 
         __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initialized Successfully");
 
-        while (coreActive)
-        {
-            if (!host->StartSystemEventLoop(false)) {
-                coreActive = false;
-            }
-            PixelGameEngine::CoreUpdate(this);
-        }
+        EngineThread();
 #else
         EngineThread();
 #endif
@@ -509,18 +495,9 @@ namespace olc
 				}
 			}
 		
-	}	
-	
-	void PixelGameEngine::EngineThread()
-	{
-        if (!EngineInit())
-        {
-            return;
-        }
-        EngineLoop();
 	}
 
-    bool PixelGameEngine::EngineInit()
+    void PixelGameEngine::EngineThread()
     {
         using namespace std::chrono_literals;
         timeFrame2 = std::chrono::steady_clock::now();
@@ -528,8 +505,8 @@ namespace olc
 
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_YES
         // Create Primary Window on EngineThread, event loop also exists for all windows
-		// on this thread, and all windows will be created on this thread
-		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
+        // on this thread, and all windows will be created on this thread
+        host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
 #endif
 
         // Initialise ImageLoader Interface
@@ -579,7 +556,7 @@ namespace olc
         {
             //const auto e = gpu->GetLastError(); // For debug visibility
             std::cout << "Error: Could not create Renderer\n";
-            return false;
+            return;
         }
 
 
@@ -600,7 +577,7 @@ namespace olc
         if (!OnUserCreate())
         {
             // Creation process signalled abort
-            return false;
+            return;
         }
 
         draw.ProcessGPUTasks();
@@ -611,16 +588,16 @@ namespace olc
 
         durationFrameCount = 0s;
 
-        return true;
-    }
-
-    void PixelGameEngine::EngineLoop()
-    {
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
         emscripten_set_main_loop_arg(PixelGameEngine::CoreUpdate, reinterpret_cast<void*>(this), 0, 1);
 #else
         while (coreActive)
         {
+#if OLC_HOST == OLC_HOST_ANDROID
+            if (!host->StartSystemEventLoop(false)) {
+                coreActive = false;
+            }
+#endif
             PixelGameEngine::CoreUpdate(this);
         }
 #endif
