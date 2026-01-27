@@ -49,3 +49,31 @@ xcuserdata/
 /dev/msvc/olcPGE3/x64
 /dev/msvc/olcPGE3_BuildSH/x64
 build/
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Gradle
+.gradle/
+/dev/android/build/
+/dev/android/app/build/
+/dev/android/.gradle/
+/dev/android/gradle/
+local.properties
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+.navigation/
+captures/
+output.json
+.kotlin/
+
+# NDK
+obj/
+.externalNativeBuild/
+.cxx/

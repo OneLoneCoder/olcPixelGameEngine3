@@ -25,6 +25,11 @@
 
 //! START DECLARATION
 #if !defined(PGE_CORE_DECLARED)
+
+#if OLC_HOST == OLC_HOST_ANDROID
+#include <game-activity/native_app_glue/android_native_app_glue.h>
+#endif
+
 namespace olc
 {
 	// A grouping of all settable PGE properties
@@ -136,9 +141,19 @@ namespace olc
 
 	public:
 		// Construct the PGE main engine window with traditional parameters
-		bool Construct(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen = false);
+		bool Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+            struct android_app* app,
+#endif
+            const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen = false
+        );
 		// Construct the PGE main engine window with verbose configuration structure
-		bool Construct(const PGEConfig& cfg = PGEConfig{});
+		bool Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+            struct android_app* app,
+#endif
+            const PGEConfig& cfg = PGEConfig{}
+        );
 		
 		// Start the PGE main engine loop (on its own thread)
 		bool Start();
@@ -166,11 +181,14 @@ namespace olc
 		std::chrono::duration<double> durationTotalElapsed{ 0 };
 		size_t frameCount = 0;
 
-
+        struct android_app* androidApp;
 
 		// Core Thread
 		std::thread coreThread;
 		std::atomic<bool> coreActive;
+
+        bool EngineInit();
+        void EngineLoop();
 		void EngineThread();
 
 		// These interfaces are created dynamically by the PGE core

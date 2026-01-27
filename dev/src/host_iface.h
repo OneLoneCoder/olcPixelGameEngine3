@@ -46,7 +46,7 @@ namespace olc
 			return uuid++;
 		}
 		#endif
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+		#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
 		inline size_t CreateUID()
 		{
 			return uuid++;

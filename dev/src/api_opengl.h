@@ -37,7 +37,6 @@
 	#include <GL/gl.h>
 
 	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(eglGetProcAddress(#t))
-
 #endif
 
 #if OLC_HOST == OLC_HOST_MACOS
@@ -66,6 +65,19 @@
 	#define GL_CLAMP GL_CLAMP_TO_EDGE
 
 	#define OGL_LOAD(t) ::t
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+    #include <EGL/egl.h>
+    #include <GLES3/gl3.h>
+    #define GL_GLEXT_PROTOTYPES
+    #include <GLES3/gl3ext.h>
+    #define CALLSTYLE
+    #undef GL_CLAMP
+    #define GL_CLAMP GL_CLAMP_TO_EDGE
+    #define GL_LINE 0
+    #define GL_FILL 0
+    #define OGL_LOAD(t) reinterpret_cast<t##_t*>(eglGetProcAddress(#t))
 #endif
 
 #if !defined(CALLSTYLE)
@@ -105,7 +117,7 @@ namespace olc
 		typedef X11::GLXContext glRenderContext_t;
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 	typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei size, const GLchar *const * string, const GLint * length);
 	typedef void glDeviceContext_t;
 	typedef struct

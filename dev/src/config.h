@@ -39,7 +39,7 @@
 		#define OLC_HOST OLC_HOST_WINDOWS
 	#endif
 
-	#if defined(__linux__) || defined(__FreeBSD__)
+	#if (defined(__linux__) || defined(__FreeBSD__)) && !defined(__ANDROID__)
 		// Note: Assumes X11 atm
 		#define OLC_HOST OLC_HOST_LINUX_X11
 	#endif
@@ -77,6 +77,7 @@
 #define OLC_IMAGELOADER_WINGDI 2
 #define OLC_IMAGELOADER_MACOS 3
 #define OLC_IMAGELOADER_LIB_PNG 4
+#define OLC_IMAGELOADER_NDK_IMAGEDECODER 5
 
 #if OLC_HOST == OLC_HOST_MACOS
 	#undef OLC_IMAGELOADER
@@ -91,6 +92,11 @@
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 	#undef OLC_IMAGELOADER
 	#define OLC_IMAGELOADER OLC_IMAGELOADER_LIB_PNG
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+    #undef OLC_IMAGELOADER
+    #define OLC_IMAGELOADER OLC_IMAGELOADER_NDK_IMAGEDECODER
 #endif
 
 #if !defined(OLC_IMAGELOADER)
