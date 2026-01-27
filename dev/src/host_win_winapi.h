@@ -59,7 +59,7 @@ namespace olc
 			
 
 		public:
-			Host_Windows_WinAPI() = default;
+			Host_Windows_WinAPI();
 			virtual ~Host_Windows_WinAPI() {};
 
 
@@ -78,12 +78,17 @@ namespace olc
 
 			LRESULT OnWindowEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+			olc::KeyboardLayout GetKeyboardLayout() const override;
+
 			std::string test;
 
 		private:
 			std::unordered_map<size_t, HWND> mapUID2HWND;
 			std::unordered_map<HWND, olc::Window*> mapHWND2PTR;
 			std::wstring ConvertS2W(std::string s);
+
+			// Map of system keycodes to olc::Keycodes
+			std::unordered_map<int32_t, olc::Key> mapKeys;
 
 		};
 	}

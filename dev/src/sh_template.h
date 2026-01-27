@@ -136,6 +136,8 @@
 
 //! GRAB hw_mouse.h	DECLARATION
 
+//! GRAB hw_keyboard.h DECLARATION
+
 //! GRAB window.h DECLARATION
  
 //! GRAB host_iface.h DECLARATION
@@ -286,6 +288,11 @@
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HW_MOUSE_IMPLEMENTED)
 //! GRAB hw_mouse.cpp IMPLEMENTATION 
 #define PGE_HW_MOUSE_IMPLEMENTED 1
+#endif
+
+#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HW_KEYBOARD_IMPLEMENTED)
+//! GRAB hw_keyboard.cpp IMPLEMENTATION 
+#define PGE_HW_KEYBOARD_IMPLEMENTED 1
 #endif
 
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_WINDOW_IMPLEMENTED)

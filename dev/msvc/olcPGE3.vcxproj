@@ -291,6 +291,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\host_win_winapi.cpp" />
+    <ClCompile Include="..\src\hw_keyboard.cpp" />
     <ClCompile Include="..\src\hw_mouse.cpp" />
     <ClCompile Include="..\src\image.cpp" />
     <ClCompile Include="..\src\imload_lib_png.cpp">

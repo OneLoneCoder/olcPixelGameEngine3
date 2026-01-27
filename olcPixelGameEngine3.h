@@ -116,7 +116,6 @@
 #include <array>
 #include <vector>
 #include <memory>
-
 #include <optional>
 #include <deque>
 #include <chrono>
@@ -249,10 +248,12 @@
 
 #define OLC_MOUSE_BUTTONS 5
 
+#define OLC_DEFAULT_KEYBOARD_LAYOUT olc::KeyboardLayout::QWERTY_UK
+
 #define OLC_GPU_MAX_VERTICES 8192
 #define OLC_GPU_ERRORCHECK 0
 #define OLC_MSAA_SAMPLES 4
-#define OLC_DEFAULT_CIRCLE_FACETS 32
+#define OLC_DEFAULT_CIRCLE_FACETS 16
 
 #define LICENCE_DEFAULT "OneLoneCoder.com - Pixel Game Engine 3 - "
 
@@ -2809,6 +2810,112 @@ namespace olc
 #define PGE_HW_MOUSE_DECLARED 1
 #endif
 
+#if !defined(PGE_HW_KEYBOARD_DECLARED)
+namespace olc
+{
+	// Forward declare for friendship
+	class Window;
+	class PGEWindow;
+
+	enum class KeyboardLayout : uint8_t
+	{
+		QWERTY_UK,
+		QWERTY_US,
+		QWERTZ,
+		AZERTY
+	};
+
+	// Officially recognised OLC key codes
+	enum class Key : uint8_t
+	{
+		NONE,
+		
+		// Alphanumeric keys
+		A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+		
+		// Numeric keys
+		K0, K1, K2, K3, K4, K5, K6, K7, K8, K9,
+		
+		// Numpad keys
+		NP0, NP1, NP2, NP3, NP4, NP5, NP6, NP7, NP8, NP9,
+		NP_MUL, NP_DIV, NP_ADD, NP_SUB, NP_DECIMAL, PERIOD,
+		
+		// Function keys
+		F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+		
+		// Arrow keys
+		UP, DOWN, LEFT, RIGHT,
+		
+		// Other keys
+		SPACE, TAB, SHIFT, CTRL, INS, DEL, HOME, END, PGUP, PGDN, CAPS_LOCK, 
+		BACK, ESCAPE, RETURN, ENTER, PAUSE, SCROLL,	EQUALS, COMMA, MINUS,
+		
+		// OEM specific keys
+		OEM_1, OEM_2, OEM_3, OEM_4, OEM_5, OEM_6, OEM_7, OEM_8,
+
+		// Special case for iteration limits
+		ENUM_END
+	};
+
+
+	namespace hw
+	{
+		class Keyboard
+		{
+			friend class olc::Window;
+			friend class olc::PGEWindow;
+
+		public:
+			Keyboard() = default;
+
+		public:
+			// Get the state of a specific key
+			const Button& GetKey(const olc::Key nOLCKeyCode) const;
+			// Get a list of keys that have been pressed/typed since last update
+			const std::vector<olc::Key>& GetKeyCache() const;
+			// Get printable glyph for a key based on current modifier state
+			const std::string GetKeyGlyph(const olc::Key key, const bool shift = false, const bool ctrl = false, const bool alt = false) const;
+			// Converts System keycode to olc::Key
+			olc::Key SystemKeyCodeToOLCKey(const int32_t nSystemKeyCode) const;
+			// Set keyboard layout for glyph mapping
+			void UseKeyboardLayout(const olc::KeyboardLayout kbl);
+
+		private:
+			// Set key state from system keycode
+			void SetKey(const olc::Key key, bool state);
+			// Update internal state, called once per frame
+			void UpdateState();
+
+		protected:
+			std::array<Button, 256> keys{};
+			std::array<bool, 256> keys_new{};
+			std::array<bool, 256> keys_old{};
+
+		private:
+			// We use two buffers to cache key presses so we can 
+			// read from one while writing to the other, we dont
+			// want to miss any key presses that are typed, or 
+			// autotyped by the OS repeat rate or peripheral
+			std::array<std::vector<olc::Key>, 2> keyCache{};
+			size_t nKeyCacheIndex = 0;
+
+			// Map of olc::Keycodes to printable glyphs
+			struct sKeyGlyph
+			{
+				std::string modNone;
+				std::string modShift;
+				std::string modCtrl;
+				std::string modAlt;
+			};
+			std::unordered_map<olc::Key, sKeyGlyph> mapKeyGlyphs;
+
+
+		};
+	}
+}
+#define PGE_HW_KEYBOARD_DECLARED 1
+#endif
+
 #if !defined(PGE_WINDOW_DECLARED)
 
 #if OLC_HOST == OLC_HOST_WINDOWS
@@ -2856,6 +2963,7 @@ namespace olc
 	namespace hw
 	{
 		class Mouse;
+		class Keyboard;
 	}
 
 	class Window
@@ -2884,6 +2992,7 @@ namespace olc
 		virtual bool olc_OnWindowClose();
 
 		// Set Keyboard State
+		virtual bool olc_OnKeyPress(const olc::Key key, const bool bPressed);
 
 
 
@@ -2918,6 +3027,7 @@ namespace olc
 
 	protected:
 		olc::hw::Mouse mouse;
+		olc::hw::Keyboard keyboard;
 
 	};
 }
@@ -3004,6 +3114,8 @@ namespace olc
 			// Wait for entire host desktop refresh (for smooooth vsync)
 			virtual bool SyncWithDesktopComposite() = 0;
 
+			virtual olc::KeyboardLayout GetKeyboardLayout() const = 0;
+
 		protected:
 			HostError lastError = HostError::None;
 		};
@@ -3087,6 +3199,7 @@ namespace olc
 
 		// Input devices are handled by a regular olc::Window, but for convenience...
 		olc::hw::Mouse& GetMouse();
+		olc::hw::Keyboard& GetKeyboard();
 		
 		// Returns the current size of the "screen" in pixels
 		const olc::vi2d& ScreenSize();
@@ -3226,7 +3339,7 @@ namespace olc
 			
 
 		public:
-			Host_Windows_WinAPI() = default;
+			Host_Windows_WinAPI();
 			virtual ~Host_Windows_WinAPI() {};
 
 
@@ -3245,12 +3358,17 @@ namespace olc
 
 			LRESULT OnWindowEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+			olc::KeyboardLayout GetKeyboardLayout() const override;
+
 			std::string test;
 
 		private:
 			std::unordered_map<size_t, HWND> mapUID2HWND;
 			std::unordered_map<HWND, olc::Window*> mapHWND2PTR;
 			std::wstring ConvertS2W(std::string s);
+
+			// Map of system keycodes to olc::Keycodes
+			std::unordered_map<int32_t, olc::Key> mapKeys;
 
 		};
 	}
@@ -5325,31 +5443,9 @@ namespace olc::host
 	// Forward Declaration
 	static LRESULT CALLBACK WINAPI_EventHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	// Windows app needs an event loop somewhere. This is blocking of course. This loop handles
-	// all windows created for this host.
-	bool Host_Windows_WinAPI::StartSystemEventLoop(bool bBlockIfPossible)
-	{
-		if (bBlockIfPossible)
-		{
-			MSG msg;
-			while (GetMessage(&msg, NULL, 0, 0) > 0)
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
-		else
-		{
-			MSG msg;
-			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
 
-		return true;    
-	}
+
+	
 
 	// Static linkage to lpfnWndProc - the hWnd is tagged with meta-info to get
 	// access to the actual host instance, which can more conveninetly process
@@ -5393,6 +5489,147 @@ namespace olc::host
 		std::wstring w(buffer);
 		delete[] buffer;
 		return w;
+	}
+
+	Host_Windows_WinAPI::Host_Windows_WinAPI()
+	{
+		// Map Windows Defined VK_ Codes to olc::KeyCodes
+		mapKeys[0x00] = Key::NONE;
+
+		// Windows doesn't define A-Z
+		mapKeys[0x41] = Key::A;
+		mapKeys[0x42] = Key::B;
+		mapKeys[0x43] = Key::C;
+		mapKeys[0x44] = Key::D;
+		mapKeys[0x45] = Key::E;
+		mapKeys[0x46] = Key::F;
+		mapKeys[0x47] = Key::G;
+		mapKeys[0x48] = Key::H;
+		mapKeys[0x49] = Key::I;
+		mapKeys[0x4A] = Key::J;
+		mapKeys[0x4B] = Key::K;
+		mapKeys[0x4C] = Key::L;
+		mapKeys[0x4D] = Key::M;
+		mapKeys[0x4E] = Key::N;
+		mapKeys[0x4F] = Key::O;
+		mapKeys[0x50] = Key::P;
+		mapKeys[0x51] = Key::Q;
+		mapKeys[0x52] = Key::R;
+		mapKeys[0x53] = Key::S;
+		mapKeys[0x54] = Key::T;
+		mapKeys[0x55] = Key::U;
+		mapKeys[0x56] = Key::V;
+		mapKeys[0x57] = Key::W;
+		mapKeys[0x58] = Key::X;
+		mapKeys[0x59] = Key::Y;
+		mapKeys[0x5A] = Key::Z;
+
+		// Windows doesnt define numeric keys
+		mapKeys[0x30] = Key::K0;
+		mapKeys[0x31] = Key::K1;
+		mapKeys[0x32] = Key::K2;
+		mapKeys[0x33] = Key::K3;
+		mapKeys[0x34] = Key::K4;
+		mapKeys[0x35] = Key::K5;
+		mapKeys[0x36] = Key::K6;
+		mapKeys[0x37] = Key::K7;
+		mapKeys[0x38] = Key::K8;
+		mapKeys[0x39] = Key::K9;
+
+		// Function Keys
+		mapKeys[VK_F1] = Key::F1;
+		mapKeys[VK_F2] = Key::F2;
+		mapKeys[VK_F3] = Key::F3;
+		mapKeys[VK_F4] = Key::F4;
+		mapKeys[VK_F5] = Key::F5;
+		mapKeys[VK_F6] = Key::F6;
+		mapKeys[VK_F7] = Key::F7;
+		mapKeys[VK_F8] = Key::F8;
+		mapKeys[VK_F9] = Key::F9;
+		mapKeys[VK_F10] = Key::F10;
+		mapKeys[VK_F11] = Key::F11;
+		mapKeys[VK_F12] = Key::F12;
+
+		// Arrow Keys
+		mapKeys[VK_DOWN] = Key::DOWN;
+		mapKeys[VK_LEFT] = Key::LEFT;
+		mapKeys[VK_RIGHT] = Key::RIGHT;
+		mapKeys[VK_UP] = Key::UP;
+
+		// Other Keys
+		mapKeys[VK_BACK] = Key::BACK;
+		mapKeys[VK_ESCAPE] = Key::ESCAPE;
+		mapKeys[VK_RETURN] = Key::ENTER;
+		mapKeys[VK_PAUSE] = Key::PAUSE;
+		mapKeys[VK_SCROLL] = Key::SCROLL;
+		mapKeys[VK_TAB] = Key::TAB;
+		mapKeys[VK_DELETE] = Key::DEL;
+		mapKeys[VK_HOME] = Key::HOME;
+		mapKeys[VK_END] = Key::END;
+		mapKeys[VK_PRIOR] = Key::PGUP;
+		mapKeys[VK_NEXT] = Key::PGDN;
+		mapKeys[VK_INSERT] = Key::INS;
+		mapKeys[VK_SHIFT] = Key::SHIFT;
+		mapKeys[VK_CONTROL] = Key::CTRL;
+		mapKeys[VK_SPACE] = Key::SPACE;
+		mapKeys[VK_CAPITAL] = Key::CAPS_LOCK;
+
+		// Numpad
+		mapKeys[VK_NUMPAD0] = Key::NP0;
+		mapKeys[VK_NUMPAD1] = Key::NP1;
+		mapKeys[VK_NUMPAD2] = Key::NP2;
+		mapKeys[VK_NUMPAD3] = Key::NP3;
+		mapKeys[VK_NUMPAD4] = Key::NP4;
+		mapKeys[VK_NUMPAD5] = Key::NP5;
+		mapKeys[VK_NUMPAD6] = Key::NP6;
+		mapKeys[VK_NUMPAD7] = Key::NP7;
+		mapKeys[VK_NUMPAD8] = Key::NP8;
+		mapKeys[VK_NUMPAD9] = Key::NP9;
+		mapKeys[VK_MULTIPLY] = Key::NP_MUL;
+		mapKeys[VK_ADD] = Key::NP_ADD;
+		mapKeys[VK_DIVIDE] = Key::NP_DIV;
+		mapKeys[VK_SUBTRACT] = Key::NP_SUB;
+		mapKeys[VK_DECIMAL] = Key::NP_DECIMAL;
+
+		// OEM Keys
+		mapKeys[VK_OEM_1] = Key::OEM_1;			// On US and UK keyboards this is the ';:' key
+		mapKeys[VK_OEM_2] = Key::OEM_2;			// On US and UK keyboards this is the '/?' key
+		mapKeys[VK_OEM_3] = Key::OEM_3;			// On US keyboard this is the '~' key
+		mapKeys[VK_OEM_4] = Key::OEM_4;			// On US and UK keyboards this is the '[{' key
+		mapKeys[VK_OEM_5] = Key::OEM_5;			// On US keyboard this is '\|' key.
+		mapKeys[VK_OEM_6] = Key::OEM_6;			// On US and UK keyboards this is the ']}' key
+		mapKeys[VK_OEM_7] = Key::OEM_7;			// On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
+		mapKeys[VK_OEM_8] = Key::OEM_8;			// miscellaneous characters. Varies by keyboard
+		mapKeys[VK_OEM_PLUS] = Key::EQUALS;		// the '+' key on any keyboard
+		mapKeys[VK_OEM_COMMA] = Key::COMMA;		// the comma key on any keyboard
+		mapKeys[VK_OEM_MINUS] = Key::MINUS;		// the minus key on any keyboard
+		mapKeys[VK_OEM_PERIOD] = Key::PERIOD;	// the period key on any keyboard
+	}
+
+	// Windows app needs an event loop somewhere. This is blocking of course. This loop handles
+	// all windows created for this host.
+	bool Host_Windows_WinAPI::StartSystemEventLoop(bool bBlockIfPossible)
+	{
+		if (bBlockIfPossible)
+		{
+			MSG msg;
+			while (GetMessage(&msg, NULL, 0, 0) > 0)
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+		else
+		{
+			MSG msg;
+			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+
+		return true;
 	}
 
 	bool Host_Windows_WinAPI::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
@@ -5560,6 +5797,25 @@ namespace olc::host
 			//		case WM_KEYUP:		ptrPGE->olc_UpdateKeyState(int32_t(wParam), false);                     return 0;
 			//		case WM_SYSKEYDOWN: ptrPGE->olc_UpdateKeyState(int32_t(wParam), true);						return 0;
 			//		case WM_SYSKEYUP:	ptrPGE->olc_UpdateKeyState(int32_t(wParam), false);						return 0;
+
+		case WM_KEYDOWN:
+			{
+				if (mapKeys.contains(int32_t(wParam)))
+				{
+					window->olc_OnKeyPress(mapKeys[int32_t(wParam)], true);
+				}
+				break;
+			}
+
+		case WM_KEYUP:
+			{
+				if (mapKeys.contains(int32_t(wParam)))
+				{
+					window->olc_OnKeyPress(mapKeys[int32_t(wParam)], false);
+				}
+				break;
+			}
+
 		case WM_LBUTTONDOWN:
 			{
 				window->olc_OnMouseButton(0, true);
@@ -5642,6 +5898,23 @@ namespace olc::host
 
 
 		return DefWindowProc(hWnd, uMsg, wParam, lParam);
+	}
+
+	olc::KeyboardLayout Host_Windows_WinAPI::GetKeyboardLayout() const
+	{
+		HKL kbl = ::GetKeyboardLayout(0);
+		size_t highWord = ((size_t)kbl >> 16) & 0xFFFF;
+
+		if (highWord == 0x00000409) // US
+			return olc::KeyboardLayout::QWERTY_US;
+		else if(highWord == 0x00000809) // UK
+			return olc::KeyboardLayout::QWERTY_UK;
+		else if(highWord == 0x00000407) // DE
+			return olc::KeyboardLayout::QWERTZ;
+		else if(highWord == 0x0000040C) // FR
+			return olc::KeyboardLayout::AZERTY;
+
+		return OLC_DEFAULT_KEYBOARD_LAYOUT;
 	}
 
 };
@@ -13042,6 +13315,7 @@ namespace olc
 	{
 		// Input Changes
 		mouse.UpdateState();
+		keyboard.UpdateState();
 		
 		draw.SetGPU(pRenderer);
 		draw.SetTarget(GetDefaultImage());
@@ -13214,6 +13488,11 @@ namespace olc
 	olc::hw::Mouse& PGEWindow::GetMouse()
 	{
 		return mouse;
+	}
+
+	olc::hw::Keyboard& PGEWindow::GetKeyboard()
+	{
+		return keyboard;
 	}
 
 	const olc::vi2d& PGEWindow::ScreenSize()
@@ -13833,12 +14112,265 @@ namespace olc::hw
 #define PGE_HW_MOUSE_IMPLEMENTED 1
 #endif
 
+#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HW_KEYBOARD_IMPLEMENTED)
+namespace olc::hw
+{
+
+    void Keyboard::UseKeyboardLayout(const olc::KeyboardLayout kbl)
+    {
+        mapKeyGlyphs.clear();
+
+		//  Define appropriate glyphs for each key for the selected keyboard layout
+        if (kbl == olc::KeyboardLayout::QWERTY_UK)
+        {
+            mapKeyGlyphs =
+            {
+                // PGE Key, no mods, shift mod, ctrl mod, alt mod
+                {olc::Key::A, {"a", "A", "a", "a"}},
+                {olc::Key::B, {"b", "B", "b", "b"}},
+                {olc::Key::C, {"c", "C", "c", "c"}},
+                {olc::Key::D, {"d", "D", "d", "d"}},
+                {olc::Key::E, {"e", "E", "e", "e"}},
+                {olc::Key::F, {"f", "F", "f", "f"}},
+                {olc::Key::G, {"g", "G", "g", "g"}},
+                {olc::Key::H, {"h", "H", "h", "h"}},
+                {olc::Key::I, {"i", "I", "i", "i"}},
+                {olc::Key::J, {"j", "J", "j", "j"}},
+                {olc::Key::K, {"k", "K", "k", "k"}},
+                {olc::Key::L, {"l", "L", "l", "l"}},
+                {olc::Key::M, {"m", "M", "m", "m"}},
+                {olc::Key::N, {"n", "N", "n", "n"}},
+                {olc::Key::O, {"o", "O", "o", "o"}},
+                {olc::Key::P, {"p", "P", "p", "p"}},
+                {olc::Key::Q, {"q", "Q", "q", "q"}},
+                {olc::Key::R, {"r", "R", "r", "r"}},
+                {olc::Key::S, {"s", "S", "s", "s"}},
+                {olc::Key::T, {"t", "T", "t", "t"}},
+                {olc::Key::U, {"u", "U", "u", "u"}},
+                {olc::Key::V, {"v", "V", "v", "v"}},
+                {olc::Key::W, {"w", "W", "w", "w"}},
+                {olc::Key::X, {"x", "X", "x", "x"}},
+                {olc::Key::Y, {"y", "Y", "y", "y"}},
+                {olc::Key::Z, {"z", "Z", "z", "z"}},
+
+                {olc::Key::K0, {"0", ")", "0", "0"}},
+                {olc::Key::K1, {"1", "!", "1", "1"}},
+                {olc::Key::K2, {"2", "\"","2", "2"}},
+                {olc::Key::K3, {"3", "#", "3", "3"}},
+                {olc::Key::K4, {"4", "$", "4", "4"}},
+                {olc::Key::K5, {"5", "%", "5", "5"}},
+                {olc::Key::K6, {"6", "^", "6", "6"}},
+                {olc::Key::K7, {"7", "&", "7", "7"}},
+                {olc::Key::K8, {"8", "*", "8", "8"}},
+                {olc::Key::K9, {"9", "(", "9", "9"}},
+
+                {olc::Key::NP0, {"0", "0", "0", "0"}},
+                {olc::Key::NP1, {"1", "1", "1", "1"}},
+                {olc::Key::NP2, {"2", "2", "2", "2"}},
+                {olc::Key::NP3, {"3", "3", "3", "3"}},
+                {olc::Key::NP4, {"4", "4", "4", "4"}},
+                {olc::Key::NP5, {"5", "5", "5", "5"}},
+                {olc::Key::NP6, {"6", "6", "6", "6"}},
+                {olc::Key::NP7, {"7", "7", "7", "7"}},
+                {olc::Key::NP8, {"8", "8", "8", "8"}},
+                {olc::Key::NP9, {"9", "9", "9", "9"}},
+                {olc::Key::NP_MUL, {"*", "*", "*", "*"}},
+                {olc::Key::NP_DIV, {"/", "/", "/", "/"}},
+                {olc::Key::NP_ADD, {"+", "+", "+", "+"}},
+                {olc::Key::NP_SUB, {"-", "-", "-", "-"}},
+                {olc::Key::NP_DECIMAL, {".", ".", ".", "."}},
+
+                {olc::Key::PERIOD, {".", ">", ".", "."}},
+                {olc::Key::EQUALS, {"=", "+", "=", "="}},
+                {olc::Key::COMMA, {",", "<", ",", ","}},
+                {olc::Key::MINUS, {"-", "_", "-", "-"}},
+                {olc::Key::SPACE, {" ", " ", " ", " "}},
+                {olc::Key::ENTER, {"\n", "\n ", "\n", "\n"}},
+
+                {olc::Key::OEM_1, {";", ":", ";", ";"}},
+                {olc::Key::OEM_2, {"/", "?", "/", "/"}},
+                {olc::Key::OEM_3, {"\'","@", "\'", "\'"}},
+                {olc::Key::OEM_4, {"[", "{", "[", "["}},
+                {olc::Key::OEM_5, {"\\", "|", "\\", "\\"}},
+                {olc::Key::OEM_6, {"]", "}", "]", "]"}},
+                {olc::Key::OEM_7, {"#", "~", "#", "#"}},
+
+                // Give these keys glyphs so they can be interpreted in text editing
+                {olc::Key::TAB, {"\t", "\t", "\t", "\t"}},
+                {olc::Key::BACK, {"\b", "\b", "\b", "\b"}},
+                {olc::Key::DEL, {"_X", "_X", "_X", "_X"}},
+                {olc::Key::LEFT, {"_L", "_L", "_L", "_L"}},
+                {olc::Key::RIGHT, {"_R", "_R", "_R", "_R"}},
+                {olc::Key::UP, {"_U", "_U", "_U", "_U"}},
+                {olc::Key::DOWN, {"_D", "_D", "_D", "_D"}},
+            };
+        }
+
+        //  Define appropriate glyphs for each key for the selected keyboard layout
+        if (kbl == olc::KeyboardLayout::QWERTY_US)
+        {
+            mapKeyGlyphs =
+            {
+                // PGE Key, no mods, shift mod, ctrl mod, alt mod
+                {olc::Key::A, {"a", "A", "a", "a"}},
+                {olc::Key::B, {"b", "B", "b", "b"}},
+                {olc::Key::C, {"c", "C", "c", "c"}},
+                {olc::Key::D, {"d", "D", "d", "d"}},
+                {olc::Key::E, {"e", "E", "e", "e"}},
+                {olc::Key::F, {"f", "F", "f", "f"}},
+                {olc::Key::G, {"g", "G", "g", "g"}},
+                {olc::Key::H, {"h", "H", "h", "h"}},
+                {olc::Key::I, {"i", "I", "i", "i"}},
+                {olc::Key::J, {"j", "J", "j", "j"}},
+                {olc::Key::K, {"k", "K", "k", "k"}},
+                {olc::Key::L, {"l", "L", "l", "l"}},
+                {olc::Key::M, {"m", "M", "m", "m"}},
+                {olc::Key::N, {"n", "N", "n", "n"}},
+                {olc::Key::O, {"o", "O", "o", "o"}},
+                {olc::Key::P, {"p", "P", "p", "p"}},
+                {olc::Key::Q, {"q", "Q", "q", "q"}},
+                {olc::Key::R, {"r", "R", "r", "r"}},
+                {olc::Key::S, {"s", "S", "s", "s"}},
+                {olc::Key::T, {"t", "T", "t", "t"}},
+                {olc::Key::U, {"u", "U", "u", "u"}},
+                {olc::Key::V, {"v", "V", "v", "v"}},
+                {olc::Key::W, {"w", "W", "w", "w"}},
+                {olc::Key::X, {"x", "X", "x", "x"}},
+                {olc::Key::Y, {"y", "Y", "y", "y"}},
+                {olc::Key::Z, {"z", "Z", "z", "z"}},
+
+                {olc::Key::K0, {"0", ")", "0", "0"}},
+                {olc::Key::K1, {"1", "!", "1", "1"}},
+                {olc::Key::K2, {"2", "@","2", "2"}},
+                {olc::Key::K3, {"3", "#", "3", "3"}},
+                {olc::Key::K4, {"4", "$", "4", "4"}},
+                {olc::Key::K5, {"5", "%", "5", "5"}},
+                {olc::Key::K6, {"6", "^", "6", "6"}},
+                {olc::Key::K7, {"7", "&", "7", "7"}},
+                {olc::Key::K8, {"8", "*", "8", "8"}},
+                {olc::Key::K9, {"9", "(", "9", "9"}},
+
+                {olc::Key::NP0, {"0", "0", "0", "0"}},
+                {olc::Key::NP1, {"1", "1", "1", "1"}},
+                {olc::Key::NP2, {"2", "2", "2", "2"}},
+                {olc::Key::NP3, {"3", "3", "3", "3"}},
+                {olc::Key::NP4, {"4", "4", "4", "4"}},
+                {olc::Key::NP5, {"5", "5", "5", "5"}},
+                {olc::Key::NP6, {"6", "6", "6", "6"}},
+                {olc::Key::NP7, {"7", "7", "7", "7"}},
+                {olc::Key::NP8, {"8", "8", "8", "8"}},
+                {olc::Key::NP9, {"9", "9", "9", "9"}},
+                {olc::Key::NP_MUL, {"*", "*", "*", "*"}},
+                {olc::Key::NP_DIV, {"/", "/", "/", "/"}},
+                {olc::Key::NP_ADD, {"+", "+", "+", "+"}},
+                {olc::Key::NP_SUB, {"-", "-", "-", "-"}},
+                {olc::Key::NP_DECIMAL, {".", ".", ".", "."}},
+
+                {olc::Key::PERIOD, {".", ">", ".", "."}},
+                {olc::Key::EQUALS, {"=", "+", "=", "="}},
+                {olc::Key::COMMA, {",", "<", ",", ","}},
+                {olc::Key::MINUS, {"-", "_", "-", "-"}},
+                {olc::Key::SPACE, {" ", " ", " ", " "}},
+                {olc::Key::ENTER, {"\n", "\n ", "\n", "\n"}},
+
+                {olc::Key::OEM_1, {";", ":", ";", ";"}},
+                {olc::Key::OEM_2, {"/", "?", "/", "/"}},
+                {olc::Key::OEM_3, {"\'","\"", "\'", "\'"}},
+                {olc::Key::OEM_4, {"[", "{", "[", "["}},
+                {olc::Key::OEM_5, {"\\", "|", "\\", "\\"}},
+                {olc::Key::OEM_6, {"]", "}", "]", "]"}},
+                {olc::Key::OEM_7, {"#", "~", "#", "#"}},
+
+                // Give these keys glyphs so they can be interpreted in text editing
+                {olc::Key::TAB, {"\t", "\t", "\t", "\t"}},
+                {olc::Key::BACK, {"\b", "\b", "\b", "\b"}},
+                {olc::Key::DEL, {"_X", "_X", "_X", "_X"}},
+                {olc::Key::LEFT, {"_L", "_L", "_L", "_L"}},
+                {olc::Key::RIGHT, {"_R", "_R", "_R", "_R"}},
+                {olc::Key::UP, {"_U", "_U", "_U", "_U"}},
+                {olc::Key::DOWN, {"_D", "_D", "_D", "_D"}},
+            };
+        }
+    }
+
+    const Button& Keyboard::GetKey(const olc::Key key) const
+    {
+		return keys.at(size_t(key));
+    }
+
+    const std::vector<olc::Key>& Keyboard::GetKeyCache() const
+    {
+		return keyCache[nKeyCacheIndex ^ 0x01]; // Return the inactive cache
+    }
+
+    const std::string Keyboard::GetKeyGlyph(const olc::Key key, const bool shift, const bool ctrl, const bool alt) const
+    {
+        if (mapKeyGlyphs.contains(key))
+        {
+            if(shift)
+                return mapKeyGlyphs.at(key).modShift;
+            else if(ctrl)
+                return mapKeyGlyphs.at(key).modCtrl;
+            else if(alt)
+                return mapKeyGlyphs.at(key).modAlt;
+            else
+				return mapKeyGlyphs.at(key).modNone;
+        }
+
+        return "";
+    }
+
+    void Keyboard::SetKey(const olc::Key key, bool state)
+    {
+        keys_new[size_t(key)] = state;
+
+        // Update key cache
+        if (state)
+        {
+            keyCache[nKeyCacheIndex].push_back(key);
+        }
+	}
+
+   
+    void olc::hw::Keyboard::UpdateState()
+    {
+        for (size_t i = 0; i < keys.size(); i++)
+        {
+            keys[i].bPressed = false;
+            keys[i].bReleased = false;
+            if (keys_new[i] != keys_old[i])
+            {
+                if (keys_new[i])
+                {
+                    keys[i].bPressed = !keys[i].bHeld;
+                    keys[i].bHeld = true;
+                }
+                else
+                {
+                    keys[i].bReleased = true;
+                    keys[i].bHeld = false;
+                }
+            }
+            keys_old[i] = keys_new[i];
+        }
+
+        // Clear the inactive cache
+        keyCache[nKeyCacheIndex ^ 0x01].clear();
+
+        // Swap active cache index
+        nKeyCacheIndex ^= 0x01;
+    }
+}
+#define PGE_HW_KEYBOARD_IMPLEMENTED 1
+#endif
+
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_WINDOW_IMPLEMENTED)
 namespace olc
 {
 	Window::Window()
 	{
 		nUniqueID = pgeguts::CreateUID();
+		
 	}
 
 	Window::~Window()
@@ -13848,6 +14380,7 @@ namespace olc
 	void Window::LinkToHost(olc::host::Host* host)
 	{
 		pHost = host;
+		keyboard.UseKeyboardLayout(pHost->GetKeyboardLayout());
 		sFrameTitle = "OneLoneCoder.com - Pixel Game Engine 3";
 		pHost->UpdateWindowFrameTitle(this);
 	}
@@ -13891,6 +14424,12 @@ namespace olc
 	bool Window::olc_OnWindowClose()
 	{
 		bRequestToClose = true;		
+		return true;
+	}
+
+	bool Window::olc_OnKeyPress(const olc::Key key, const bool bPressed)
+	{
+		keyboard.SetKey(key, bPressed);
 		return true;
 	}
 

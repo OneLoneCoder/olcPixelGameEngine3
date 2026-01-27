@@ -94,6 +94,8 @@ namespace olc
 			// Wait for entire host desktop refresh (for smooooth vsync)
 			virtual bool SyncWithDesktopComposite() = 0;
 
+			virtual olc::KeyboardLayout GetKeyboardLayout() const = 0;
+
 		protected:
 			HostError lastError = HostError::None;
 		};

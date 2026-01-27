@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\..\examples\olcPGE3_Shockwave.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\examples\olcPGE3_Keyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\examples\assets\minsanity_texture.png">

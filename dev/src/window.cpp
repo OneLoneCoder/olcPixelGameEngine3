@@ -10,6 +10,7 @@ namespace olc
 	Window::Window()
 	{
 		nUniqueID = pgeguts::CreateUID();
+		
 	}
 
 	Window::~Window()
@@ -19,6 +20,7 @@ namespace olc
 	void Window::LinkToHost(olc::host::Host* host)
 	{
 		pHost = host;
+		keyboard.UseKeyboardLayout(pHost->GetKeyboardLayout());
 		sFrameTitle = "OneLoneCoder.com - Pixel Game Engine 3";
 		pHost->UpdateWindowFrameTitle(this);
 	}
@@ -62,6 +64,12 @@ namespace olc
 	bool Window::olc_OnWindowClose()
 	{
 		bRequestToClose = true;		
+		return true;
+	}
+
+	bool Window::olc_OnKeyPress(const olc::Key key, const bool bPressed)
+	{
+		keyboard.SetKey(key, bPressed);
 		return true;
 	}
 

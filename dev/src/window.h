@@ -7,7 +7,6 @@
 #include <array>
 #include <vector>
 #include <memory>
-
 //! END STDHEADER
 
 //! START CUSTOMHEADER GLOBAL
@@ -16,6 +15,7 @@
 #include "vector2d.h"
 #include "draw2d.h"
 #include "hw_mouse.h"
+#include "hw_keyboard.h"
 //! END CUSTOMHEADER
 
 //! START DECLARATION
@@ -66,6 +66,7 @@ namespace olc
 	namespace hw
 	{
 		class Mouse;
+		class Keyboard;
 	}
 
 	class Window
@@ -94,6 +95,7 @@ namespace olc
 		virtual bool olc_OnWindowClose();
 
 		// Set Keyboard State
+		virtual bool olc_OnKeyPress(const olc::Key key, const bool bPressed);
 
 
 
@@ -128,6 +130,7 @@ namespace olc
 
 	protected:
 		olc::hw::Mouse mouse;
+		olc::hw::Keyboard keyboard;
 
 	};
 }

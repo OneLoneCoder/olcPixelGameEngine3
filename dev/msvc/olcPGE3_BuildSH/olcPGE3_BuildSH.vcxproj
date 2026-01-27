@@ -49,13 +49,19 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\examples\olcPGE3_Keyboard.cpp" />
     <ClCompile Include="..\..\..\examples\olcPGE3_PixelShaders.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\examples\olcPGE3_Shockwave.cpp" />
+    <ClCompile Include="..\..\..\examples\olcPGE3_Shockwave.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\examples\olcPGE3_TextFontMap.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -198,7 +204,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>make_pge3.bat</Command>
+      <Command> $(ProjectDir)make_pge3.bat</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create single header library</Message>
@@ -221,7 +227,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>make_pge3.bat</Command>
+      <Command> $(ProjectDir)make_pge3.bat</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create single header library</Message>
@@ -240,7 +246,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>make_pge3.bat</Command>
+      <Command> $(ProjectDir)make_pge3.bat</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create single header library</Message>
@@ -263,7 +269,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>make_pge3.bat</Command>
+      <Command> $(ProjectDir)make_pge3.bat</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Create single header library</Message>

@@ -218,5 +218,8 @@
     <ClCompile Include="..\src\host_lin_wayland.cpp">
       <Filter>Hosts\Wayland Specific</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\hw_keyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
