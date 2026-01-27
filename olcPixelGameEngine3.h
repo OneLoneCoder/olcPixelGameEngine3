@@ -174,7 +174,7 @@
 		#define OLC_HOST OLC_HOST_WINDOWS
 	#endif
 
-	#if defined(__linux__) || defined(__FreeBSD__)
+	#if (defined(__linux__) || defined(__FreeBSD__)) && !defined(__ANDROID__)
 		// Note: Assumes X11 atm
 		#define OLC_HOST OLC_HOST_LINUX_X11
 	#endif
@@ -212,6 +212,7 @@
 #define OLC_IMAGELOADER_WINGDI 2
 #define OLC_IMAGELOADER_MACOS 3
 #define OLC_IMAGELOADER_LIB_PNG 4
+#define OLC_IMAGELOADER_NDK_IMAGEDECODER 5
 
 #if OLC_HOST == OLC_HOST_MACOS
 	#undef OLC_IMAGELOADER
@@ -226,6 +227,11 @@
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 	#undef OLC_IMAGELOADER
 	#define OLC_IMAGELOADER OLC_IMAGELOADER_LIB_PNG
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+    #undef OLC_IMAGELOADER
+    #define OLC_IMAGELOADER OLC_IMAGELOADER_NDK_IMAGEDECODER
 #endif
 
 #if !defined(OLC_IMAGELOADER)
@@ -2825,6 +2831,10 @@ namespace olc
 	#define FRIENDLY_HOST Host_Web_Emscripten
 #endif
 
+#if OLC_HOST == OLC_HOST_ANDROID
+    #define FRIENDLY_HOST Host_Android
+#endif
+
 namespace olc
 {
 	namespace host
@@ -2946,7 +2956,7 @@ namespace olc
 			return uuid++;
 		}
 		#endif
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+		#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
 		inline size_t CreateUID()
 		{
 			return uuid++;
@@ -3003,6 +3013,11 @@ namespace olc
 #endif
 
 #if !defined(PGE_CORE_DECLARED)
+
+#if OLC_HOST == OLC_HOST_ANDROID
+#include <game-activity/native_app_glue/android_native_app_glue.h>
+#endif
+
 namespace olc
 {
 	// A grouping of all settable PGE properties
@@ -3114,9 +3129,19 @@ namespace olc
 
 	public:
 		// Construct the PGE main engine window with traditional parameters
-		bool Construct(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen = false);
+		bool Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+            struct android_app* app,
+#endif
+            const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen = false
+        );
 		// Construct the PGE main engine window with verbose configuration structure
-		bool Construct(const PGEConfig& cfg = PGEConfig{});
+		bool Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+            struct android_app* app,
+#endif
+            const PGEConfig& cfg = PGEConfig{}
+        );
 		
 		// Start the PGE main engine loop (on its own thread)
 		bool Start();
@@ -3144,11 +3169,14 @@ namespace olc
 		std::chrono::duration<double> durationTotalElapsed{ 0 };
 		size_t frameCount = 0;
 
-
+        struct android_app* androidApp;
 
 		// Core Thread
 		std::thread coreThread;
 		std::atomic<bool> coreActive;
+
+        bool EngineInit();
+        void EngineLoop();
 		void EngineThread();
 
 		// These interfaces are created dynamically by the PGE core
@@ -4681,6 +4709,41 @@ namespace olc::host
 
 #endif
 
+#if OLC_HOST == OLC_HOST_ANDROID
+
+#include <game-activity/native_app_glue/android_native_app_glue.h>
+#include <android/log.h>
+
+namespace olc::host
+{
+    class Host_Android : public olc::host::Host
+    {
+    private:
+        struct android_app* olc_App = nullptr;
+    public:
+        bool StartSystemEventLoop(bool bBlockIfPossible) override;
+        bool AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen) override;
+        bool CloseWindowFrame(olc::Window* pWindow) override;
+        bool UpdateWindowFrameTitle(olc::Window* pWindow) override;
+
+        std::vector<void*> GetHostWindowDescriptor(olc::Window* pWindow) override;
+
+        bool ConnectHostResourceToRenderer() override;
+
+        // Wait for entire host desktop refresh (for smooooth vsync)
+        bool SyncWithDesktopComposite() override;
+
+        void OnAppCmd(struct android_app* app, int32_t cmd);
+        void SetAndridApp(struct android_app* app);
+
+        bool IsInitialized() { return initialized; }
+    protected:
+        olc::Window* pgeWindow = nullptr;
+        std::atomic<bool> initialized {false};
+    };
+}
+#endif
+
 #if OLC_GPU == OLC_GPU_OPENGL33
 
 #if OLC_HOST == OLC_HOST_WINDOWS
@@ -4705,7 +4768,6 @@ namespace olc::host
 	#include <GL/gl.h>
 
 	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(eglGetProcAddress(#t))
-
 #endif
 
 #if OLC_HOST == OLC_HOST_MACOS
@@ -4734,6 +4796,19 @@ namespace olc::host
 	#define GL_CLAMP GL_CLAMP_TO_EDGE
 
 	#define OGL_LOAD(t) ::t
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+    #include <EGL/egl.h>
+    #include <GLES3/gl3.h>
+    #define GL_GLEXT_PROTOTYPES
+    #include <GLES3/gl3ext.h>
+    #define CALLSTYLE
+    #undef GL_CLAMP
+    #define GL_CLAMP GL_CLAMP_TO_EDGE
+    #define GL_LINE 0
+    #define GL_FILL 0
+    #define OGL_LOAD(t) reinterpret_cast<t##_t*>(eglGetProcAddress(#t))
 #endif
 
 #if !defined(CALLSTYLE)
@@ -4771,7 +4846,7 @@ namespace olc
 		typedef X11::GLXContext glRenderContext_t;
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 	typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei size, const GLchar *const * string, const GLint * length);
 	typedef void glDeviceContext_t;
 	typedef struct
@@ -5052,7 +5127,7 @@ namespace olc
 		
 		protected: // These may need some thinking about re multiple window
 			//olc::apis::opengl::glDeviceContext_t glDeviceContext = 0;
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 	olc::apis::opengl::glRenderContext_t glRenderContext;
 #else
 	olc::apis::opengl::glRenderContext_t glRenderContext = 0;
@@ -5211,6 +5286,43 @@ namespace olc::imload
 }
 
 #define PGE_IMAGELOADER_LIB_PNG_DECLARED 1
+#endif
+#endif
+
+#if OLC_HOST == OLC_HOST_ANDROID
+#include <android/asset_manager.h>
+
+#if !defined(PGE_IMAGELOADER_NDK_IMAGEDECODER_DECLARED)
+namespace olc::imload
+{
+
+    // Create an image resource based on an image file asset
+    class ImageLoader_NDKImageDecoder : public ImageLoader
+    {
+    public:
+        ImageLoader_NDKImageDecoder() = default;
+        ImageLoader_NDKImageDecoder(AAssetManager* assetManager) : assetManager(assetManager) {}
+
+        // Create an image resource based on an image file asset on disk
+        bool CreateImageFromFile(olc::Image& image, const std::string& sFileName) override;
+
+        // Create an image resource based on an image file asset in memory
+        bool CreateImageFromMemory(olc::Image& image, const uint8_t* data, const size_t bytes) override;
+
+        // Create an image resource based on an image file asset in memory
+        bool CreateImageFromMemory(olc::Image& image, const std::vector<uint8_t>& data) override;
+
+        // Store an image as a file asset on disk
+        bool WriteImageToFile(const olc::Image& image, const std::string& sFileName) override;
+
+        // Store an image as a file asset in memory
+        bool WriteImageToMemoryFile(olc::Image& image, const std::vector<uint8_t>& data) override;
+
+    protected:
+        AAssetManager* assetManager = nullptr;
+    };
+}
+#define PGE_IMAGELOADER_NDK_IMAGEDECODER_DECLARED 1
 #endif
 #endif
 
@@ -9211,6 +9323,149 @@ namespace olc::host
 }
 #endif
 
+#if OLC_HOST == OLC_HOST_ANDROID
+namespace olc::host
+{
+    static void Android_onAppCmd(struct android_app* app, int32_t cmd)
+    {
+        auto host = reinterpret_cast<olc::host::Host_Android*>(app->userData);
+        host->OnAppCmd(app, cmd);
+    }
+
+    static bool Android_motionEventFilter(const GameActivityMotionEvent* event)
+    {
+        return (event->source & AINPUT_SOURCE_TOUCHSCREEN) || (event->source & AINPUT_SOURCE_MOUSE);
+    }
+
+    bool Host_Android::StartSystemEventLoop(bool bBlockIfPossible)
+    {
+        int events;
+        struct android_poll_source* source = nullptr;
+
+        while (ALooper_pollOnce(
+            !initialized ? -1 : 0,
+            nullptr,
+            &events,
+            (void**)&source
+        ) >= 0) {
+            if (source) source->process(olc_App, source);
+        }
+
+        if (!initialized) return false;
+
+        android_input_buffer* inputBuffer = android_app_swap_input_buffers(olc_App);
+        if (inputBuffer) {
+            // Process motion events (touch, mouse, joystick)
+            for (int i = 0; i < inputBuffer->motionEventsCount; ++i) {
+                GameActivityMotionEvent* motionEvent = &inputBuffer->motionEvents[i];
+                switch (motionEvent->action & AMOTION_EVENT_ACTION_MASK)
+                {
+                    case AMOTION_EVENT_ACTION_DOWN:
+                    case AMOTION_EVENT_ACTION_POINTER_DOWN:
+                        // Only the first button for now.
+                        pgeWindow->olc_OnMouseButton(motionEvent->actionButton, true);
+                        break;
+                    case AMOTION_EVENT_ACTION_UP:
+                    case AMOTION_EVENT_ACTION_POINTER_UP:
+                        // Only the first button for now.
+                        pgeWindow->olc_OnMouseButton(motionEvent->actionButton, false);
+                        break;
+                    case AMOTION_EVENT_ACTION_MOVE:
+                    case AMOTION_EVENT_ACTION_HOVER_MOVE:
+                        if (motionEvent->pointerCount > 0)
+                        {
+                            pgeWindow->olc_OnMouseMove({
+                               static_cast<int32_t>(GameActivityPointerAxes_getX(
+                                   &motionEvent->pointers[0])),
+                               static_cast<int32_t>(GameActivityPointerAxes_getY(
+                                   &motionEvent->pointers[0])),
+                           });
+                        }
+                        break;
+                }
+            }
+
+            // TODO: Process other input events (keyboard, controller)
+
+            android_app_clear_motion_events(inputBuffer);
+            android_app_clear_key_events(inputBuffer);
+        }
+
+        if (olc_App->destroyRequested != 0) return false;
+
+        return true;
+    }
+
+    void Host_Android::OnAppCmd(struct android_app *app, int32_t cmd)
+    {
+        auto host = reinterpret_cast<olc::host::Host_Android*>(app->userData);
+        switch (cmd) {
+            case APP_CMD_WINDOW_RESIZED:
+                host->pgeWindow->olc_OnWindowSize({
+                  ANativeWindow_getWidth(app->window),
+                  ANativeWindow_getHeight(app->window)
+                });
+                break;
+            case APP_CMD_INIT_WINDOW:
+                host->initialized = app->window != nullptr;
+                __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "APP_CMD_INIT_WINDOW received with Window");
+                break;
+            case APP_CMD_TERM_WINDOW: {
+                host->pgeWindow->olc_OnWindowClose();
+            } break;
+            case APP_CMD_GAINED_FOCUS: {
+                host->pgeWindow->olc_OnMouseFocus(true);
+            } break;
+            case APP_CMD_LOST_FOCUS: {
+                host->pgeWindow->olc_OnMouseFocus(false);
+            } break;
+            default: break;
+        }
+    }
+
+    bool Host_Android::AddWindowFrame(olc::Window *pWindow, const vi2d &vWindowPos,
+                                      const vi2d &vWindowSize, const bool bFullScreen)
+    {
+        pgeWindow = pWindow;
+        return true;
+    }
+
+    bool Host_Android::CloseWindowFrame(olc::Window *pWindow)
+    {
+        return true;
+    }
+
+    bool Host_Android::UpdateWindowFrameTitle(olc::Window *pWindow)
+    {
+        return true;
+    }
+
+    std::vector<void*> Host_Android::GetHostWindowDescriptor(olc::Window *pWindow)
+    {
+        return { reinterpret_cast<void*>(olc_App->window) };
+    }
+
+    bool Host_Android::ConnectHostResourceToRenderer()
+    {
+        return true;
+    }
+
+    bool Host_Android::SyncWithDesktopComposite()
+    {
+        return true;
+    }
+
+    void Host_Android::SetAndridApp(struct android_app *app)
+    {
+        olc_App = app;
+        olc_App->userData = this;
+        olc_App->onAppCmd = Android_onAppCmd;
+
+        android_app_set_motion_event_filter(olc_App, Android_motionEventFilter);
+    }
+}
+#endif
+
 #define PGE_HOST_IMPLEMENTED 1
 #endif
 
@@ -9310,17 +9565,23 @@ namespace olc::apis::opengl
 		bLoaded &= (_glVertexAttribPointer = OGL_LOAD(glVertexAttribPointer)) != nullptr;
 		bLoaded &= (_glEnableVertexAttribArray = OGL_LOAD(glEnableVertexAttribArray)) != nullptr;
 		bLoaded &= (_glUseProgram = OGL_LOAD(glUseProgram)) != nullptr;
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
-		bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
-		bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
-		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
-		bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
-		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
-#else
-		bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArrayOES)) != nullptr;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+        bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArrayOES)) != nullptr;
 		bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArraysOES)) != nullptr;
 		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffersEXT)) != nullptr;
 		// bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
+		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
+#elif OLC_HOST == OLC_HOST_ANDROID
+        bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
+        bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
+        bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
+        // bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
+        bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
+#else
+        bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
+		bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
+		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
+		bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
 		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
 #endif
 		bLoaded &= (_glGetShaderInfoLog = OGL_LOAD(glGetShaderInfoLog)) != nullptr;
@@ -9410,8 +9671,10 @@ namespace olc::apis::opengl
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
+#if OLC_HOST != OLC_HOST_ANDROID
 		::glTexEnvf(target, pname, param);
 		CheckError();
+#endif
 	}
 
 	void gl::glDeleteTextures(GLsizei n, const GLuint* textures)
@@ -9488,7 +9751,7 @@ namespace olc::apis::opengl
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		::glGetTexImage(target, level, format, type, pixels);
 		CheckError();
 #endif
@@ -9502,7 +9765,7 @@ namespace olc::apis::opengl
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		::glPolygonMode(face, mode);
 		CheckError();
 #endif
@@ -9692,7 +9955,7 @@ namespace olc::apis::opengl
 
 	void gl::glTexImage2DMultisample(GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		_glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);
 		CheckError();
 #endif
@@ -9751,7 +10014,7 @@ namespace olc::gpu
 
 	// === PIXEL SHADER PGE DEFAULTS ===
 	std::string Shader::static_PS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 R"(#version 330 core
 )"
 #else
@@ -9790,7 +10053,7 @@ void main()
 	
 	// === VERTEX SHADER PGE DEFAULTS ===
 	std::string Shader::static_VS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 R"(#version 330 core
 )"
 #else
@@ -10029,9 +10292,13 @@ void main()
 
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN
-	EGLNativeWindowType window_handle = NULL;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+    #if OLC_HOST == OLC_HOST_ANDROID
+        EGLNativeWindowType window_handle = reinterpret_cast<ANativeWindow*>(os_win_id[0]);
+    #else
+        EGLNativeWindowType window_handle = NULL;
+    #endif
 	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
 #else
 	const auto wayland_window = reinterpret_cast<olc::host::WaylandWindow*>(os_win_id[0]);
@@ -10039,7 +10306,22 @@ void main()
 	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(os_win_id[1]);
 #endif
 
-	EGLint const attribute_list[] = {EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8, EGL_DEPTH_SIZE, 16, EGL_SAMPLE_BUFFERS, 1, EGL_SAMPLES, OLC_MSAA_SAMPLES, EGL_NONE};
+    EGLint const attribute_list[] = {
+#if OLC_HOST == OLC_HOST_ANDROID
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+#endif
+        EGL_RED_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_BLUE_SIZE, 8,
+        EGL_ALPHA_SIZE, 8,
+        EGL_DEPTH_SIZE, 16,
+#if OLC_HOST != OLC_HOST_ANDROID
+        EGL_SAMPLE_BUFFERS, 1,
+        EGL_SAMPLES, OLC_MSAA_SAMPLES,
+#endif
+        EGL_NONE
+    };
 	EGLint const context_config[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_NONE};
 	EGLint num_config;
 
@@ -10159,7 +10441,7 @@ void main()
 		gl.glGenFramebuffers(1, &nResolveFBO_Draw);
 		gl.glGenFramebuffers(1, &nResolveFBO_Read);
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		gl.glEnable(GL_TEXTURE_2D); // Turn on texturing
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #endif
@@ -10185,7 +10467,7 @@ void main()
 		X11::glXMakeCurrent(display, 0, NULL);
 		X11::glXDestroyContext(display, glRenderContext);
 #endif
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 		eglMakeCurrent(glRenderContext.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		eglDestroyContext(glRenderContext.display, glRenderContext.context);
 		eglDestroySurface(glRenderContext.display, glRenderContext.surface);
@@ -10226,13 +10508,13 @@ void main()
 			return false;
 		}
 #endif
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 	if(!eglMakeCurrent(glRenderContext.display, glRenderContext.surface, glRenderContext.surface, glRenderContext.context))
 	{
 		lastError = RendererError::FailedToSwitchRenderContext;
 		return false;
 	}
-#endif		
+#endif
 		return true;
 	}
 
@@ -10332,10 +10614,8 @@ void main()
 			mapTextureToRenderbuffer[id] = rboId;
 		}
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
-#if OLC_HOST != OLC_HOST_MACOS		
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID
 		gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-#endif
 #endif
 
 		mapTextureSizes[id] = vSize;
@@ -10390,7 +10670,7 @@ void main()
 		// which has been blitted to via ResolveMSAA if its an MSAA texture
 		gl.glBindTexture(GL_TEXTURE_2D, image.GetGPUID());
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		gl.glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.Data());
 #else		
 		gl.glReadPixels(0, 0, image.Size().x, image.Size().y, GL_RGBA, GL_UNSIGNED_BYTE, image.Data());
@@ -10849,8 +11129,9 @@ void main()
 	eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
 		eglSwapInterval(glRenderContext.display, bVerticalSyncNow ? 1 : 0);
+		eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
 #endif
 
 		return true;
@@ -12948,18 +13229,33 @@ namespace olc
 	{
 	}
 
-	bool PixelGameEngine::Construct(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen)
+	bool PixelGameEngine::Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+        struct android_app* app,
+#endif
+        const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize, bool bFullScreen
+    )
 	{
 		config.vScreenSize = vScreenSize;
 		config.vPixelSize = vPixelSize;
 		config.bFullScreen = bFullScreen;
-
+#if OLC_HOST == OLC_HOST_ANDROID
+        androidApp = app;
+#endif
 		return true;
 	}
 
-	bool PixelGameEngine::Construct(const PGEConfig& cfg)
+	bool PixelGameEngine::Construct(
+#if OLC_HOST == OLC_HOST_ANDROID
+        struct android_app* app,
+#endif
+        const PGEConfig& cfg
+    )
 	{		
 		config = cfg;
+#if OLC_HOST == OLC_HOST_ANDROID
+        androidApp = app;
+#endif
 		return true;
 	}
 
@@ -12981,7 +13277,12 @@ namespace olc
 		#endif
 		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
 		host = std::make_unique<olc::host::Host_Web_Emscripten>();
-		#endif
+        #endif
+        #if OLC_HOST == OLC_HOST_ANDROID
+        host = std::make_unique<olc::host::Host_Android>();
+        auto hostPtr = (dynamic_cast<olc::host::Host_Android*>(host.get()));
+        hostPtr->SetAndridApp(androidApp);
+        #endif
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_NO
 		// Create OS window on this thread
 		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
@@ -12989,7 +13290,8 @@ namespace olc
 		// at least to initialise teh rendering subsystem... sigh.
 		coreActive = true;
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+		// Create EngineThread
 		coreThread = std::thread(&PixelGameEngine::EngineThread, this);
 		// Handle window events on this thread (and block)
 		host->StartSystemEventLoop(true);		
@@ -12997,8 +13299,32 @@ namespace olc
 		coreActive = false;
 		// Wait for engine thread to terminate
 		coreThread.join();
+#elif OLC_HOST == OLC_HOST_ANDROID
+        // We need to wait for the APP_CMD_INIT_WINDOW command before starting the loop
+        while (!hostPtr->IsInitialized())
+        {
+            __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Waiting window creation...");
+            host->StartSystemEventLoop(false);
+        }
+
+        __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initializing...");
+
+        if (!EngineInit())
+        {
+            return false;
+        }
+
+        __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID", "Initialized Successfully");
+
+        while (coreActive)
+        {
+            if (!host->StartSystemEventLoop(false)) {
+                coreActive = false;
+            }
+            PixelGameEngine::CoreUpdate(this);
+        }
 #else
-		EngineThread();
+        EngineThread();
 #endif
 
 #else
@@ -13139,100 +13465,118 @@ namespace olc
 	
 	void PixelGameEngine::EngineThread()
 	{
-		using namespace std::chrono_literals;
-		timeFrame2 = std::chrono::steady_clock::now();
-		timeFrame1 = std::chrono::steady_clock::now();
+        if (!EngineInit())
+        {
+            return;
+        }
+        EngineLoop();
+	}
+
+    bool PixelGameEngine::EngineInit()
+    {
+        using namespace std::chrono_literals;
+        timeFrame2 = std::chrono::steady_clock::now();
+        timeFrame1 = std::chrono::steady_clock::now();
 
 #if OLC_MULTIWINDOW == OLC_MULTIWINDOW_YES
-		// Create Primary Window on EngineThread, event loop also exists for all windows
+        // Create Primary Window on EngineThread, event loop also exists for all windows
 		// on this thread, and all windows will be created on this thread
 		host->AddWindowFrame(this, { 30,30 }, config.vPixelSize * config.vScreenSize, false);
 #endif
-		
-		// Initialise ImageLoader Interface
-		#if OLC_HOST == OLC_HOST_WINDOWS
-		imageloader = std::make_unique<olc::imload::ImageLoader_WinGDI>();
-		#endif
 
-		// Initialise ImageLoader Interface
-		#if OLC_HOST == OLC_HOST_MACOS
-		imageloader = std::make_unique<olc::imload::ImageLoader_MacOS>();
-		#endif
+        // Initialise ImageLoader Interface
+#if OLC_HOST == OLC_HOST_WINDOWS
+        imageloader = std::make_unique<olc::imload::ImageLoader_WinGDI>();
+#endif
 
-		#if OLC_HOST == OLC_HOST_LINUX_X11
-		imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
-		#endif
+        // Initialise ImageLoader Interface
+#if OLC_HOST == OLC_HOST_MACOS
+        imageloader = std::make_unique<olc::imload::ImageLoader_MacOS>();
+#endif
 
-		#if OLC_HOST == OLC_HOST_LINUX_WAYLAND
-		imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
-		#endif
+#if OLC_HOST == OLC_HOST_LINUX_X11
+        imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
+#endif
 
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
-		imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
-		#endif
+#if OLC_HOST == OLC_HOST_LINUX_WAYLAND
+        imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
+#endif
 
-		// Initialise GPU Interface	- This thread is the context
-		olc::gpu::RendererConfig cfgRenderer;
-		cfgRenderer.VerticalSync = config.bVSync;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+        imageloader = std::make_unique<olc::imload::ImageLoader_LibPNG>();
+#endif
 
-		gpu = std::make_unique<olc::gpu::Renderer_OGL33>();
+#if OLC_HOST == OLC_HOST_ANDROID
+        imageloader = std::make_unique<olc::imload::ImageLoader_NDKImageDecoder>(
+            androidApp->activity->assetManager
+        );
+#endif
 
-		// Link this windows devices
-		LinkToHost(host.get());
-		LinkToRenderer(gpu.get());
-		LinkToImageLoader(imageloader.get());
+        // Initialise GPU Interface	- This thread is the context
+        olc::gpu::RendererConfig cfgRenderer;
+        cfgRenderer.VerticalSync = config.bVSync;
 
-		// The GPU device can be based upon the primary window configuration. This
-		// gives us completed gpu and host objects to pass to other windows as and
-		// when required
-		gpu->CreateDevice(host->GetHostWindowDescriptor(this), cfgRenderer);
-		if (gpu->GetLastError() != olc::gpu::RendererError::NoError)
-		{
-			//const auto e = gpu->GetLastError(); // For debug visibility
-			std::cout << "Error: Could not create Renderer\n";
-			return;
-		}
+        gpu = std::make_unique<olc::gpu::Renderer_OGL33>();
 
+        // Link this windows devices
+        LinkToHost(host.get());
+        LinkToRenderer(gpu.get());
+        LinkToImageLoader(imageloader.get());
 
-		
-		olc::ImageConfig cfg;
-		cfg.MSAA = config.bAntiAliasMainScreen;
-		CreateImage(GetDefaultImage(), config.vScreenSize, cfg);
-		
-
-		// Initialise Font System
-		olc::pgeguts::CreateClassicFont(this);
+        // The GPU device can be based upon the primary window configuration. This
+        // gives us completed gpu and host objects to pass to other windows as and
+        // when required
+        gpu->CreateDevice(host->GetHostWindowDescriptor(this), cfgRenderer);
+        if (gpu->GetLastError() != olc::gpu::RendererError::NoError)
+        {
+            //const auto e = gpu->GetLastError(); // For debug visibility
+            std::cout << "Error: Could not create Renderer\n";
+            return false;
+        }
 
 
-		draw.SetGPU(gpu.get());
-		gpu->ApplyDefaultShader();
-		draw.SetTarget(GetDefaultImage());
 
-		if (!OnUserCreate())
-		{
-			// Creation process signalled abort
-			return;
-		}
+        olc::ImageConfig cfg;
+        cfg.MSAA = config.bAntiAliasMainScreen;
+        CreateImage(GetDefaultImage(), config.vScreenSize, cfg);
 
 
-		
-		draw.ProcessGPUTasks();
-		draw.SetTarget(GetDefaultImage());
-
-		// Initialise Input Devices
+        // Initialise Font System
+        olc::pgeguts::CreateClassicFont(this);
 
 
-		durationFrameCount = 0s;
+        draw.SetGPU(gpu.get());
+        gpu->ApplyDefaultShader();
+        draw.SetTarget(GetDefaultImage());
 
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN
-			emscripten_set_main_loop_arg(PixelGameEngine::CoreUpdate, reinterpret_cast<void*>(this), 0, 1);
-		#else
-		while (coreActive)
-		{
-			PixelGameEngine::CoreUpdate(this);
-		}
-		#endif
-	}
+        if (!OnUserCreate())
+        {
+            // Creation process signalled abort
+            return false;
+        }
+
+        draw.ProcessGPUTasks();
+        draw.SetTarget(GetDefaultImage());
+
+        // Initialise Input Devices
+
+
+        durationFrameCount = 0s;
+
+        return true;
+    }
+
+    void PixelGameEngine::EngineLoop()
+    {
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+        emscripten_set_main_loop_arg(PixelGameEngine::CoreUpdate, reinterpret_cast<void*>(this), 0, 1);
+#else
+        while (coreActive)
+        {
+            PixelGameEngine::CoreUpdate(this);
+        }
+#endif
+    }
 }
 #define PGE_CORE_IMPLEMENTED 1
 #endif
@@ -13901,6 +14245,151 @@ namespace olc::imload
 
 }
 #endif
+#if OLC_HOST == OLC_HOST_ANDROID
+#include <android/imagedecoder.h>
+#include <android/log.h>
+#include <vector>
+
+namespace olc::imload
+{
+    bool ImageLoader_NDKImageDecoder::CreateImageFromFile(olc::Image& image, const std::string& sFileName)
+    {
+        AAsset* asset = AAssetManager_open(
+            assetManager,
+            sFileName.c_str(),
+            AASSET_MODE_BUFFER
+        );
+        if (!asset) {
+            return false;
+        }
+
+        AImageDecoder* decoder = nullptr;
+        int status = AImageDecoder_createFromAAsset(
+            asset,
+            &decoder
+        );
+
+        if (status != ANDROID_IMAGE_DECODER_SUCCESS || !decoder) {
+            AAsset_close(asset);
+            return false;
+        }
+
+        const AImageDecoderHeaderInfo* info =
+            AImageDecoder_getHeaderInfo(decoder);
+        if (!info) {
+            AImageDecoder_delete(decoder);
+            AAsset_close(asset);
+            return false;
+        }
+
+        image.Create({
+            AImageDecoderHeaderInfo_getWidth(info),
+            AImageDecoderHeaderInfo_getHeight(info)
+        });
+
+        AImageDecoder_setAndroidBitmapFormat(
+            decoder,
+            ANDROID_BITMAP_FORMAT_RGBA_8888
+        );
+        AImageDecoder_setUnpremultipliedRequired(decoder, true);
+
+        std::vector<uint8_t> pixels(image.Size().x * image.Size().y * 4);
+
+        status = AImageDecoder_decodeImage(
+            decoder,
+            pixels.data(),
+            image.Size().x * 4,
+            pixels.size()
+        );
+
+        AImageDecoder_delete(decoder);
+        AAsset_close(asset);
+
+        for (size_t i = 0; i < pixels.size(); i += 4) {
+            int32_t x = static_cast<int32_t>(i / 4) % image.Size().x;
+            int32_t y = static_cast<int32_t>(i / 4) / image.Size().x;
+            uint8_t r = pixels[i];
+            uint8_t g = pixels[i + 1];
+            uint8_t b = pixels[i + 2];
+            uint8_t a = pixels[i + 3];
+            image.Pixel({x, y}) = olc::Pixel(r, g, b, a);
+        }
+
+        return status == ANDROID_IMAGE_DECODER_SUCCESS;
+    }
+
+    bool ImageLoader_NDKImageDecoder::CreateImageFromMemory(Image &image, const uint8_t *data, const size_t bytes)
+    {
+        AImageDecoder* decoder = nullptr;
+        int status = AImageDecoder_createFromBuffer(
+            data,
+            bytes,
+            &decoder
+        );
+
+        if (status != ANDROID_IMAGE_DECODER_SUCCESS || !decoder) {
+            return false;
+        }
+
+        const AImageDecoderHeaderInfo* info =
+            AImageDecoder_getHeaderInfo(decoder);
+        if (!info) {
+            AImageDecoder_delete(decoder);
+            return false;
+        }
+
+        image.Create({
+         AImageDecoderHeaderInfo_getWidth(info),
+         AImageDecoderHeaderInfo_getHeight(info)
+        });
+
+        AImageDecoder_setAndroidBitmapFormat(
+            decoder,
+            ANDROID_BITMAP_FORMAT_RGBA_8888
+        );
+        AImageDecoder_setUnpremultipliedRequired(decoder, true);
+
+        std::vector<uint8_t> pixels(image.Size().x * image.Size().y * 4);
+
+        status = AImageDecoder_decodeImage(
+            decoder,
+            pixels.data(),
+            image.Size().x * 4,
+            pixels.size()
+        );
+
+        AImageDecoder_delete(decoder);
+
+        for (size_t i = 0; i < pixels.size(); i += 4) {
+            int32_t x = static_cast<int32_t>(i / 4) % image.Size().x;
+            int32_t y = static_cast<int32_t>(i / 4) / image.Size().x;
+            uint8_t r = pixels[i];
+            uint8_t g = pixels[i + 1];
+            uint8_t b = pixels[i + 2];
+            uint8_t a = pixels[i + 3];
+            image.Pixel({x, y}) = olc::Pixel(r, g, b, a);
+        }
+
+        return status == ANDROID_IMAGE_DECODER_SUCCESS;
+    }
+
+    bool ImageLoader_NDKImageDecoder::CreateImageFromMemory(Image &image, const std::vector<uint8_t> &data)
+    {
+        return CreateImageFromMemory(image, data.data(), data.size());
+    }
+
+    bool ImageLoader_NDKImageDecoder::WriteImageToFile(const Image &image, const std::string &sFileName)
+    {
+        // No solution for now
+        return false;
+    }
+
+    bool ImageLoader_NDKImageDecoder::WriteImageToMemoryFile(Image &image, const std::vector<uint8_t> &data)
+    {
+        return false;
+    }
+}
+#endif
 #define PGE_IMAGELOADER_IMPLEMENTED 1
 #endif
 
@@ -13921,4 +14410,3 @@ So you scrolled all this way huh ? In that case:
 */
 
 // Thank you for using olcPixelGameEngine! :)
-

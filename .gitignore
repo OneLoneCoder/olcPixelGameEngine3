@@ -62,7 +62,6 @@ build/
 /dev/android/build/
 /dev/android/app/build/
 /dev/android/.gradle/
-/dev/android/gradle/
 local.properties
 
 # Android Studio / IntelliJ
@@ -77,3 +76,6 @@ output.json
 obj/
 .externalNativeBuild/
 .cxx/
+
+# olcPixelGameEngine3.h from inside dev/android
+/dev/android/**/olcPixelGameEngine3.h
