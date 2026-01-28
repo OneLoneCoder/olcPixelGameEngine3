@@ -54,6 +54,7 @@ namespace olc::host
     protected:
         olc::Window* pgeWindow = nullptr;
         std::atomic<bool> initialized{false};
+        bool shiftOn = false;
     };
 
     class JNI

@@ -141,6 +141,7 @@ namespace olc::imload
 
     bool ImageLoader_NDKImageDecoder::WriteImageToMemoryFile(Image &image, const std::vector<uint8_t> &data)
     {
+        // No solution for now
         return false;
     }
 }

@@ -8,110 +8,125 @@ namespace olc::host
 {
     constexpr size_t ANDROID_KEY_MAX = 163;
 
-    static const std::array<Key, ANDROID_KEY_MAX> AndroidKeyMap = [] {
-        std::array<Key, ANDROID_KEY_MAX> map{};
-        map.fill(Key::NONE);
+
+    struct KeyEntry
+    {
+        olc::Key key;
+        bool shiftOn;
+    };
+
+    static const std::array<KeyEntry, ANDROID_KEY_MAX> AndroidKeyMap = [] {
+        std::array<KeyEntry, ANDROID_KEY_MAX> map{};
+        map.fill({Key::NONE, false});
 
         // Letters
-        map[AKEYCODE_A] = Key::A;
-        map[AKEYCODE_B] = Key::B;
-        map[AKEYCODE_C] = Key::C;
-        map[AKEYCODE_D] = Key::D;
-        map[AKEYCODE_E] = Key::E;
-        map[AKEYCODE_F] = Key::F;
-        map[AKEYCODE_G] = Key::G;
-        map[AKEYCODE_H] = Key::H;
-        map[AKEYCODE_I] = Key::I;
-        map[AKEYCODE_J] = Key::J;
-        map[AKEYCODE_K] = Key::K;
-        map[AKEYCODE_L] = Key::L;
-        map[AKEYCODE_M] = Key::M;
-        map[AKEYCODE_N] = Key::N;
-        map[AKEYCODE_O] = Key::O;
-        map[AKEYCODE_P] = Key::P;
-        map[AKEYCODE_Q] = Key::Q;
-        map[AKEYCODE_R] = Key::R;
-        map[AKEYCODE_S] = Key::S;
-        map[AKEYCODE_T] = Key::T;
-        map[AKEYCODE_U] = Key::U;
-        map[AKEYCODE_V] = Key::V;
-        map[AKEYCODE_W] = Key::W;
-        map[AKEYCODE_X] = Key::X;
-        map[AKEYCODE_Y] = Key::Y;
-        map[AKEYCODE_Z] = Key::Z;
+        map[AKEYCODE_A] = {Key::A, false};
+        map[AKEYCODE_B] = {Key::B, false};
+        map[AKEYCODE_C] = {Key::C, false};
+        map[AKEYCODE_D] = {Key::D, false};
+        map[AKEYCODE_E] = {Key::E, false};
+        map[AKEYCODE_F] = {Key::F, false};
+        map[AKEYCODE_G] = {Key::G, false};
+        map[AKEYCODE_H] = {Key::H, false};
+        map[AKEYCODE_I] = {Key::I, false};
+        map[AKEYCODE_J] = {Key::J, false};
+        map[AKEYCODE_K] = {Key::K, false};
+        map[AKEYCODE_L] = {Key::L, false};
+        map[AKEYCODE_M] = {Key::M, false};
+        map[AKEYCODE_N] = {Key::N, false};
+        map[AKEYCODE_O] = {Key::O, false};
+        map[AKEYCODE_P] = {Key::P, false};
+        map[AKEYCODE_Q] = {Key::Q, false};
+        map[AKEYCODE_R] = {Key::R, false};
+        map[AKEYCODE_S] = {Key::S, false};
+        map[AKEYCODE_T] = {Key::T, false};
+        map[AKEYCODE_U] = {Key::U, false};
+        map[AKEYCODE_V] = {Key::V, false};
+        map[AKEYCODE_W] = {Key::W, false};
+        map[AKEYCODE_X] = {Key::X, false};
+        map[AKEYCODE_Y] = {Key::Y, false};
+        map[AKEYCODE_Z] = {Key::Z, false};
 
         // Numbers
-        map[AKEYCODE_0] = Key::K0;
-        map[AKEYCODE_1] = Key::K1;
-        map[AKEYCODE_2] = Key::K2;
-        map[AKEYCODE_3] = Key::K3;
-        map[AKEYCODE_4] = Key::K4;
-        map[AKEYCODE_5] = Key::K5;
-        map[AKEYCODE_6] = Key::K6;
-        map[AKEYCODE_7] = Key::K7;
-        map[AKEYCODE_8] = Key::K8;
-        map[AKEYCODE_9] = Key::K9;
+        map[AKEYCODE_0] = {Key::K0, false};
+        map[AKEYCODE_1] = {Key::K1, false};
+        map[AKEYCODE_2] = {Key::K2, false};
+        map[AKEYCODE_3] = {Key::K3, false};
+        map[AKEYCODE_4] = {Key::K4, false};
+        map[AKEYCODE_5] = {Key::K5, false};
+        map[AKEYCODE_6] = {Key::K6, false};
+        map[AKEYCODE_7] = {Key::K7, false};
+        map[AKEYCODE_8] = {Key::K8, false};
+        map[AKEYCODE_9] = {Key::K9, false};
 
         // Numpad
-        map[AKEYCODE_NUMPAD_0] = Key::NP0;
-        map[AKEYCODE_NUMPAD_1] = Key::NP1;
-        map[AKEYCODE_NUMPAD_2] = Key::NP2;
-        map[AKEYCODE_NUMPAD_3] = Key::NP3;
-        map[AKEYCODE_NUMPAD_4] = Key::NP4;
-        map[AKEYCODE_NUMPAD_5] = Key::NP5;
-        map[AKEYCODE_NUMPAD_6] = Key::NP6;
-        map[AKEYCODE_NUMPAD_7] = Key::NP7;
-        map[AKEYCODE_NUMPAD_8] = Key::NP8;
-        map[AKEYCODE_NUMPAD_9] = Key::NP9;
-        map[AKEYCODE_NUMPAD_ADD] = Key::NP_ADD;
-        map[AKEYCODE_NUMPAD_SUBTRACT] = Key::NP_SUB;
-        map[AKEYCODE_NUMPAD_MULTIPLY] = Key::NP_MUL;
-        map[AKEYCODE_NUMPAD_DIVIDE] = Key::NP_DIV;
-        map[AKEYCODE_NUMPAD_DOT] = Key::NP_DECIMAL;
+        map[AKEYCODE_NUMPAD_0] = {Key::NP0, false};
+        map[AKEYCODE_NUMPAD_1] = {Key::NP1, false};
+        map[AKEYCODE_NUMPAD_2] = {Key::NP2, false};
+        map[AKEYCODE_NUMPAD_3] = {Key::NP3, false};
+        map[AKEYCODE_NUMPAD_4] = {Key::NP4, false};
+        map[AKEYCODE_NUMPAD_5] = {Key::NP5, false};
+        map[AKEYCODE_NUMPAD_6] = {Key::NP6, false};
+        map[AKEYCODE_NUMPAD_7] = {Key::NP7, false};
+        map[AKEYCODE_NUMPAD_8] = {Key::NP8, false};
+        map[AKEYCODE_NUMPAD_9] = {Key::NP9, false};
+        map[AKEYCODE_NUMPAD_ADD] = {Key::NP_ADD, false};
+        map[AKEYCODE_NUMPAD_SUBTRACT] = {Key::NP_SUB, false};
+        map[AKEYCODE_NUMPAD_MULTIPLY] = {Key::NP_MUL, false};
+        map[AKEYCODE_NUMPAD_DIVIDE] = {Key::NP_DIV, false};
+        map[AKEYCODE_NUMPAD_DOT] = {Key::NP_DECIMAL, false};
 
         // Function keys
-        map[AKEYCODE_F1] = Key::F1;
-        map[AKEYCODE_F2] = Key::F2;
-        map[AKEYCODE_F3] = Key::F3;
-        map[AKEYCODE_F4] = Key::F4;
-        map[AKEYCODE_F5] = Key::F5;
-        map[AKEYCODE_F6] = Key::F6;
-        map[AKEYCODE_F7] = Key::F7;
-        map[AKEYCODE_F8] = Key::F8;
-        map[AKEYCODE_F9] = Key::F9;
-        map[AKEYCODE_F10] = Key::F10;
-        map[AKEYCODE_F11] = Key::F11;
-        map[AKEYCODE_F12] = Key::F12;
+        map[AKEYCODE_F1] = {Key::F1, false};
+        map[AKEYCODE_F2] = {Key::F2, false};
+        map[AKEYCODE_F3] = {Key::F3, false};
+        map[AKEYCODE_F4] = {Key::F4, false};
+        map[AKEYCODE_F5] = {Key::F5, false};
+        map[AKEYCODE_F6] = {Key::F6, false};
+        map[AKEYCODE_F7] = {Key::F7, false};
+        map[AKEYCODE_F8] = {Key::F8, false};
+        map[AKEYCODE_F9] = {Key::F9, false};
+        map[AKEYCODE_F10] = {Key::F10, false};
+        map[AKEYCODE_F11] = {Key::F11, false};
+        map[AKEYCODE_F12] = {Key::F12, false};
 
         // Arrows
-        map[AKEYCODE_DPAD_UP] = Key::UP;
-        map[AKEYCODE_DPAD_DOWN] = Key::DOWN;
-        map[AKEYCODE_DPAD_LEFT] = Key::LEFT;
-        map[AKEYCODE_DPAD_RIGHT] = Key::RIGHT;
+        map[AKEYCODE_DPAD_UP] = {Key::UP, false};
+        map[AKEYCODE_DPAD_DOWN] = {Key::DOWN, false};
+        map[AKEYCODE_DPAD_LEFT] = {Key::LEFT, false};
+        map[AKEYCODE_DPAD_RIGHT] = {Key::RIGHT, false};
 
         // Common keys
-        map[AKEYCODE_SPACE] = Key::SPACE;
-        map[AKEYCODE_TAB] = Key::TAB;
-        map[AKEYCODE_ENTER] = Key::ENTER;
-        map[AKEYCODE_ESCAPE] = Key::ESCAPE;
-        map[AKEYCODE_DEL] = Key::BACK;
-        map[AKEYCODE_FORWARD_DEL] = Key::DEL;
+        map[AKEYCODE_SPACE] = {Key::SPACE, false};
+        map[AKEYCODE_TAB] = {Key::TAB, false};
+        map[AKEYCODE_ENTER] = {Key::ENTER, false};
+        map[AKEYCODE_ESCAPE] = {Key::ESCAPE, false};
+        map[AKEYCODE_DEL] = {Key::BACK, false};
+        map[AKEYCODE_FORWARD_DEL] = {Key::DEL, false};
 
         // Modifiers
-        map[AKEYCODE_SHIFT_LEFT] = Key::SHIFT;
-        map[AKEYCODE_SHIFT_RIGHT] = Key::SHIFT;
-        map[AKEYCODE_CTRL_LEFT] = Key::CTRL;
-        map[AKEYCODE_CTRL_RIGHT] = Key::CTRL;
-        map[AKEYCODE_CAPS_LOCK] = Key::CAPS_LOCK;
+        map[AKEYCODE_SHIFT_LEFT] = {Key::SHIFT, false};
+        map[AKEYCODE_SHIFT_RIGHT] = {Key::SHIFT, false};
+        map[AKEYCODE_CTRL_LEFT] = {Key::CTRL, false};
+        map[AKEYCODE_CTRL_RIGHT] = {Key::CTRL, false};
+        map[AKEYCODE_CAPS_LOCK] = {Key::CAPS_LOCK, false};
 
         // OEM-style punctuation
-        map[AKEYCODE_SEMICOLON] = Key::OEM_1;
-        map[AKEYCODE_SLASH] = Key::OEM_2;
-        map[AKEYCODE_GRAVE] = Key::OEM_3;
-        map[AKEYCODE_LEFT_BRACKET] = Key::OEM_4;
-        map[AKEYCODE_BACKSLASH] = Key::OEM_5;
-        map[AKEYCODE_RIGHT_BRACKET] = Key::OEM_6;
-        map[AKEYCODE_APOSTROPHE] = Key::OEM_7;
+        map[AKEYCODE_SEMICOLON] = {Key::OEM_1, false};
+        map[AKEYCODE_SLASH] = {Key::OEM_2, false};
+        map[AKEYCODE_GRAVE] = {Key::OEM_7, false};
+        map[AKEYCODE_LEFT_BRACKET] = {Key::OEM_4, false};
+        map[AKEYCODE_BACKSLASH] = {Key::OEM_5, false};
+        map[AKEYCODE_RIGHT_BRACKET] = {Key::OEM_6, false};
+        map[AKEYCODE_APOSTROPHE] = {Key::OEM_3, false};
+        map[AKEYCODE_EQUALS] = {Key::EQUALS, false};
+        map[AKEYCODE_COMMA] = {Key::COMMA, false};
+        map[AKEYCODE_MINUS] = {Key::MINUS, false};
+        map[AKEYCODE_PERIOD] = {Key::PERIOD, false};
+        map[AKEYCODE_PLUS] = {Key::EQUALS, true};
+        map[AKEYCODE_AT] = {Key::K2, true};
+        map[AKEYCODE_POUND] = {Key::K3, true};
+        map[AKEYCODE_STAR] = {Key::NP_MUL, false};
 
         return map;
     }();
@@ -227,18 +242,27 @@ namespace olc::host
         {
             int32_t keyCode = AKeyEvent_getKeyCode(event);
             int32_t action = AKeyEvent_getAction(event);
+            int32_t meta = AKeyEvent_getMetaState(event);
 
-            olc::Key key = ((keyCode > 0) && keyCode < ANDROID_KEY_MAX) ? AndroidKeyMap[keyCode] : Key::NONE;
+            auto entry = ((keyCode > 0) && keyCode < ANDROID_KEY_MAX) ? AndroidKeyMap[keyCode] : KeyEntry{Key::NONE, false};
 
-            if (key != Key::NONE)
+            shiftOn =
+                (meta & AMETA_SHIFT_ON) != 0 ||
+                (meta & AMETA_SHIFT_LEFT_ON) != 0 ||
+                (meta & AMETA_SHIFT_RIGHT_ON) != 0 ||
+                (meta & AMETA_CAPS_LOCK_ON) != 0 ||
+                entry.shiftOn;
+
+            if (entry.key != Key::NONE)
             {
+                pgeWindow->olc_OnKeyPress(Key::SHIFT, shiftOn);
                 if (action == AKEY_EVENT_ACTION_DOWN)
                 {
-                    pgeWindow->olc_OnKeyPress(key, true);
+                    pgeWindow->olc_OnKeyPress(entry.key, true);
                 }
                 else if (action == AKEY_EVENT_ACTION_UP)
                 {
-                    pgeWindow->olc_OnKeyPress(key, false);
+                    pgeWindow->olc_OnKeyPress(entry.key, false);
                 }
             }
 
