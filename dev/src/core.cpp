@@ -143,8 +143,8 @@ namespace olc
 		draw.ProcessGPUTasks();
 
 		// Update Window's primary surface
-		//pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
-		pRenderer->DisplayDraw(pHost->GetHostWindowDescriptor(this));
+		// pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
+		pRenderer->DisplayDraw(pHost->GetHostWindowDescriptor(this), config.bVSync);
 
 		return true;
 	}
