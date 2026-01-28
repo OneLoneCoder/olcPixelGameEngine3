@@ -39,6 +39,9 @@ public:
 	// Called every frame, so update things here
 	bool OnUserUpdate(float fElapsedTime) override
 	{
+		auto metrics = draw.GetDrawMetrics();
+		draw.ResetDrawMetrics();
+
 		// Clear whole screen
 		draw.Clear(olc::Colour::VERY_DARK_BLUE);
 
@@ -90,6 +93,13 @@ public:
 		draw.StringProp({ 10,20 }, sText, olc::Colour::GREEN);
 		
 
+		// Display frame time and draw metrics
+		draw.String({ 10, 200 },
+			"GPU Tasks: " + std::to_string(metrics.nGPUTasks) + "\n" +
+			"CPU->GPU : " + std::to_string(metrics.nCPUtoGPUTransfers) + "\n" +
+			"GPU->CPU : " + std::to_string(metrics.nGPUtoCPUTransfers) + "\n" +
+			"Shaders  : " + std::to_string(metrics.nShaderChanges));
+
 		// Successful frame
 		return true;
 	}
@@ -104,7 +114,12 @@ int main()
 
 	// Create "screen" of 256x240 "pixels"
 	// with a pixel size of 4x4 actual screen pixels
-	if (demo.Construct({ 256, 240 }, { 4, 4 }))
+	PGEConfig config;
+	config.bVSync = true;
+	config.vPixelSize = { 4,4 };
+	config.vScreenSize = { 256,240 };
+
+	if (demo.Construct(config))
 	{
 		// Start the application
 		demo.Start();

@@ -18,6 +18,9 @@
 #include "xdg-shell.h"
 #include "xdg-decoration.h"
 #include <linux/input-event-codes.h>
+#include <xkbcommon/xkbcommon.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
@@ -76,6 +79,9 @@ namespace olc::host
         wl_compositor* compositor{nullptr};
         wl_seat* seat{nullptr};
         wl_pointer* pointer{nullptr};
+        wl_keyboard* keyboard{nullptr};
+        xkb_context* kb_context{nullptr};
+        xkb_state* kb_state{nullptr};
         xdg_wm_base* xdg_wm{nullptr};
         zxdg_decoration_manager_v1* decoration_manager{nullptr};
 
@@ -96,6 +102,8 @@ namespace olc::host
         
         
         bool ConnectHostResourceToRenderer() override;
+
+        olc::KeyboardLayout GetKeyboardLayout() const override;
 
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
@@ -119,6 +127,14 @@ namespace olc::host
         static void pointer_axis_discrete_callback(void* data, wl_pointer* pointer, uint32_t axis, int32_t discrete);
         static void pointer_axis_value120_callback(void* data, wl_pointer* pointer, uint32_t axis, int32_t value120);
         static void pointer_axis_relative_direction_callback(void* data, wl_pointer* pointer, uint32_t axis, uint32_t direction);
+
+        // Keyboard callbacks
+        static void keyboard_keymap_callback(void* data, wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size);
+        static void keyboard_enter_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys);
+        static void keyboard_leave_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface);
+        static void keyboard_key_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
+        static void keyboard_modifiers_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
+        static void keyboard_repeat_info_callback(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay);
 
         // xdg callbacks
         static void xdg_wm_ping_callback(void* data, xdg_wm_base* wm, uint32_t serial);
@@ -147,6 +163,13 @@ namespace olc::host
         void pointer_axis_value120(wl_pointer* pointer, uint32_t axis, int32_t value120);
         void pointer_axis_relative_direction(wl_pointer* pointer, uint32_t axis, uint32_t direction);
 
+        // Keyboard Callback Functions
+        void keyboard_keymap(wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size);
+        void keyboard_enter(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys);
+        void keyboard_leave(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface);
+        void keyboard_key(wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
+        void keyboard_modifiers(wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
+
         // XDG toplevel callback functions
         void xdg_toplevel_configure(xdg_toplevel* toplevel, int32_t width, int32_t height, wl_array* states);
         void xdg_toplevel_close(xdg_toplevel* toplevel);
@@ -157,6 +180,7 @@ namespace olc::host
         std::unordered_map<size_t, WaylandWindow> mapUID2Window;
         std::unordered_map<size_t, olc::Window*> mapUID2OlcWindow;
         std::atomic<bool> terminate {false};
+        std::unordered_map<uint32_t, olc::Key> mapKeys;
     };
 }
 

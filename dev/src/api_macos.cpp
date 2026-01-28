@@ -149,111 +149,40 @@ static constexpr const char* kDrawRectMethodTypeEncoding = "v@:{NSRect={NSPoint=
 // Type encoding for void methods with no parameters: "v@:"
 static constexpr const char* kVoidMethodTypeEncoding = "v@:";
 
-
 namespace ObjectiveCSEL {
      
     // Application memory management selectors
-    static SEL allocSel = nullptr;
-    static SEL initSel = nullptr;
-    static SEL setDelegateSel = nullptr;
-    static SEL releaseSel = nullptr;
-    static SEL isKindOfClassSel = nullptr;
+    static SEL allocSel, initSel, setDelegateSel, releaseSel, isKindOfClassSel = nullptr;
 
     // NSApplication lifecycle and management selectors
-    static SEL sharedApplicationSel = nullptr;
-    static SEL activateIgnoringOtherAppsSel = nullptr;
-    static SEL setActivationPolicySel = nullptr;
-    static SEL runSel = nullptr;
+    static SEL sharedApplicationSel, activateIgnoringOtherAppsSel, setActivationPolicySel,runSel = nullptr;
 
     // NSApplicationDelegate lifecycle methods
-    static SEL applicationWillFinishLaunchingSel = nullptr;
-    static SEL applicationDidFinishLaunchingSel  = nullptr;
-    static SEL applicationWillTerminateSel       = nullptr;
-    static SEL applicationDidBecomeActiveSel     = nullptr;
-    static SEL applicationWillResignActiveSel    = nullptr;
+    static SEL applicationWillFinishLaunchingSel, applicationDidFinishLaunchingSel, applicationWillTerminateSel, applicationDidBecomeActiveSel, applicationWillResignActiveSel = nullptr;
 
     // NSWindow creation, display, and management selectors
-    static SEL initWithContentRectSel           = nullptr;
-    static SEL stringWithUTF8StringSel          = nullptr;
-    static SEL setTitleSel                      = nullptr;
-    static SEL orderFrontRegardlessSel          = nullptr;
-    static SEL setAcceptsMouseMovedEventsSel    = nullptr;
-    static SEL makeFirstResponderSel            = nullptr;
-    static SEL makeKeyAndOrderFrontSel          = nullptr;
-    static SEL makeKeyWindowSel                 = nullptr;
-    static SEL frameSel                         = nullptr;
-    static SEL setFrameDisplaySel               = nullptr;
-    static SEL setFrameSel                      = nullptr;
+    static SEL initWithContentRectSel, stringWithUTF8StringSel, setTitleSel, orderFrontRegardlessSel, setAcceptsMouseMovedEventsSel, makeKeyAndOrderFrontSel = nullptr;
+    static SEL makeKeyWindowSel, frameSel, setFrameDisplaySel, setFrameSel, makeFirstResponderSel = nullptr;
 
     // NSWindowDelegate lifecycle and event methods selectors
-    static SEL windowDidResizeSel               = nullptr;
-    static SEL windowWillCloseSel               = nullptr;
-    static SEL windowDidBecomeKeySel            = nullptr;
-    static SEL windowDidResignKeySel            = nullptr;
-    static SEL windowDidMiniaturizeSel          = nullptr;
-    static SEL windowDidDeminiaturizeSel        = nullptr;
+    static SEL windowDidResizeSel, windowWillCloseSel, windowDidBecomeKeySel, windowDidResignKeySel, windowDidMiniaturizeSel, windowDidDeminiaturizeSel = nullptr;
 
     // NSResponder keyboard and mouse event methods selectors
-    static SEL keyDownSel                       = nullptr;
-    static SEL keyUpSel                         = nullptr;
-    static SEL mouseDownSel                     = nullptr;
-    static SEL mouseUpSel                       = nullptr;
-    static SEL mouseDraggedSel                  = nullptr;
-    static SEL mouseMovedSel                    = nullptr;
-    static SEL rightMouseDownSel                = nullptr;
-    static SEL rightMouseUpSel                  = nullptr;
-    static SEL rightMouseDraggedSel             = nullptr;
-    static SEL otherMouseDownSel                = nullptr;
-    static SEL otherMouseUpSel                  = nullptr;
-    static SEL otherMouseDraggedSel             = nullptr;
-    static SEL scrollWheelSel                   = nullptr;
-    static SEL deltaXSel                        = nullptr;
-    static SEL deltaYSel                        = nullptr;
+    static SEL keyDownSel, keyUpSel, mouseDownSel, mouseUpSel, mouseDraggedSel, mouseMovedSel, rightMouseDownSel, rightMouseUpSel, rightMouseDraggedSel, otherMouseDownSel = nullptr;
+    static SEL otherMouseUpSel, otherMouseDraggedSel, scrollWheelSel, deltaXSel, deltaYSel = nullptr;
 
     // Managing first responder status and keyboard focus selectors
-    static SEL acceptsFirstResponderSel         = nullptr;
-    static SEL becomeFirstResponderSel          = nullptr;
-    static SEL canBecomeKeyViewSel              = nullptr;
-    static SEL needsPanelToBecomeKeySel         = nullptr;
-    static SEL drawRectSel                      = nullptr;
-    static SEL reshapeSel                       = nullptr;
-    static SEL updateSel                        = nullptr;
+    static SEL acceptsFirstResponderSel, becomeFirstResponderSel, canBecomeKeyViewSel, needsPanelToBecomeKeySel, drawRectSel, reshapeSel, updateSel = nullptr;
 
     // NSOpenGL pixel format, view, and context management selectors
-    static SEL initWithAttributesSel            = nullptr;
-    static SEL initWithFramePixelFormatSel      = nullptr;
-    static SEL setContentViewSel                = nullptr;
-    static SEL contentViewSel                   = nullptr;
-    static SEL boundsSel                        = nullptr;
-    static SEL convertPointFromViewSel          = nullptr;
-    static SEL openGLContextSel                 = nullptr;
-    static SEL makeCurrentContextSel            = nullptr;
-    static SEL setAutoresizingMaskSel           = nullptr;
-    static SEL flushBufferSel                   = nullptr;
-    static SEL displaySel                       = nullptr;
-    static SEL CGLContextObjSel                 = nullptr;
-    static SEL setValuesSel                     = nullptr;
+    static SEL initWithAttributesSel, initWithFramePixelFormatSel, setContentViewSel, contentViewSel, boundsSel, convertPointFromViewSel, openGLContextSel, makeCurrentContextSel = nullptr;
+    static SEL setAutoresizingMaskSel, flushBufferSel, displaySel, CGLContextObjSel, setValuesSel = nullptr;
 
     // Extracting data from NSEvent objects selectors
-    static SEL keyCodeSel                       = nullptr;
-    static SEL charactersSel                    = nullptr;
-    static SEL locationInWindowSel              = nullptr;
-    static SEL buttonNumberSel                  = nullptr;
-    static SEL clickCountSel                    = nullptr;
-    static SEL modifierFlagsSel                 = nullptr;
-    static SEL utf8StringSel                    = nullptr;
+    static SEL keyCodeSel, charactersSel, locationInWindowSel, buttonNumberSel, clickCountSel, modifierFlagsSel, utf8StringSel = nullptr;
 
     // NSImage, NSBitmapImageRep, and image data access selectors
-    static SEL initWithContentsOfFileSel        = nullptr;
-    static SEL representationsSel               = nullptr;
-    static SEL countSel                         = nullptr;
-    static SEL objectAtIndexSel                 = nullptr;
-    static SEL pixelsWideSel                    = nullptr;
-    static SEL pixelsHighSel                    = nullptr;
-    static SEL bitsPerPixelSel                  = nullptr;
-    static SEL bytesPerRowSel                   = nullptr;
-    static SEL hasAlphaSel                      = nullptr;
-    static SEL bitmapDataSel                    = nullptr;
+    static SEL initWithContentsOfFileSel, representationsSel, countSel, objectAtIndexSel, pixelsWideSel, pixelsHighSel, bitsPerPixelSel, bytesPerRowSel, hasAlphaSel, bitmapDataSel = nullptr;
 
     // Initialize all selectors - called once at startup
     void initializeSelectors() {
@@ -427,7 +356,6 @@ struct CustomOpenGLView;
 struct WindowDelegate;
 struct ImageLoader;
 
-
 // enums for OpenGL pixel format and rendering capabilities
 enum class NSOpenGLPixelFormatAttribute : uint16_t {
     // Renderer selection
@@ -572,7 +500,6 @@ static Window*      gptrNSWindowEvents      = nullptr;
 static Application* gptrApplicationDelegate = nullptr;
 static Window*      gptrWindowDelegate      = nullptr;
 
-
 // Handles NSApplication delegate methods and lifecycle events
 struct ApplicationDelegate {
     Class isa;                      // Objective-C class pointer (required)
@@ -625,8 +552,6 @@ struct Application {
     // Delete copy constructor and assignment
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
-    
-    // Allow move semantics
     Application(Application&&) = default;
     Application& operator=(Application&&) = default;
 };
@@ -733,7 +658,6 @@ struct ImageLoader {
     BOOL (*getPixel)               (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha){nullptr};
     unsigned int (*createOpenGLTexture)(const struct ImageLoader* self){nullptr};
 };
-
 
 // Called when application is about to finish launching
 void applicationWillFinishLaunching(id self, SEL _cmd, id notification) {
@@ -874,7 +798,6 @@ void convertToContentViewCoordinates(NSPoint& location) {
     }
 }
 
-// Structure to hold common mouse event data
 struct MouseEventData {
     NSPoint location         = {0.0, 0.0};
     NSUInteger modifierFlags = 0;
@@ -894,8 +817,6 @@ MouseEventData extractMouseEventData(id event) {
     return data;
 }
 
-
-
 // Handle left mouse down events
 void view_mouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd; // Remove unused parameter warnings
@@ -914,12 +835,10 @@ void view_mouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseUpCallback) [[likely]] {
         gptrNSWindowEvents->mouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber,
                                             (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
-
 }
 
 // Handle mouse drag events
@@ -927,7 +846,6 @@ void view_mouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseDraggedCallback) [[likely]] {
         gptrNSWindowEvents->mouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -936,12 +854,6 @@ void view_mouseDragged(id self, SEL _cmd, id event) {
 // Handle mouse movement events
 void view_mouseMoved(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
-
-    // Note: mouseMoved events do not have buttonNumber except in the case of Touch screens
-    // When using a touch screen, mouseMoved events may include a buttonNumber corresponding to the touch point
-    // However, for standard mouse movement, buttonNumber is typically not applicable, but if you call it, it returns 0
-    // Hence, we will use kNoButton constant to indicate no button is pressed during mouse movement and avoid
-    // using extractMouseEventData which retrieves buttonNumber
 
     NSPoint location         = ((NSPoint(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::locationInWindowSel);
     NSUInteger modifierFlags = ((NSUInteger(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::modifierFlagsSel);
@@ -958,7 +870,6 @@ void view_rightMouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseDownCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseDownCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -969,7 +880,6 @@ void view_rightMouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseUpCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -980,7 +890,6 @@ void view_rightMouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseDraggedCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -992,7 +901,6 @@ void view_otherMouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDownCallback) [[likely]] {
         gptrNSWindowEvents->otherMouseDownCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -1003,7 +911,6 @@ void view_otherMouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseUpCallback) {
         gptrNSWindowEvents->otherMouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -1013,7 +920,6 @@ void view_otherMouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDraggedCallback) [[likely]] {
         gptrNSWindowEvents->otherMouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -1034,7 +940,6 @@ void view_scrollWheel(id self, SEL _cmd, id event) {
         gptrNSWindowEvents->scrollWheelCallback(location.x, location.y, deltaX, deltaY, (unsigned int)modifierFlags, gptrNSWindowEvents->eventUserData);
     }
 }
-
 
 // Determine if view can accept first responder status
 id view_acceptsFirstResponder(id self, SEL _cmd) {
@@ -1063,25 +968,20 @@ id view_needsPanelToBecomeKey(id self, SEL _cmd) {
 // Empty drawRect method - prevents automatic drawing on main thread
 void view_drawRect(id self, SEL _cmd, NSRect dirtyRect) {
     (void)self;(void)_cmd;(void)dirtyRect;
-
-    // Block automatic drawing - PGE engine thread will handle OpenGL rendering
 }
 
 // Empty reshape method - prevents automatic context reshaping on main thread
 void view_reshape(id self, SEL _cmd) {
     (void)self;(void)_cmd;
-    // Block automatic reshape - PGE engine thread will handle OpenGL updates
 }
 
 // Empty update method - prevents automatic context updates on main thread
 void view_update(id self, SEL _cmd) {
     (void)self;(void)_cmd;
-    // Block automatic update - PGE engine thread will handle OpenGL updates
 }
 
 // Create custom OpenGL view class
 Class createCustomOpenGLViewClass() {
-    // Check if class already exists
     Class existingClass = objc_getClass(kCustomOpenGLViewClass);
     if (existingClass) {
         return existingClass;
@@ -1141,7 +1041,8 @@ void windowDidResize(id self, SEL _cmd, id notification) {
     (void)self;(void)_cmd;(void)notification;
 
     if (gptrWindowDelegate && gptrWindowDelegate->nsWindow) {
-        // Safely update frame data only - no OpenGL operations
+
+        // Update frame data only
         window_updateFrameFromOSX(gptrWindowDelegate);
 
          // Get the new content view size
@@ -1171,6 +1072,7 @@ void windowDidBecomeKey(id self, SEL _cmd, id notification) {
     }
 }
 
+// handle window did resign key events
 void windowDidResignKey(id self, SEL _cmd, id notification) {
     (void)self;(void)_cmd;(void)notification;
     if (gptrWindowDelegate && gptrWindowDelegate->windowDidResignKeyCallback) {
@@ -1178,6 +1080,7 @@ void windowDidResignKey(id self, SEL _cmd, id notification) {
     }
 }
 
+// Handle window did miniaturize events
 void windowDidMiniaturize(id self, SEL _cmd, id notification) {
     (void)self;(void)_cmd;(void)notification;
     if (gptrWindowDelegate && gptrWindowDelegate->windowDidMiniaturizeCallback) {
@@ -1257,7 +1160,6 @@ id createWindowDelegateForWindow(void) {
     
     return delegate;
 }
-
 
     // Forward declarations for C API functions used by internal helpers
     extern "C" void window_setDelegate(Window* self, id delegate);
@@ -1366,7 +1268,6 @@ extern "C" {
 
         window_getContentViewFrame(self, &self->contentViewFrame.x, &self->contentViewFrame.y,
                                    &self->contentViewFrame.width, &self->contentViewFrame.height);
-        // Update internal frame representation from actual NSWindow
     }
 
     // Show the window and set up event handling
@@ -1390,8 +1291,8 @@ extern "C" {
 
     // Destroy the window
     void window_destroy(Window* self) {
-        // NSWindow will be cleaned up by autorelease pool
         (void)self;
+        // NSWindow will be cleaned up by autorelease pool
     }
 
     // Window delegate setter
@@ -1429,11 +1330,7 @@ extern "C" {
 
     // Refresh internal frame representation from actual NSWindow (OSX)
     void window_updateFrameFromOSX(Window* self) {
-
-       NSRect screenFrame = ((NSRect(*)(id, SEL))objc_msgSend)(self->nsWindow, ObjectiveCSEL::frameSel);
-
-        self->windowFrame = screenFrame; // Update internal frame representation
-       
+       self->windowFrame = ((NSRect(*)(id, SEL))objc_msgSend)(self->nsWindow, ObjectiveCSEL::frameSel);
     }
 
     // Get the content view size (excludes title bar and borders)
@@ -1485,7 +1382,6 @@ extern "C" {
            }
        }
     }
-
 
     // Get Window frame (x, y, width, height)
     void window_getWindowFrame(const Window* self, double* x, double* y, double* width, double* height) {
@@ -1611,20 +1507,10 @@ extern "C" {
         ((void(*)(id, SEL))objc_msgSend)(self->window->nsWindow, ObjectiveCSEL::makeKeyWindowSel);
         
         // Make the OpenGL view the first responder so it can receive keyboard and mouse events
-        BOOL result = ((BOOL(*)(id, SEL, id))objc_msgSend)(self->window->nsWindow, ObjectiveCSEL::makeFirstResponderSel, self->glView);
-        
-        if(result == NO) {
-            // Handle error if needed
-            //printf("Warning: Failed to make OpenGL view the first responder.\n");
-        }
+        ((BOOL(*)(id, SEL, id))objc_msgSend)(self->window->nsWindow, ObjectiveCSEL::makeFirstResponderSel, self->glView);
         
         // Additional debug: check if view can become key view
-        BOOL canBecomeKey = ((BOOL(*)(id, SEL))objc_msgSend)(self->glView, ObjectiveCSEL::canBecomeKeyViewSel);
-        if(canBecomeKey == NO) {
-            // Handle error if needed
-            //printf("Warning: OpenGL view cannot become key view.\n");
-        }
-
+        ((BOOL(*)(id, SEL))objc_msgSend)(self->glView, ObjectiveCSEL::canBecomeKeyViewSel);
     }
 
     // Implementation function
@@ -1651,7 +1537,6 @@ extern "C" {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         return true;
-
     }
 
 
@@ -1662,11 +1547,8 @@ extern "C" {
 
     // Get the underlying CGLContextObj from the OpenGL renderer
     void* opengl_getCGLContextObj(struct OpenGLRenderer* self) {
-        if (!self || !self->glContext) {
-            return nullptr;
-        }
+        if (!self || !self->glContext) { return nullptr;}
         
-        // Get the CGLContextObj from the NSOpenGLContext
         return (void*)((void*(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::CGLContextObjSel);
     }
     
@@ -1684,9 +1566,7 @@ extern "C" {
 
     // Enable or disable vertical synchronization (vsync)
     void opengl_setVsync(OpenGLRenderer* self, BOOL enabled) {
-        if (!self || !self->glContext) {
-            return;
-        }
+        if (!self || !self->glContext) { return; }
         
         // Make context current first
         ((void(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::makeCurrentContextSel);
@@ -1695,7 +1575,6 @@ extern "C" {
         GLint swapInterval = enabled ? 1 : 0;
         
         // Use NSOpenGLContext setValues:forParameter: to set swap interval
-        // NSOpenGLContextParameterSwapInterval = 222
         const GLint parameter = 222; // NSOpenGLContextParameterSwapInterval
         ((void(*)(id, SEL, const GLint*, GLint))objc_msgSend)(self->glContext, ObjectiveCSEL::setValuesSel, &swapInterval, parameter);
     }
@@ -1890,36 +1769,7 @@ extern "C" {
         self->bytesPerRow     = kZeroRows;
         self->hasAlpha        = NO;
     }
-
-    // Create OpenGL texture from ImageLoader
-    unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* loader) {
-        if (!loader->isLoaded(const_cast<struct ImageLoader*>(loader))) {
-            return 0;
-        }
-        
-        unsigned int textureID;
-        glGenTextures(1, &textureID);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        
-        // Set texture parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        // Determine format
-        GLenum format = (loader->bytesPerPixel == kRGBABytesPerPixel) ? GL_RGBA : GL_RGB;
-
-        // Upload texture data
-        glTexImage2D(GL_TEXTURE_2D, 0, format, loader->width, loader->height,
-                    0, format, GL_UNSIGNED_BYTE, loader->pixelData);
-        
-        // Generate mipmaps for better quality at different scales
-        glGenerateMipmap(GL_TEXTURE_2D);
-        
-        return textureID;
-    }
-
+ 
     // ImageLoader constructor
     struct ImageLoader* imageloader_init() {
         struct ImageLoader* loader = (struct ImageLoader*)malloc(sizeof(struct ImageLoader));
@@ -1940,7 +1790,6 @@ extern "C" {
         loader->getDetailedInfo     = imageloader_getDetailedInfo;
         loader->isLoaded            = imageloader_isLoaded;
         loader->getPixel            = imageloader_getPixel;
-        loader->createOpenGLTexture = imageloader_createOpenGLTexture;
         
         return loader;
     }
@@ -2102,38 +1951,32 @@ extern "C" {
     void window_setWindowDidResizeCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidResizeCallback = callback;
         self->windowDidResizeUserData = userData;
-        ensureWindowDelegate(self);  // Ensure delegate exists when callbacks are set
 
     }
 
     void window_setWindowWillCloseCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowWillCloseCallback = callback;
         self->windowWillCloseUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidBecomeKeyCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidBecomeKeyCallback = callback;
         self->windowDidBecomeKeyUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidResignKeyCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidResignKeyCallback = callback;
         self->windowDidResignKeyUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidMiniaturizeCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidMiniaturizeCallback = callback;
         self->windowDidMiniaturizeUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidDeminiaturizeCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidDeminiaturizeCallback = callback;
         self->windowDidDeminiaturizeUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     // Application delegate callback setter functions

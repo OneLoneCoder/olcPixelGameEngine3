@@ -120,6 +120,7 @@
 #define OLC_GPU_ERRORCHECK 0
 #define OLC_MSAA_SAMPLES 4
 #define OLC_DEFAULT_CIRCLE_FACETS 16
+#define OLC_DEFAULT_VSYNC true
 
 #define LICENCE_DEFAULT "OneLoneCoder.com - Pixel Game Engine 3 - "
 

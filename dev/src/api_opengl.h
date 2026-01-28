@@ -171,7 +171,7 @@ namespace olc
 		typedef void CALLSTYLE glGetShaderiv_t(GLuint shader, GLenum pname, GLint* params);
 
 #if OLC_HOST == OLC_HOST_WINDOWS
-		typedef void CALLSTYLE glSwapInterval_t(GLsizei n);
+		typedef void CALLSTYLE wglSwapIntervalEXT_t(GLsizei n);
 #endif
 
 		// A little GL class (singleton)
@@ -229,6 +229,9 @@ namespace olc
 			glDeleteRenderbuffers_t* _glDeleteRenderbuffers = nullptr;
 			glGetInternalformativ_t* _glGetInternalformativ = nullptr;
 			glGetShaderiv_t* _glGetShaderiv = nullptr;
+#if OLC_HOST == OLC_HOST_WINDOWS
+			wglSwapIntervalEXT_t* _wglSwapIntervalEXT = nullptr;
+#endif
 
 
 		public:
@@ -299,6 +302,9 @@ namespace olc
 			void glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels);
 			void glHint(GLenum target, GLenum mode);
 			void glPolygonMode(GLenum face, GLenum mode);
+
+
+			void glSwapInterval(GLsizei n);
 
 			// Constants
 			static constexpr GLenum GL_FRAMEBUFFER_COMPLETE_X = 0x8CD5;

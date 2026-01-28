@@ -40,57 +40,6 @@ namespace olc {
                 AutoreleasePool& operator=(AutoreleasePool&&) = delete;
             };
             
-            // RAII wrapper for OpenGL texture management
-            class OpenGLTexture {
-            private:
-                unsigned int textureID_;
-                
-            public:
-                explicit constexpr OpenGLTexture(unsigned int id = 0) noexcept : textureID_(id) {}
-                
-                ~OpenGLTexture() noexcept {
-                    if (textureID_ != 0) {
-                        glDeleteTextures(1, &textureID_);
-                    }
-                }
-                
-                constexpr unsigned int get() const noexcept { return textureID_; }
-                constexpr bool isValid() const noexcept { return textureID_ != 0; }
-                
-                // Release ownership
-                unsigned int release() noexcept {
-                    unsigned int id = textureID_;
-                    textureID_ = 0;
-                    return id;
-                }
-                
-                // Reset with new texture ID
-                void reset(unsigned int id = 0) noexcept {
-                    if (textureID_ != 0) {
-                        glDeleteTextures(1, &textureID_);
-                    }
-                    textureID_ = id;
-                }
-                
-                // Move semantics
-                OpenGLTexture(OpenGLTexture&& other) noexcept : textureID_(other.textureID_) {
-                    other.textureID_ = 0;
-                }
-                
-                OpenGLTexture& operator=(OpenGLTexture&& other) noexcept {
-                    if (this != &other) {
-                        reset();
-                        textureID_ = other.textureID_;
-                        other.textureID_ = 0;
-                    }
-                    return *this;
-                }
-                
-                // Non-copyable
-                OpenGLTexture(const OpenGLTexture&) = delete;
-                OpenGLTexture& operator=(const OpenGLTexture&) = delete;
-            };
-
             // Exception class for framework errors
             class FrameworkException : public std::runtime_error {
             public:
@@ -149,8 +98,7 @@ namespace olc {
                 
                 // Get underlying C handle
                 struct ::Application* getCHandle() const noexcept { return app_; }
-                
-                        
+                              
                 // Set callback for application will finish launching event
                 void setWillFinishLaunchingCallback(std::function<void()> callback) {
                     setCallback(application_setWillFinishLaunchingCallback, std::move(callback));
@@ -238,7 +186,6 @@ namespace olc {
                     if (!window_) {
                         throw FrameworkException("Failed to create window");
                     }
-                   
                 }
                 
                 ~Window() {
@@ -286,20 +233,21 @@ namespace olc {
                     return NSRect{0, 0, 0, 0};
                 }
 
+                // Set the window frame size
                 void setFrameSize(int32_t width, int32_t height) noexcept {
                     setFrameSize(static_cast<double>(width), static_cast<double>(height));
                 }
+
                 void setFrameSize(float width, float height) noexcept {
                     setFrameSize(static_cast<double>(width), static_cast<double>(height));
                 }
-                // Set the window frame size
+
                 void setFrameSize(double width, double height) noexcept {
                     if (window_) {
                         double x = 0.0, y = 0.0;
                         window_getWindowFrame(window_, &x, &y, nullptr, nullptr);
                         window_setWindowFrame(window_, x, y, width, height);
                     }
-
                 }
 
                 void getFrameSize(int32_t& width, int32_t& height) const noexcept {
@@ -324,13 +272,15 @@ namespace olc {
                     }
                 }
 
+                // Set the window position
                 void setPosition(int32_t x, int32_t y) noexcept {
                     setPosition(static_cast<double>(x), static_cast<double>(y));
                 }
+
                 void setPosition(float x, float y) noexcept {
                     setPosition(static_cast<double>(x), static_cast<double>(y));
                 }
-                // Set the window position
+
                 void setPosition(double x, double y) noexcept {
                     if (window_) {
                         window_setWindowPosition(window_, x, y);
@@ -345,6 +295,7 @@ namespace olc {
                     }
                 }
 
+                // Set the window size
                 void setWindowSize(int32_t width, int32_t height) noexcept {
                     setWindowSize(static_cast<double>(width), static_cast<double>(height));
                 }
@@ -352,7 +303,7 @@ namespace olc {
                 void setWindowSize(float width, float height) noexcept {
                     setWindowSize(static_cast<double>(width), static_cast<double>(height));
                 }
-                // Set the window size
+                
                 void setWindowSize(double width, double height) noexcept {
                     if (window_) {
                         window_setWindowSize(window_, width, height);
@@ -381,7 +332,6 @@ namespace olc {
                         width = height = 0.0;
                     }
                 }
-
 
                 // Context view frame getters and setters
                 void setContentViewPosition(int32_t x, int32_t y) noexcept {
@@ -458,8 +408,6 @@ namespace olc {
                     }
                 }
 
-               
-
                 // Set callback for window resize events
                 void setWindowDidResizeCallback(std::function<void()> callback) {
                     setCallback(window_setWindowDidResizeCallback, std::move(callback));
@@ -528,7 +476,6 @@ namespace olc {
                 ~OpenGLRenderer() {
                     if (renderer_) {
                         opengl_destroy(renderer_);
-                        // Note: opengl_destroy already calls free() on the renderer
                     }
                 }
                 
@@ -645,22 +592,7 @@ namespace olc {
                 bool isLoaded() const noexcept {
                     return loaded_ && loader_ && imageloader_isLoaded(loader_);
                 }
-                
-                OpenGLTexture createOpenGLTexture() const noexcept {
-                    if (loader_ && loaded_) {
-                        return OpenGLTexture(imageloader_createOpenGLTexture(loader_));
-                    }
-                    return OpenGLTexture{};
-                }
-                
-                // Legacy method for backwards compatibility
-                unsigned int createOpenGLTextureID() const noexcept {
-                    if (loader_ && loaded_) {
-                        return imageloader_createOpenGLTexture(loader_);
-                    }
-                    return 0;
-                }
-                
+
                 void getImageInfo(int& width, int& height, int& bytesPerPixel) const noexcept {
                     if (loader_ && loaded_) {
                         imageloader_getImageInfo(loader_, &width, &height, &bytesPerPixel);
@@ -695,7 +627,6 @@ namespace olc {
                     return *this;
                 }
             };
-            
             
             // Keyboard event data structure
             struct KeyEvent {
@@ -937,8 +868,6 @@ namespace olc {
                 EventHandler& operator=(EventHandler&&) = delete;
             };
             
-            
-    
         } // namespace macos
     } // namespace apis
 } // namespace olc

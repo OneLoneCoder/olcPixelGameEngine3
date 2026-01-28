@@ -72,6 +72,10 @@ namespace olc::apis::opengl
 		bLoaded &= (_glGetInternalformativ = OGL_LOAD(glGetInternalformativ)) != nullptr;
 		bLoaded &= (_glGetShaderiv = OGL_LOAD(glGetShaderiv)) != nullptr;
 
+#if OLC_HOST == OLC_HOST_WINDOWS
+		bLoaded &= (_wglSwapIntervalEXT = OGL_LOAD(wglSwapIntervalEXT)) != nullptr;
+#endif
+
 		
 		return bLoaded;
 	}
@@ -234,6 +238,13 @@ namespace olc::apis::opengl
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		::glPolygonMode(face, mode);
 		CheckError();
+#endif
+	}
+
+	void gl::glSwapInterval(GLsizei n)
+	{
+#if OLC_HOST == OLC_HOST_WINDOWS
+		_wglSwapIntervalEXT(n);
 #endif
 	}
 

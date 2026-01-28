@@ -254,6 +254,7 @@
 #define OLC_GPU_ERRORCHECK 0
 #define OLC_MSAA_SAMPLES 4
 #define OLC_DEFAULT_CIRCLE_FACETS 16
+#define OLC_DEFAULT_VSYNC true
 
 #define LICENCE_DEFAULT "OneLoneCoder.com - Pixel Game Engine 3 - "
 
@@ -2681,6 +2682,22 @@ namespace olc
 			// Assign an image to a texture slot for subsequent GPU drawing tasks
 			bool SetShaderTexture(const uint32_t nSlot, olc::Image& image);
 
+		public:
+			struct sDrawMetrics
+			{
+				uint32_t nGPUTasks = 0;
+				uint32_t nGPUtoCPUTransfers = 0;
+				uint32_t nCPUtoGPUTransfers = 0;
+				uint32_t nShaderChanges = 0;
+			};
+
+			void ResetDrawMetrics();
+			sDrawMetrics GetDrawMetrics() const;
+
+		private:
+			sDrawMetrics drawMetrics;
+
+
 
 
 		protected:
@@ -3144,7 +3161,7 @@ namespace olc
 		// Allow the window to be resized by user
 		bool bResizeable = true;
 		// Synchronise rendering with monitor
-		bool bVSync = false;
+		bool bVSync = OLC_DEFAULT_VSYNC;
 		// Behave like a host window, resizing the screen in response to window resize
 		bool bRealWindow = false;
 		// Ensure aspect ratio of "screen" is mainatined regardless of window size
@@ -3385,7 +3402,6 @@ namespace olc
 
 extern "C" {
     // NSRect (OSX rectangle structure same as GCRect C structure)
-    // NSRect structure for window and view frames
     struct NSRect {
         double x{0.0}, y{0.0};
         double width{800.0}, height{600.0};
@@ -3428,16 +3444,15 @@ extern "C" {
     void window_getContentViewFrame      (const struct Window* self, double* x, double* y, double* width, double* height);
     void window_setContentViewFrame      (struct Window* self, double* x, double* y, double* width, double* height);
     
-
     // OpenGL Renderer API - as implemented in api_macos.c
     struct OpenGLRenderer* opengl_init    (void);
     void opengl_initialize                (struct OpenGLRenderer* self, struct Window* window);
     void opengl_setupContext              (struct OpenGLRenderer* self);
-    void* opengl_getOpenGLContext         (const struct OpenGLRenderer* self);  // Returns id, cast to void*
-    void* opengl_getCGLContextObj         (struct OpenGLRenderer* self);        // Returns CGLContextObj, cast to void*
-    void* opengl_getCGLContextObjPtr      (struct OpenGLRenderer* self);        // Returns CGLContextObj as void*
-    void opengl_makeCurrentContext        (struct OpenGLRenderer* self);        // Make OpenGL context current
-    void opengl_setVsync                  (struct OpenGLRenderer* self, BOOL enabled); // Enable/disable vsync
+    void* opengl_getOpenGLContext         (const struct OpenGLRenderer* self);          // Returns id, cast to void*
+    void* opengl_getCGLContextObj         (struct OpenGLRenderer* self);                // Returns CGLContextObj, cast to void*
+    void* opengl_getCGLContextObjPtr      (struct OpenGLRenderer* self);                // Returns CGLContextObj as void*
+    void opengl_makeCurrentContext        (struct OpenGLRenderer* self);                // Make OpenGL context current
+    void opengl_setVsync                  (struct OpenGLRenderer* self, BOOL enabled);  // Enable/disable vsync
     void opengl_destroy                   (struct OpenGLRenderer* self);
     bool opengl_resetContextForSize       (struct OpenGLRenderer* self, double width, double height);
 
@@ -3450,7 +3465,6 @@ extern "C" {
     void imageloader_getDetailedInfo            (const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel, int* bytesPerRow, BOOL* hasAlpha);
     BOOL imageloader_isLoaded                   (const struct ImageLoader* self);
     BOOL imageloader_getPixel                   (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha);
-    unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* self);
     
     // Autorelease pool management
     void* objc_autoreleasePoolPush  (void);
@@ -3459,14 +3473,9 @@ extern "C" {
     // OpenGL functions we might need
     void glDeleteTextures(int n, const unsigned int* textures);
     
-    // ===========================================================================
-    // EVENT HANDLING API
-    // ===========================================================================
-    
     // Event callback function types
     typedef void (*KeyEventCallback)        (unsigned short keyCode, const char* characters, void* userData);
     typedef void (*MouseEventCallback)      (double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData);
-    //typedef void (*MouseMoveEventCallback)  (double x, double y, unsigned int modifierFlags, void* userData);
     
     // Event handler setup
     void window_setKeyDownCallback          (struct Window* self, KeyEventCallback callback, void* userData);
@@ -3487,10 +3496,6 @@ extern "C" {
     void window_enableEventHandling     (struct Window* self);
     void window_disableEventHandling    (struct Window* self);
     
-    // ===========================================================================
-    // APPLICATION DELEGATE EVENT HANDLING API
-    // ===========================================================================
-    
     // Application delegate callback function type
     typedef void (*ApplicationDelegateCallback)(void* userData);
     
@@ -3500,10 +3505,6 @@ extern "C" {
     void application_setWillTerminateCallback       (struct Application* self, ApplicationDelegateCallback callback, void* userData);
     void application_setDidBecomeActiveCallback     (struct Application* self, ApplicationDelegateCallback callback, void* userData);
     void application_setWillResignActiveCallback    (struct Application* self, ApplicationDelegateCallback callback, void* userData);
-
-    // ===========================================================================
-    // WINDOW DELEGATE EVENT HANDLING API
-    // ===========================================================================
     
     // Window delegate callback function type
     typedef void (*WindowDelegateCallback)(void* userData);
@@ -3543,57 +3544,6 @@ namespace olc {
                 AutoreleasePool& operator=(AutoreleasePool&&) = delete;
             };
             
-            // RAII wrapper for OpenGL texture management
-            class OpenGLTexture {
-            private:
-                unsigned int textureID_;
-                
-            public:
-                explicit constexpr OpenGLTexture(unsigned int id = 0) noexcept : textureID_(id) {}
-                
-                ~OpenGLTexture() noexcept {
-                    if (textureID_ != 0) {
-                        glDeleteTextures(1, &textureID_);
-                    }
-                }
-                
-                constexpr unsigned int get() const noexcept { return textureID_; }
-                constexpr bool isValid() const noexcept { return textureID_ != 0; }
-                
-                // Release ownership
-                unsigned int release() noexcept {
-                    unsigned int id = textureID_;
-                    textureID_ = 0;
-                    return id;
-                }
-                
-                // Reset with new texture ID
-                void reset(unsigned int id = 0) noexcept {
-                    if (textureID_ != 0) {
-                        glDeleteTextures(1, &textureID_);
-                    }
-                    textureID_ = id;
-                }
-                
-                // Move semantics
-                OpenGLTexture(OpenGLTexture&& other) noexcept : textureID_(other.textureID_) {
-                    other.textureID_ = 0;
-                }
-                
-                OpenGLTexture& operator=(OpenGLTexture&& other) noexcept {
-                    if (this != &other) {
-                        reset();
-                        textureID_ = other.textureID_;
-                        other.textureID_ = 0;
-                    }
-                    return *this;
-                }
-                
-                // Non-copyable
-                OpenGLTexture(const OpenGLTexture&) = delete;
-                OpenGLTexture& operator=(const OpenGLTexture&) = delete;
-            };
-
             // Exception class for framework errors
             class FrameworkException : public std::runtime_error {
             public:
@@ -3652,8 +3602,7 @@ namespace olc {
                 
                 // Get underlying C handle
                 struct ::Application* getCHandle() const noexcept { return app_; }
-                
-                        
+                              
                 // Set callback for application will finish launching event
                 void setWillFinishLaunchingCallback(std::function<void()> callback) {
                     setCallback(application_setWillFinishLaunchingCallback, std::move(callback));
@@ -3741,7 +3690,6 @@ namespace olc {
                     if (!window_) {
                         throw FrameworkException("Failed to create window");
                     }
-                   
                 }
                 
                 ~Window() {
@@ -3789,20 +3737,21 @@ namespace olc {
                     return NSRect{0, 0, 0, 0};
                 }
 
+                // Set the window frame size
                 void setFrameSize(int32_t width, int32_t height) noexcept {
                     setFrameSize(static_cast<double>(width), static_cast<double>(height));
                 }
+
                 void setFrameSize(float width, float height) noexcept {
                     setFrameSize(static_cast<double>(width), static_cast<double>(height));
                 }
-                // Set the window frame size
+
                 void setFrameSize(double width, double height) noexcept {
                     if (window_) {
                         double x = 0.0, y = 0.0;
                         window_getWindowFrame(window_, &x, &y, nullptr, nullptr);
                         window_setWindowFrame(window_, x, y, width, height);
                     }
-
                 }
 
                 void getFrameSize(int32_t& width, int32_t& height) const noexcept {
@@ -3827,13 +3776,15 @@ namespace olc {
                     }
                 }
 
+                // Set the window position
                 void setPosition(int32_t x, int32_t y) noexcept {
                     setPosition(static_cast<double>(x), static_cast<double>(y));
                 }
+
                 void setPosition(float x, float y) noexcept {
                     setPosition(static_cast<double>(x), static_cast<double>(y));
                 }
-                // Set the window position
+
                 void setPosition(double x, double y) noexcept {
                     if (window_) {
                         window_setWindowPosition(window_, x, y);
@@ -3848,6 +3799,7 @@ namespace olc {
                     }
                 }
 
+                // Set the window size
                 void setWindowSize(int32_t width, int32_t height) noexcept {
                     setWindowSize(static_cast<double>(width), static_cast<double>(height));
                 }
@@ -3855,7 +3807,7 @@ namespace olc {
                 void setWindowSize(float width, float height) noexcept {
                     setWindowSize(static_cast<double>(width), static_cast<double>(height));
                 }
-                // Set the window size
+                
                 void setWindowSize(double width, double height) noexcept {
                     if (window_) {
                         window_setWindowSize(window_, width, height);
@@ -3884,7 +3836,6 @@ namespace olc {
                         width = height = 0.0;
                     }
                 }
-
 
                 // Context view frame getters and setters
                 void setContentViewPosition(int32_t x, int32_t y) noexcept {
@@ -3961,8 +3912,6 @@ namespace olc {
                     }
                 }
 
-               
-
                 // Set callback for window resize events
                 void setWindowDidResizeCallback(std::function<void()> callback) {
                     setCallback(window_setWindowDidResizeCallback, std::move(callback));
@@ -4031,7 +3980,6 @@ namespace olc {
                 ~OpenGLRenderer() {
                     if (renderer_) {
                         opengl_destroy(renderer_);
-                        // Note: opengl_destroy already calls free() on the renderer
                     }
                 }
                 
@@ -4148,22 +4096,7 @@ namespace olc {
                 bool isLoaded() const noexcept {
                     return loaded_ && loader_ && imageloader_isLoaded(loader_);
                 }
-                
-                OpenGLTexture createOpenGLTexture() const noexcept {
-                    if (loader_ && loaded_) {
-                        return OpenGLTexture(imageloader_createOpenGLTexture(loader_));
-                    }
-                    return OpenGLTexture{};
-                }
-                
-                // Legacy method for backwards compatibility
-                unsigned int createOpenGLTextureID() const noexcept {
-                    if (loader_ && loaded_) {
-                        return imageloader_createOpenGLTexture(loader_);
-                    }
-                    return 0;
-                }
-                
+
                 void getImageInfo(int& width, int& height, int& bytesPerPixel) const noexcept {
                     if (loader_ && loaded_) {
                         imageloader_getImageInfo(loader_, &width, &height, &bytesPerPixel);
@@ -4198,7 +4131,6 @@ namespace olc {
                     return *this;
                 }
             };
-            
             
             // Keyboard event data structure
             struct KeyEvent {
@@ -4440,8 +4372,6 @@ namespace olc {
                 EventHandler& operator=(EventHandler&&) = delete;
             };
             
-            
-    
         } // namespace macos
     } // namespace apis
 } // namespace olc
@@ -4455,23 +4385,18 @@ namespace olc
 {
     namespace host
     {
-        
         // Manages our MacOS Host
         class Host_Apple_MacOS : public olc::host::Host
         {
         public:
-            
             olc::Window* pPGEwindow = nullptr;                  // Pointer to PGE Window
-            //GLint glSwapInterval = 0;                         // VSync disbaled by default
             
         public:
             Host_Apple_MacOS() = default;
             virtual ~Host_Apple_MacOS() {};
             
         public:
-            // Check/Get last error
             HostError GetLastError() const { return lastError; }
-
 
         public:
             virtual bool StartSystemEventLoop(bool bBlockIfPossible = false) override;
@@ -4480,7 +4405,6 @@ namespace olc
 			virtual bool UpdateWindowFrameTitle(olc::Window* pWindow) override;
 
 			virtual std::vector<void*> GetHostWindowDescriptor(olc::Window* pWindow) override;
-			
 			
 			virtual bool ConnectHostResourceToRenderer() override;
 
@@ -4491,7 +4415,6 @@ namespace olc
 			HostError lastError = HostError::None;
 
         public:
-          
             // MacOS Application and Window pointers
             std::unique_ptr<olc::apis::macos::Application> pMacApplication = nullptr;
             std::unique_ptr<olc::apis::macos::Window> pMacOSWindow = nullptr;
@@ -4501,9 +4424,7 @@ namespace olc
             void* pMacGLConextObj = nullptr;
             std::once_flag intialAppFlag;
     
-            
-        private:
-                       
+        private:      
             enum MAINTASKS{
                 NONE,
                 CREATE_OPENGL_RENDERER,
@@ -4523,7 +4444,7 @@ namespace olc
             
             std::vector<void*> vMacOSWindowDescriptors; // Vector to hold window descriptors
             bool enableVSync = false;                   // VSync enabled flag
-            bool bSkipFrame = false;                     // Flag to indicate if frame should be skipped 
+            bool bSkipFrame = false;                    // Flag to indicate if frame should be skipped 
 
             // Thread synchronization for PGE Thread V Main thread
             mutable std::mutex      mainThreadPendingTasksMutex;    // Mutex for main thread pending tasks
@@ -4542,7 +4463,6 @@ namespace olc
                 double height = 600.0;
             } frameBounds;
 
-             // TODO: Should these be private?
             void MacApplicationEventsHandler();
             void MacWindowEventsHandler();
             void MacEventsHandler();
@@ -4561,6 +4481,7 @@ namespace X11
 {
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <X11/XKBlib.h>
 #include <GL/glx.h>
 }
 
@@ -4586,6 +4507,8 @@ namespace olc::host
         
         
         bool ConnectHostResourceToRenderer() override;
+        
+        olc::KeyboardLayout GetKeyboardLayout() const override;
 
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
@@ -4593,6 +4516,8 @@ namespace olc::host
         std::unordered_map<size_t, X11::Window> mapUID2X11Window;
         std::unordered_map<X11::Window, olc::Window*> mapX11Window2PTR;
         std::atomic<bool> terminate {false};
+
+        std::unordered_map<uint32_t, olc::Key> mapKeys;
     };
 }
 
@@ -4605,6 +4530,9 @@ namespace olc::host
 #include "xdg-shell.h"
 #include "xdg-decoration.h"
 #include <linux/input-event-codes.h>
+#include <xkbcommon/xkbcommon.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
@@ -4663,6 +4591,9 @@ namespace olc::host
         wl_compositor* compositor{nullptr};
         wl_seat* seat{nullptr};
         wl_pointer* pointer{nullptr};
+        wl_keyboard* keyboard{nullptr};
+        xkb_context* kb_context{nullptr};
+        xkb_state* kb_state{nullptr};
         xdg_wm_base* xdg_wm{nullptr};
         zxdg_decoration_manager_v1* decoration_manager{nullptr};
 
@@ -4683,6 +4614,8 @@ namespace olc::host
         
         
         bool ConnectHostResourceToRenderer() override;
+
+        olc::KeyboardLayout GetKeyboardLayout() const override;
 
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
@@ -4706,6 +4639,14 @@ namespace olc::host
         static void pointer_axis_discrete_callback(void* data, wl_pointer* pointer, uint32_t axis, int32_t discrete);
         static void pointer_axis_value120_callback(void* data, wl_pointer* pointer, uint32_t axis, int32_t value120);
         static void pointer_axis_relative_direction_callback(void* data, wl_pointer* pointer, uint32_t axis, uint32_t direction);
+
+        // Keyboard callbacks
+        static void keyboard_keymap_callback(void* data, wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size);
+        static void keyboard_enter_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys);
+        static void keyboard_leave_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface);
+        static void keyboard_key_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
+        static void keyboard_modifiers_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
+        static void keyboard_repeat_info_callback(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay);
 
         // xdg callbacks
         static void xdg_wm_ping_callback(void* data, xdg_wm_base* wm, uint32_t serial);
@@ -4734,6 +4675,13 @@ namespace olc::host
         void pointer_axis_value120(wl_pointer* pointer, uint32_t axis, int32_t value120);
         void pointer_axis_relative_direction(wl_pointer* pointer, uint32_t axis, uint32_t direction);
 
+        // Keyboard Callback Functions
+        void keyboard_keymap(wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size);
+        void keyboard_enter(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys);
+        void keyboard_leave(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface);
+        void keyboard_key(wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
+        void keyboard_modifiers(wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
+
         // XDG toplevel callback functions
         void xdg_toplevel_configure(xdg_toplevel* toplevel, int32_t width, int32_t height, wl_array* states);
         void xdg_toplevel_close(xdg_toplevel* toplevel);
@@ -4744,6 +4692,7 @@ namespace olc::host
         std::unordered_map<size_t, WaylandWindow> mapUID2Window;
         std::unordered_map<size_t, olc::Window*> mapUID2OlcWindow;
         std::atomic<bool> terminate {false};
+        std::unordered_map<uint32_t, olc::Key> mapKeys;
     };
 }
 
@@ -5185,7 +5134,7 @@ namespace olc
 		typedef void CALLSTYLE glGetShaderiv_t(GLuint shader, GLenum pname, GLint* params);
 
 #if OLC_HOST == OLC_HOST_WINDOWS
-		typedef void CALLSTYLE glSwapInterval_t(GLsizei n);
+		typedef void CALLSTYLE wglSwapIntervalEXT_t(GLsizei n);
 #endif
 
 		// A little GL class (singleton)
@@ -5243,6 +5192,9 @@ namespace olc
 			glDeleteRenderbuffers_t* _glDeleteRenderbuffers = nullptr;
 			glGetInternalformativ_t* _glGetInternalformativ = nullptr;
 			glGetShaderiv_t* _glGetShaderiv = nullptr;
+#if OLC_HOST == OLC_HOST_WINDOWS
+			wglSwapIntervalEXT_t* _wglSwapIntervalEXT = nullptr;
+#endif
 
 
 		public:
@@ -5313,6 +5265,9 @@ namespace olc
 			void glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels);
 			void glHint(GLenum target, GLenum mode);
 			void glPolygonMode(GLenum face, GLenum mode);
+
+
+			void glSwapInterval(GLsizei n);
 
 			// Constants
 			static constexpr GLenum GL_FRAMEBUFFER_COMPLETE_X = 0x8CD5;
@@ -6103,10 +6058,8 @@ namespace olc::host
 #if OLC_HOST == OLC_HOST_MACOS
 namespace olc::host {
 
-    bool Host_Apple_MacOS::StartSystemEventLoop(bool bBlockIfPossible)
-    {
+    bool Host_Apple_MacOS::StartSystemEventLoop(bool bBlockIfPossible){
         (void)(bBlockIfPossible); // Remove unused variable warning
-        //TODO: Johnngy63 find out what bBlockIfPossible is supposed to do
 
         // Create MacOS Application instance
         pMacApplication = std::make_unique<olc::apis::macos::Application>();
@@ -6142,10 +6095,7 @@ namespace olc::host {
         return true;
     }
 
-    bool Host_Apple_MacOS::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
-    {
-         // Update the PGE window with the actual window size given by MacOS
-        
+    bool Host_Apple_MacOS::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen){       
         pPGEwindow = pWindow;
         pPGEwindow->SetWindowPosition(vWindowPos);
         pPGEwindow->SetWindowSize(vWindowSize); // Temporary small size to avoid large window on creation
@@ -6160,17 +6110,14 @@ namespace olc::host {
     }
 
 
-    bool Host_Apple_MacOS::CloseWindowFrame(olc::Window* pWindow)
-    {
-        // TODO: Gracefully close the window and clean up resources
+    bool Host_Apple_MacOS::CloseWindowFrame(olc::Window* pWindow){
         if (!pMacOSWindow) return false;
         if (!pWindow) return false;
         pWindow->olc_OnWindowClose();
         return true;
     }
 
-    bool Host_Apple_MacOS::UpdateWindowFrameTitle(olc::Window* pWindow)
-    {
+    bool Host_Apple_MacOS::UpdateWindowFrameTitle(olc::Window* pWindow){
         if (!pMacOSWindow) return false;
         dispatch_async(dispatch_get_main_queue(), ^{
             pMacOSWindow->setTitle(pWindow->GetWindowTitle().c_str());
@@ -6178,9 +6125,7 @@ namespace olc::host {
         return true;
     }
 
-    std::vector<void*> Host_Apple_MacOS::GetHostWindowDescriptor(olc::Window* pWindow)
-    {
-               
+    std::vector<void*> Host_Apple_MacOS::GetHostWindowDescriptor(olc::Window* pWindow){
         // While the PGE is running, if there are pending main thread tasks, process them, this causes PGE to wait
         bSkipFrame = ExecutePendingMainThreadTasks();
         
@@ -6341,7 +6286,6 @@ namespace olc::host {
         }
         vPendingMainThreadTasks.clear();
         
-        // Release any locks on the PGE
         // 4. Main Thread unlocks PGE Thread
         {
             std::lock_guard<std::mutex> lock(pgeThreadPendingTasksMutex);
@@ -6349,49 +6293,34 @@ namespace olc::host {
             isMainThreadResetting = false; // Reset main thread flag
         }
         pgeThreadResetCondition.notify_all();  // Wake up PGE thread
-
         return res;
-        
     }
 
 //------ Events Handlers -----
 
     void Host_Apple_MacOS::MacApplicationEventsHandler()
     {
-        // Application event handling code here
-        // Set application delegate event handlers
-       pMacApplication->setWillFinishLaunchingCallback([]() {
-           //std::cout << "--> Application delegate: Will finish launching" << std::endl;
-       });
+       pMacApplication->setWillFinishLaunchingCallback([]() { });
        
        pMacApplication->setDidFinishLaunchingCallback([&]() {
-           //std::cout << "--> Application delegate: Did finish launching" << std::endl;
            // Queue the Create OpenGL context task
            vPendingMainThreadTasks.push_back(CREATE_OPENGL_RENDERER);
        });
        
        pMacApplication->setWillTerminateCallback([&]() {
-           //std::cout << "--> Application delegate: Will terminate" << std::endl;
            // TODO: Johnngy63 - Implement olc_OnDestory in window.h/cpp
-           
        });
        
-       pMacApplication->setDidBecomeActiveCallback([]() {
-           //std::cout << "--> Application delegate: Did become active" << std::endl;
-       });
+       pMacApplication->setDidBecomeActiveCallback([]() { });
        
-       pMacApplication->setWillResignActiveCallback([]() {
-           //std::cout << "--> Application delegate: Will resign active" << std::endl;
-       });
+       pMacApplication->setWillResignActiveCallback([]() { });
         
     }
 
     void Host_Apple_MacOS::MacWindowEventsHandler()
     {
-        // Window event handling code here
         pMacOSWindow->setWindowDidResizeCallback([&]() {
             AddPendingMainThreadTask(RESIZE_WINDOW);
-            
         });
 
         pMacOSWindow->setWindowWillCloseCallback([&]() {
@@ -6407,16 +6336,13 @@ namespace olc::host {
 
         pMacOSWindow->setWindowDidResignKeyCallback([&]() {
             //TODO: Johnngy63 - Implement olc_OnWindowFocus in window.h/cpp
-            
         });
        
         pMacOSWindow->setWindowDidMiniaturizeCallback([&]() {
-            //TODO: Johnngy63 - Implement olc_OnWindowMinimize in window.h/cpp if needed
             AddPendingMainThreadTask(MINIMIZE_WINDOW);
         });
        
         pMacOSWindow->setWindowDidDeminiaturizeCallback([&]() {
-            //TODO: Johnngy63 - Implement olc_OnWindowFocus in window.h/cpp if needed
             AddPendingMainThreadTask(DEMINIMIZE_WINDOW);
         });
         
@@ -6520,7 +6446,6 @@ namespace olc::host {
         });
         
     }
-
 
 }
 
@@ -6671,111 +6596,40 @@ static constexpr const char* kDrawRectMethodTypeEncoding = "v@:{NSRect={NSPoint=
 // Type encoding for void methods with no parameters: "v@:"
 static constexpr const char* kVoidMethodTypeEncoding = "v@:";
 
-
 namespace ObjectiveCSEL {
      
     // Application memory management selectors
-    static SEL allocSel = nullptr;
-    static SEL initSel = nullptr;
-    static SEL setDelegateSel = nullptr;
-    static SEL releaseSel = nullptr;
-    static SEL isKindOfClassSel = nullptr;
+    static SEL allocSel, initSel, setDelegateSel, releaseSel, isKindOfClassSel = nullptr;
 
     // NSApplication lifecycle and management selectors
-    static SEL sharedApplicationSel = nullptr;
-    static SEL activateIgnoringOtherAppsSel = nullptr;
-    static SEL setActivationPolicySel = nullptr;
-    static SEL runSel = nullptr;
+    static SEL sharedApplicationSel, activateIgnoringOtherAppsSel, setActivationPolicySel,runSel = nullptr;
 
     // NSApplicationDelegate lifecycle methods
-    static SEL applicationWillFinishLaunchingSel = nullptr;
-    static SEL applicationDidFinishLaunchingSel  = nullptr;
-    static SEL applicationWillTerminateSel       = nullptr;
-    static SEL applicationDidBecomeActiveSel     = nullptr;
-    static SEL applicationWillResignActiveSel    = nullptr;
+    static SEL applicationWillFinishLaunchingSel, applicationDidFinishLaunchingSel, applicationWillTerminateSel, applicationDidBecomeActiveSel, applicationWillResignActiveSel = nullptr;
 
     // NSWindow creation, display, and management selectors
-    static SEL initWithContentRectSel           = nullptr;
-    static SEL stringWithUTF8StringSel          = nullptr;
-    static SEL setTitleSel                      = nullptr;
-    static SEL orderFrontRegardlessSel          = nullptr;
-    static SEL setAcceptsMouseMovedEventsSel    = nullptr;
-    static SEL makeFirstResponderSel            = nullptr;
-    static SEL makeKeyAndOrderFrontSel          = nullptr;
-    static SEL makeKeyWindowSel                 = nullptr;
-    static SEL frameSel                         = nullptr;
-    static SEL setFrameDisplaySel               = nullptr;
-    static SEL setFrameSel                      = nullptr;
+    static SEL initWithContentRectSel, stringWithUTF8StringSel, setTitleSel, orderFrontRegardlessSel, setAcceptsMouseMovedEventsSel, makeKeyAndOrderFrontSel = nullptr;
+    static SEL makeKeyWindowSel, frameSel, setFrameDisplaySel, setFrameSel, makeFirstResponderSel = nullptr;
 
     // NSWindowDelegate lifecycle and event methods selectors
-    static SEL windowDidResizeSel               = nullptr;
-    static SEL windowWillCloseSel               = nullptr;
-    static SEL windowDidBecomeKeySel            = nullptr;
-    static SEL windowDidResignKeySel            = nullptr;
-    static SEL windowDidMiniaturizeSel          = nullptr;
-    static SEL windowDidDeminiaturizeSel        = nullptr;
+    static SEL windowDidResizeSel, windowWillCloseSel, windowDidBecomeKeySel, windowDidResignKeySel, windowDidMiniaturizeSel, windowDidDeminiaturizeSel = nullptr;
 
     // NSResponder keyboard and mouse event methods selectors
-    static SEL keyDownSel                       = nullptr;
-    static SEL keyUpSel                         = nullptr;
-    static SEL mouseDownSel                     = nullptr;
-    static SEL mouseUpSel                       = nullptr;
-    static SEL mouseDraggedSel                  = nullptr;
-    static SEL mouseMovedSel                    = nullptr;
-    static SEL rightMouseDownSel                = nullptr;
-    static SEL rightMouseUpSel                  = nullptr;
-    static SEL rightMouseDraggedSel             = nullptr;
-    static SEL otherMouseDownSel                = nullptr;
-    static SEL otherMouseUpSel                  = nullptr;
-    static SEL otherMouseDraggedSel             = nullptr;
-    static SEL scrollWheelSel                   = nullptr;
-    static SEL deltaXSel                        = nullptr;
-    static SEL deltaYSel                        = nullptr;
+    static SEL keyDownSel, keyUpSel, mouseDownSel, mouseUpSel, mouseDraggedSel, mouseMovedSel, rightMouseDownSel, rightMouseUpSel, rightMouseDraggedSel, otherMouseDownSel = nullptr;
+    static SEL otherMouseUpSel, otherMouseDraggedSel, scrollWheelSel, deltaXSel, deltaYSel = nullptr;
 
     // Managing first responder status and keyboard focus selectors
-    static SEL acceptsFirstResponderSel         = nullptr;
-    static SEL becomeFirstResponderSel          = nullptr;
-    static SEL canBecomeKeyViewSel              = nullptr;
-    static SEL needsPanelToBecomeKeySel         = nullptr;
-    static SEL drawRectSel                      = nullptr;
-    static SEL reshapeSel                       = nullptr;
-    static SEL updateSel                        = nullptr;
+    static SEL acceptsFirstResponderSel, becomeFirstResponderSel, canBecomeKeyViewSel, needsPanelToBecomeKeySel, drawRectSel, reshapeSel, updateSel = nullptr;
 
     // NSOpenGL pixel format, view, and context management selectors
-    static SEL initWithAttributesSel            = nullptr;
-    static SEL initWithFramePixelFormatSel      = nullptr;
-    static SEL setContentViewSel                = nullptr;
-    static SEL contentViewSel                   = nullptr;
-    static SEL boundsSel                        = nullptr;
-    static SEL convertPointFromViewSel          = nullptr;
-    static SEL openGLContextSel                 = nullptr;
-    static SEL makeCurrentContextSel            = nullptr;
-    static SEL setAutoresizingMaskSel           = nullptr;
-    static SEL flushBufferSel                   = nullptr;
-    static SEL displaySel                       = nullptr;
-    static SEL CGLContextObjSel                 = nullptr;
-    static SEL setValuesSel                     = nullptr;
+    static SEL initWithAttributesSel, initWithFramePixelFormatSel, setContentViewSel, contentViewSel, boundsSel, convertPointFromViewSel, openGLContextSel, makeCurrentContextSel = nullptr;
+    static SEL setAutoresizingMaskSel, flushBufferSel, displaySel, CGLContextObjSel, setValuesSel = nullptr;
 
     // Extracting data from NSEvent objects selectors
-    static SEL keyCodeSel                       = nullptr;
-    static SEL charactersSel                    = nullptr;
-    static SEL locationInWindowSel              = nullptr;
-    static SEL buttonNumberSel                  = nullptr;
-    static SEL clickCountSel                    = nullptr;
-    static SEL modifierFlagsSel                 = nullptr;
-    static SEL utf8StringSel                    = nullptr;
+    static SEL keyCodeSel, charactersSel, locationInWindowSel, buttonNumberSel, clickCountSel, modifierFlagsSel, utf8StringSel = nullptr;
 
     // NSImage, NSBitmapImageRep, and image data access selectors
-    static SEL initWithContentsOfFileSel        = nullptr;
-    static SEL representationsSel               = nullptr;
-    static SEL countSel                         = nullptr;
-    static SEL objectAtIndexSel                 = nullptr;
-    static SEL pixelsWideSel                    = nullptr;
-    static SEL pixelsHighSel                    = nullptr;
-    static SEL bitsPerPixelSel                  = nullptr;
-    static SEL bytesPerRowSel                   = nullptr;
-    static SEL hasAlphaSel                      = nullptr;
-    static SEL bitmapDataSel                    = nullptr;
+    static SEL initWithContentsOfFileSel, representationsSel, countSel, objectAtIndexSel, pixelsWideSel, pixelsHighSel, bitsPerPixelSel, bytesPerRowSel, hasAlphaSel, bitmapDataSel = nullptr;
 
     // Initialize all selectors - called once at startup
     void initializeSelectors() {
@@ -6949,7 +6803,6 @@ struct CustomOpenGLView;
 struct WindowDelegate;
 struct ImageLoader;
 
-
 // enums for OpenGL pixel format and rendering capabilities
 enum class NSOpenGLPixelFormatAttribute : uint16_t {
     // Renderer selection
@@ -7094,7 +6947,6 @@ static Window*      gptrNSWindowEvents      = nullptr;
 static Application* gptrApplicationDelegate = nullptr;
 static Window*      gptrWindowDelegate      = nullptr;
 
-
 // Handles NSApplication delegate methods and lifecycle events
 struct ApplicationDelegate {
     Class isa;                      // Objective-C class pointer (required)
@@ -7147,8 +6999,6 @@ struct Application {
     // Delete copy constructor and assignment
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
-    
-    // Allow move semantics
     Application(Application&&) = default;
     Application& operator=(Application&&) = default;
 };
@@ -7255,7 +7105,6 @@ struct ImageLoader {
     BOOL (*getPixel)               (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha){nullptr};
     unsigned int (*createOpenGLTexture)(const struct ImageLoader* self){nullptr};
 };
-
 
 // Called when application is about to finish launching
 void applicationWillFinishLaunching(id self, SEL _cmd, id notification) {
@@ -7396,7 +7245,6 @@ void convertToContentViewCoordinates(NSPoint& location) {
     }
 }
 
-// Structure to hold common mouse event data
 struct MouseEventData {
     NSPoint location         = {0.0, 0.0};
     NSUInteger modifierFlags = 0;
@@ -7416,8 +7264,6 @@ MouseEventData extractMouseEventData(id event) {
     return data;
 }
 
-
-
 // Handle left mouse down events
 void view_mouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd; // Remove unused parameter warnings
@@ -7436,12 +7282,10 @@ void view_mouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseUpCallback) [[likely]] {
         gptrNSWindowEvents->mouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber,
                                             (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
-
 }
 
 // Handle mouse drag events
@@ -7449,7 +7293,6 @@ void view_mouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseDraggedCallback) [[likely]] {
         gptrNSWindowEvents->mouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7458,12 +7301,6 @@ void view_mouseDragged(id self, SEL _cmd, id event) {
 // Handle mouse movement events
 void view_mouseMoved(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
-
-    // Note: mouseMoved events do not have buttonNumber except in the case of Touch screens
-    // When using a touch screen, mouseMoved events may include a buttonNumber corresponding to the touch point
-    // However, for standard mouse movement, buttonNumber is typically not applicable, but if you call it, it returns 0
-    // Hence, we will use kNoButton constant to indicate no button is pressed during mouse movement and avoid
-    // using extractMouseEventData which retrieves buttonNumber
 
     NSPoint location         = ((NSPoint(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::locationInWindowSel);
     NSUInteger modifierFlags = ((NSUInteger(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::modifierFlagsSel);
@@ -7480,7 +7317,6 @@ void view_rightMouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseDownCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseDownCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7491,7 +7327,6 @@ void view_rightMouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseUpCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7502,7 +7337,6 @@ void view_rightMouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseDraggedCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7514,7 +7348,6 @@ void view_otherMouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDownCallback) [[likely]] {
         gptrNSWindowEvents->otherMouseDownCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7525,7 +7358,6 @@ void view_otherMouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseUpCallback) {
         gptrNSWindowEvents->otherMouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7535,7 +7367,6 @@ void view_otherMouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
 
     MouseEventData data = extractMouseEventData(event);
-
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDraggedCallback) [[likely]] {
         gptrNSWindowEvents->otherMouseDraggedCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
@@ -7556,7 +7387,6 @@ void view_scrollWheel(id self, SEL _cmd, id event) {
         gptrNSWindowEvents->scrollWheelCallback(location.x, location.y, deltaX, deltaY, (unsigned int)modifierFlags, gptrNSWindowEvents->eventUserData);
     }
 }
-
 
 // Determine if view can accept first responder status
 id view_acceptsFirstResponder(id self, SEL _cmd) {
@@ -7585,25 +7415,20 @@ id view_needsPanelToBecomeKey(id self, SEL _cmd) {
 // Empty drawRect method - prevents automatic drawing on main thread
 void view_drawRect(id self, SEL _cmd, NSRect dirtyRect) {
     (void)self;(void)_cmd;(void)dirtyRect;
-
-    // Block automatic drawing - PGE engine thread will handle OpenGL rendering
 }
 
 // Empty reshape method - prevents automatic context reshaping on main thread
 void view_reshape(id self, SEL _cmd) {
     (void)self;(void)_cmd;
-    // Block automatic reshape - PGE engine thread will handle OpenGL updates
 }
 
 // Empty update method - prevents automatic context updates on main thread
 void view_update(id self, SEL _cmd) {
     (void)self;(void)_cmd;
-    // Block automatic update - PGE engine thread will handle OpenGL updates
 }
 
 // Create custom OpenGL view class
 Class createCustomOpenGLViewClass() {
-    // Check if class already exists
     Class existingClass = objc_getClass(kCustomOpenGLViewClass);
     if (existingClass) {
         return existingClass;
@@ -7663,7 +7488,8 @@ void windowDidResize(id self, SEL _cmd, id notification) {
     (void)self;(void)_cmd;(void)notification;
 
     if (gptrWindowDelegate && gptrWindowDelegate->nsWindow) {
-        // Safely update frame data only - no OpenGL operations
+
+        // Update frame data only
         window_updateFrameFromOSX(gptrWindowDelegate);
 
          // Get the new content view size
@@ -7693,6 +7519,7 @@ void windowDidBecomeKey(id self, SEL _cmd, id notification) {
     }
 }
 
+// handle window did resign key events
 void windowDidResignKey(id self, SEL _cmd, id notification) {
     (void)self;(void)_cmd;(void)notification;
     if (gptrWindowDelegate && gptrWindowDelegate->windowDidResignKeyCallback) {
@@ -7700,6 +7527,7 @@ void windowDidResignKey(id self, SEL _cmd, id notification) {
     }
 }
 
+// Handle window did miniaturize events
 void windowDidMiniaturize(id self, SEL _cmd, id notification) {
     (void)self;(void)_cmd;(void)notification;
     if (gptrWindowDelegate && gptrWindowDelegate->windowDidMiniaturizeCallback) {
@@ -7779,7 +7607,6 @@ id createWindowDelegateForWindow(void) {
     
     return delegate;
 }
-
 
     // Forward declarations for C API functions used by internal helpers
     extern "C" void window_setDelegate(Window* self, id delegate);
@@ -7888,7 +7715,6 @@ extern "C" {
 
         window_getContentViewFrame(self, &self->contentViewFrame.x, &self->contentViewFrame.y,
                                    &self->contentViewFrame.width, &self->contentViewFrame.height);
-        // Update internal frame representation from actual NSWindow
     }
 
     // Show the window and set up event handling
@@ -7912,8 +7738,8 @@ extern "C" {
 
     // Destroy the window
     void window_destroy(Window* self) {
-        // NSWindow will be cleaned up by autorelease pool
         (void)self;
+        // NSWindow will be cleaned up by autorelease pool
     }
 
     // Window delegate setter
@@ -7951,11 +7777,7 @@ extern "C" {
 
     // Refresh internal frame representation from actual NSWindow (OSX)
     void window_updateFrameFromOSX(Window* self) {
-
-       NSRect screenFrame = ((NSRect(*)(id, SEL))objc_msgSend)(self->nsWindow, ObjectiveCSEL::frameSel);
-
-        self->windowFrame = screenFrame; // Update internal frame representation
-       
+       self->windowFrame = ((NSRect(*)(id, SEL))objc_msgSend)(self->nsWindow, ObjectiveCSEL::frameSel);
     }
 
     // Get the content view size (excludes title bar and borders)
@@ -8007,7 +7829,6 @@ extern "C" {
            }
        }
     }
-
 
     // Get Window frame (x, y, width, height)
     void window_getWindowFrame(const Window* self, double* x, double* y, double* width, double* height) {
@@ -8133,20 +7954,10 @@ extern "C" {
         ((void(*)(id, SEL))objc_msgSend)(self->window->nsWindow, ObjectiveCSEL::makeKeyWindowSel);
         
         // Make the OpenGL view the first responder so it can receive keyboard and mouse events
-        BOOL result = ((BOOL(*)(id, SEL, id))objc_msgSend)(self->window->nsWindow, ObjectiveCSEL::makeFirstResponderSel, self->glView);
-        
-        if(result == NO) {
-            // Handle error if needed
-            //printf("Warning: Failed to make OpenGL view the first responder.\n");
-        }
+        ((BOOL(*)(id, SEL, id))objc_msgSend)(self->window->nsWindow, ObjectiveCSEL::makeFirstResponderSel, self->glView);
         
         // Additional debug: check if view can become key view
-        BOOL canBecomeKey = ((BOOL(*)(id, SEL))objc_msgSend)(self->glView, ObjectiveCSEL::canBecomeKeyViewSel);
-        if(canBecomeKey == NO) {
-            // Handle error if needed
-            //printf("Warning: OpenGL view cannot become key view.\n");
-        }
-
+        ((BOOL(*)(id, SEL))objc_msgSend)(self->glView, ObjectiveCSEL::canBecomeKeyViewSel);
     }
 
     // Implementation function
@@ -8173,7 +7984,6 @@ extern "C" {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         return true;
-
     }
 
 
@@ -8184,11 +7994,8 @@ extern "C" {
 
     // Get the underlying CGLContextObj from the OpenGL renderer
     void* opengl_getCGLContextObj(struct OpenGLRenderer* self) {
-        if (!self || !self->glContext) {
-            return nullptr;
-        }
+        if (!self || !self->glContext) { return nullptr;}
         
-        // Get the CGLContextObj from the NSOpenGLContext
         return (void*)((void*(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::CGLContextObjSel);
     }
     
@@ -8206,9 +8013,7 @@ extern "C" {
 
     // Enable or disable vertical synchronization (vsync)
     void opengl_setVsync(OpenGLRenderer* self, BOOL enabled) {
-        if (!self || !self->glContext) {
-            return;
-        }
+        if (!self || !self->glContext) { return; }
         
         // Make context current first
         ((void(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::makeCurrentContextSel);
@@ -8217,7 +8022,6 @@ extern "C" {
         GLint swapInterval = enabled ? 1 : 0;
         
         // Use NSOpenGLContext setValues:forParameter: to set swap interval
-        // NSOpenGLContextParameterSwapInterval = 222
         const GLint parameter = 222; // NSOpenGLContextParameterSwapInterval
         ((void(*)(id, SEL, const GLint*, GLint))objc_msgSend)(self->glContext, ObjectiveCSEL::setValuesSel, &swapInterval, parameter);
     }
@@ -8412,36 +8216,7 @@ extern "C" {
         self->bytesPerRow     = kZeroRows;
         self->hasAlpha        = NO;
     }
-
-    // Create OpenGL texture from ImageLoader
-    unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* loader) {
-        if (!loader->isLoaded(const_cast<struct ImageLoader*>(loader))) {
-            return 0;
-        }
-        
-        unsigned int textureID;
-        glGenTextures(1, &textureID);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        
-        // Set texture parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        // Determine format
-        GLenum format = (loader->bytesPerPixel == kRGBABytesPerPixel) ? GL_RGBA : GL_RGB;
-
-        // Upload texture data
-        glTexImage2D(GL_TEXTURE_2D, 0, format, loader->width, loader->height,
-                    0, format, GL_UNSIGNED_BYTE, loader->pixelData);
-        
-        // Generate mipmaps for better quality at different scales
-        glGenerateMipmap(GL_TEXTURE_2D);
-        
-        return textureID;
-    }
-
+ 
     // ImageLoader constructor
     struct ImageLoader* imageloader_init() {
         struct ImageLoader* loader = (struct ImageLoader*)malloc(sizeof(struct ImageLoader));
@@ -8462,7 +8237,6 @@ extern "C" {
         loader->getDetailedInfo     = imageloader_getDetailedInfo;
         loader->isLoaded            = imageloader_isLoaded;
         loader->getPixel            = imageloader_getPixel;
-        loader->createOpenGLTexture = imageloader_createOpenGLTexture;
         
         return loader;
     }
@@ -8624,38 +8398,32 @@ extern "C" {
     void window_setWindowDidResizeCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidResizeCallback = callback;
         self->windowDidResizeUserData = userData;
-        ensureWindowDelegate(self);  // Ensure delegate exists when callbacks are set
 
     }
 
     void window_setWindowWillCloseCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowWillCloseCallback = callback;
         self->windowWillCloseUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidBecomeKeyCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidBecomeKeyCallback = callback;
         self->windowDidBecomeKeyUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidResignKeyCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidResignKeyCallback = callback;
         self->windowDidResignKeyUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidMiniaturizeCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidMiniaturizeCallback = callback;
         self->windowDidMiniaturizeUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     void window_setWindowDidDeminiaturizeCallback(Window* self, void (*callback)(void*), void* userData) {
         self->windowDidDeminiaturizeCallback = callback;
         self->windowDidDeminiaturizeUserData = userData;
-        ensureWindowDelegate(self);
     }
 
     // Application delegate callback setter functions
@@ -8698,6 +8466,61 @@ namespace olc::host
         XInitThreads();
         olc_Display = XOpenDisplay(NULL);
         olc_WindowRoot = DefaultRootWindow(olc_Display);
+
+        mapKeys[NoSymbol] = Key::NONE;
+
+        int keyTracker = static_cast<int>(Key::A);
+        uint32_t uppercase = static_cast<uint32_t>(XK_A);
+        uint32_t lowercase = static_cast<uint32_t>(XK_a);
+
+        for (; uppercase <= static_cast<uint32_t>(XK_Z); ++uppercase, ++lowercase)
+        {
+            mapKeys[uppercase] = (Key)keyTracker;
+            mapKeys[lowercase] = (Key)keyTracker;
+            ++keyTracker;
+        }
+
+        mapKeys[XK_F1] = Key::F1; mapKeys[XK_F2] = Key::F2; mapKeys[XK_F3] = Key::F3; mapKeys[XK_F4] = Key::F4;
+        mapKeys[XK_F5] = Key::F5; mapKeys[XK_F6] = Key::F6; mapKeys[XK_F7] = Key::F7; mapKeys[XK_F8] = Key::F8;
+        mapKeys[XK_F9] = Key::F9; mapKeys[XK_F10] = Key::F10; mapKeys[XK_F11] = Key::F11; mapKeys[XK_F12] = Key::F12;
+
+        mapKeys[XK_Down] = Key::DOWN; mapKeys[XK_Left] = Key::LEFT; mapKeys[XK_Right] = Key::RIGHT; mapKeys[XK_Up] = Key::UP;
+        mapKeys[XK_KP_Enter] = Key::ENTER; mapKeys[XK_Return] = Key::ENTER;
+
+        mapKeys[XK_BackSpace] = Key::BACK; mapKeys[XK_Escape] = Key::ESCAPE; mapKeys[XK_Linefeed] = Key::ENTER;	mapKeys[XK_Pause] = Key::PAUSE;
+        mapKeys[XK_Scroll_Lock] = Key::SCROLL; mapKeys[XK_Tab] = Key::TAB; mapKeys[XK_Delete] = Key::DEL; mapKeys[XK_Home] = Key::HOME;
+        mapKeys[XK_End] = Key::END; mapKeys[XK_Page_Up] = Key::PGUP; mapKeys[XK_Page_Down] = Key::PGDN;	mapKeys[XK_Insert] = Key::INS;
+        mapKeys[XK_Shift_L] = Key::SHIFT; mapKeys[XK_Shift_R] = Key::SHIFT; mapKeys[XK_Control_L] = Key::CTRL; mapKeys[XK_Control_R] = Key::CTRL;
+        mapKeys[XK_space] = Key::SPACE; mapKeys[XK_period] = Key::PERIOD;
+
+        mapKeys[XK_0] = Key::K0; mapKeys[XK_1] = Key::K1; mapKeys[XK_2] = Key::K2; mapKeys[XK_3] = Key::K3; mapKeys[XK_4] = Key::K4;
+        mapKeys[XK_5] = Key::K5; mapKeys[XK_6] = Key::K6; mapKeys[XK_7] = Key::K7; mapKeys[XK_8] = Key::K8; mapKeys[XK_9] = Key::K9;
+
+        mapKeys[XK_KP_0] = Key::NP0; mapKeys[XK_KP_1] = Key::NP1; mapKeys[XK_KP_2] = Key::NP2; mapKeys[XK_KP_3] = Key::NP3; mapKeys[XK_KP_4] = Key::NP4;
+        mapKeys[XK_KP_5] = Key::NP5; mapKeys[XK_KP_6] = Key::NP6; mapKeys[XK_KP_7] = Key::NP7; mapKeys[XK_KP_8] = Key::NP8; mapKeys[XK_KP_9] = Key::NP9;
+        mapKeys[XK_KP_Multiply] = Key::NP_MUL; mapKeys[XK_KP_Add] = Key::NP_ADD; mapKeys[XK_KP_Divide] = Key::NP_DIV; mapKeys[XK_KP_Subtract] = Key::NP_SUB; mapKeys[XK_KP_Decimal] = Key::NP_DECIMAL;
+
+        // These map the keypad when NUMLOCK is off
+        mapKeys[XK_KP_Home] = Key::HOME; mapKeys[XK_KP_End] = Key::END; mapKeys[XK_KP_Up] = Key::UP;
+        mapKeys[XK_KP_Down] = Key::DOWN; mapKeys[XK_KP_Left] = Key::LEFT; mapKeys[XK_KP_Right] = Key::RIGHT;
+        mapKeys[XK_KP_Page_Up] = Key::PGUP; mapKeys[XK_KP_Page_Down] = Key::PGDN; mapKeys[XK_KP_Insert] = Key::INS;
+        mapKeys[XK_KP_Delete] = Key::DEL;
+
+        // These keys vary depending on the keyboard. I've included comments for US and UK keyboard layouts
+        mapKeys[XK_semicolon] = Key::OEM_1;		// On US and UK keyboards this is the ';:' key
+        mapKeys[XK_slash] = Key::OEM_2;			// On US and UK keyboards this is the '/?' key
+        mapKeys[XK_asciitilde] = Key::OEM_3;	// On US keyboard this is the '~' key
+        mapKeys[XK_grave] = Key::OEM_3;	// On US keyboard this is the '`' key
+        mapKeys[XK_bracketleft] = Key::OEM_4;	// On US and UK keyboards this is the '[{' key
+        mapKeys[XK_backslash] = Key::OEM_5;		// On US keyboard this is '\|' key.
+        mapKeys[XK_bracketright] = Key::OEM_6;	// On US and UK keyboards this is the ']}' key
+        mapKeys[XK_apostrophe] = Key::OEM_7;	// On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
+        mapKeys[XK_numbersign] = Key::OEM_8;	// miscellaneous characters. Varies by keyboard. I believe this to be the '#~' key on UK keyboards
+        mapKeys[XK_equal] = Key::EQUALS;		// the '+' key on any keyboard
+        mapKeys[XK_comma] = Key::COMMA;			// the comma key on any keyboard
+        mapKeys[XK_minus] = Key::MINUS;			// the minus key on any keyboard			
+
+        mapKeys[XK_Caps_Lock] = Key::CAPS_LOCK;
     }
 
     bool Host_Linux_X11::StartSystemEventLoop(bool bBlockIfPossible)
@@ -8738,24 +8561,36 @@ namespace olc::host
                             pge_window->olc_OnWindowSize(olc::vi2d{xce.width, xce.height});
                         }
                     }
-                    // else if (xev.type == KeyPress)
-                    // {
-                    // 	KeySym ks;
+                    else if (xev.type == KeyPress)
+                    {
+                    	KeySym ks;
 
-                    // 	// DragonEye still loves numpads, but this is a better way
-                    // 	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                        // Unset the "shift" bit so that Key and Shift-Key will be mapped to the same olc::key
+                        // since the system kind of assumes this
+                        xev.xkey.state &= ~(1); 
 
-                    // 	if (ks != NoSymbol)
-                    // 		ptrPGE->olc_UpdateKeyState(ks, true);
-                    // }
-                    // else if (xev.type == KeyRelease)
-                    // {
-                    // 	KeySym ks;
-                    // 	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                    	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                        
+                        if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
+                            auto it = mapKeys.find(static_cast<uint32_t>(ks));
+                            if(it != mapKeys.end()) {
+                                pge_window->olc_OnKeyPress(it->second, true);
+                            }
+                        }
+                    }
+                    else if (xev.type == KeyRelease)
+                    {
+                    	KeySym ks;
 
-                    // 	if (ks != NoSymbol)
-                    // 		ptrPGE->olc_UpdateKeyState(ks, false);
-                    // }
+                    	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+
+                        if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
+                            auto it = mapKeys.find(static_cast<uint32_t>(ks));
+                            if(it != mapKeys.end()) {
+                                pge_window->olc_OnKeyPress(it->second, false);
+                            }
+                        }
+                    }
                     else if (xev.type == ButtonPress)
                     {
                         if(auto* pge_window = get_pge_window(xev.xbutton.window); pge_window) {
@@ -8815,11 +8650,6 @@ namespace olc::host
 
     bool Host_Linux_X11::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
     {
-		// The user created olc::Window object is the SSoT for what a window
-		// should look like, so get that sort of thing from there
-		olc::vi2d vWinPos = vWindowPos;
-		olc::vi2d vWinSize = vWindowSize;
-
         // Based on the display capabilities, configure the appearance of the window
         // to do this namespacing, both x11 and glx have to be included in the x11 namespace
         GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
@@ -8887,6 +8717,12 @@ namespace olc::host
         return true;
     }
 
+    olc::KeyboardLayout Host_Linux_X11::GetKeyboardLayout() const {
+        // The objectively correct keyboard layout
+        return olc::KeyboardLayout::QWERTY_US;
+    }
+
+
     // Wait for entire host desktop refresh (for smooooth vsync)
     bool Host_Linux_X11::SyncWithDesktopComposite()
     {
@@ -8921,6 +8757,15 @@ namespace olc::host
             .axis_discrete = Host_Linux_Wayland::pointer_axis_discrete_callback,
             .axis_value120 = Host_Linux_Wayland::pointer_axis_value120_callback,
             .axis_relative_direction = Host_Linux_Wayland::pointer_axis_relative_direction_callback
+        };
+
+        static const wl_keyboard_listener keyboard_listener {
+            .keymap = Host_Linux_Wayland::keyboard_keymap_callback,
+            .enter = Host_Linux_Wayland::keyboard_enter_callback,
+            .leave = Host_Linux_Wayland::keyboard_leave_callback,
+            .key = Host_Linux_Wayland::keyboard_key_callback,
+            .modifiers = Host_Linux_Wayland::keyboard_modifiers_callback,
+            .repeat_info = Host_Linux_Wayland::keyboard_repeat_info_callback
         };
     }
 
@@ -8960,6 +8805,64 @@ namespace olc::host
         
         xdg_wm_base_add_listener(xdg_wm, &xdg::xdg_base_listener, this);
         wl_seat_add_listener(seat, &wayland::seat_listener, this);
+
+        kb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+
+        // Setup the keymap with XKB codes, which are basically the same as the X11 codes
+        mapKeys[XKB_KEY_NoSymbol] = Key::NONE;
+
+        int keyTracker = static_cast<int>(Key::A);
+        uint32_t uppercase = static_cast<uint32_t>(XKB_KEY_A);
+        uint32_t lowercase = static_cast<uint32_t>(XKB_KEY_a);
+
+        for (; uppercase <= static_cast<uint32_t>(XKB_KEY_Z); ++uppercase, ++lowercase)
+        {
+            mapKeys[uppercase] = (Key)keyTracker;
+            mapKeys[lowercase] = (Key)keyTracker;
+            ++keyTracker;
+        }
+
+        mapKeys[XKB_KEY_F1] = Key::F1; mapKeys[XKB_KEY_F2] = Key::F2; mapKeys[XKB_KEY_F3] = Key::F3; mapKeys[XKB_KEY_F4] = Key::F4;
+        mapKeys[XKB_KEY_F5] = Key::F5; mapKeys[XKB_KEY_F6] = Key::F6; mapKeys[XKB_KEY_F7] = Key::F7; mapKeys[XKB_KEY_F8] = Key::F8;
+        mapKeys[XKB_KEY_F9] = Key::F9; mapKeys[XKB_KEY_F10] = Key::F10; mapKeys[XKB_KEY_F11] = Key::F11; mapKeys[XKB_KEY_F12] = Key::F12;
+
+        mapKeys[XKB_KEY_Down] = Key::DOWN; mapKeys[XKB_KEY_Left] = Key::LEFT; mapKeys[XKB_KEY_Right] = Key::RIGHT; mapKeys[XKB_KEY_Up] = Key::UP;
+        mapKeys[XKB_KEY_KP_Enter] = Key::ENTER; mapKeys[XKB_KEY_Return] = Key::ENTER;
+
+        mapKeys[XKB_KEY_BackSpace] = Key::BACK; mapKeys[XKB_KEY_Escape] = Key::ESCAPE; mapKeys[XKB_KEY_Linefeed] = Key::ENTER;	mapKeys[XKB_KEY_Pause] = Key::PAUSE;
+        mapKeys[XKB_KEY_Scroll_Lock] = Key::SCROLL; mapKeys[XKB_KEY_Tab] = Key::TAB; mapKeys[XKB_KEY_Delete] = Key::DEL; mapKeys[XKB_KEY_Home] = Key::HOME;
+        mapKeys[XKB_KEY_End] = Key::END; mapKeys[XKB_KEY_Page_Up] = Key::PGUP; mapKeys[XKB_KEY_Page_Down] = Key::PGDN;	mapKeys[XKB_KEY_Insert] = Key::INS;
+        mapKeys[XKB_KEY_Shift_L] = Key::SHIFT; mapKeys[XKB_KEY_Shift_R] = Key::SHIFT; mapKeys[XKB_KEY_Control_L] = Key::CTRL; mapKeys[XKB_KEY_Control_R] = Key::CTRL;
+        mapKeys[XKB_KEY_space] = Key::SPACE; mapKeys[XKB_KEY_period] = Key::PERIOD;
+
+        mapKeys[XKB_KEY_0] = Key::K0; mapKeys[XKB_KEY_1] = Key::K1; mapKeys[XKB_KEY_2] = Key::K2; mapKeys[XKB_KEY_3] = Key::K3; mapKeys[XKB_KEY_4] = Key::K4;
+        mapKeys[XKB_KEY_5] = Key::K5; mapKeys[XKB_KEY_6] = Key::K6; mapKeys[XKB_KEY_7] = Key::K7; mapKeys[XKB_KEY_8] = Key::K8; mapKeys[XKB_KEY_9] = Key::K9;
+
+        mapKeys[XKB_KEY_KP_0] = Key::NP0; mapKeys[XKB_KEY_KP_1] = Key::NP1; mapKeys[XKB_KEY_KP_2] = Key::NP2; mapKeys[XKB_KEY_KP_3] = Key::NP3; mapKeys[XKB_KEY_KP_4] = Key::NP4;
+        mapKeys[XKB_KEY_KP_5] = Key::NP5; mapKeys[XKB_KEY_KP_6] = Key::NP6; mapKeys[XKB_KEY_KP_7] = Key::NP7; mapKeys[XKB_KEY_KP_8] = Key::NP8; mapKeys[XKB_KEY_KP_9] = Key::NP9;
+        mapKeys[XKB_KEY_KP_Multiply] = Key::NP_MUL; mapKeys[XKB_KEY_KP_Add] = Key::NP_ADD; mapKeys[XKB_KEY_KP_Divide] = Key::NP_DIV; mapKeys[XKB_KEY_KP_Subtract] = Key::NP_SUB; mapKeys[XKB_KEY_KP_Decimal] = Key::NP_DECIMAL;
+
+        // These map the keypad when NUMLOCK is off
+        mapKeys[XKB_KEY_KP_Home] = Key::HOME; mapKeys[XKB_KEY_KP_End] = Key::END; mapKeys[XKB_KEY_KP_Up] = Key::UP;
+        mapKeys[XKB_KEY_KP_Down] = Key::DOWN; mapKeys[XKB_KEY_KP_Left] = Key::LEFT; mapKeys[XKB_KEY_KP_Right] = Key::RIGHT;
+        mapKeys[XKB_KEY_KP_Page_Up] = Key::PGUP; mapKeys[XKB_KEY_KP_Page_Down] = Key::PGDN; mapKeys[XKB_KEY_KP_Insert] = Key::INS;
+        mapKeys[XKB_KEY_KP_Delete] = Key::DEL;
+
+        // These keys vary depending on the keyboard. I've included comments for US and UK keyboard layouts
+        mapKeys[XKB_KEY_semicolon] = Key::OEM_1;		// On US and UK keyboards this is the ';:' key
+        mapKeys[XKB_KEY_slash] = Key::OEM_2;			// On US and UK keyboards this is the '/?' key
+        mapKeys[XKB_KEY_asciitilde] = Key::OEM_3;	// On US keyboard this is the '~' key
+        mapKeys[XKB_KEY_grave] = Key::OEM_3;	// On US keyboard this is the '`' key
+        mapKeys[XKB_KEY_bracketleft] = Key::OEM_4;	// On US and UK keyboards this is the '[{' key
+        mapKeys[XKB_KEY_backslash] = Key::OEM_5;		// On US keyboard this is '\|' key.
+        mapKeys[XKB_KEY_bracketright] = Key::OEM_6;	// On US and UK keyboards this is the ']}' key
+        mapKeys[XKB_KEY_apostrophe] = Key::OEM_7;	// On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
+        mapKeys[XKB_KEY_numbersign] = Key::OEM_8;	// miscellaneous characters. Varies by keyboard. I believe this to be the '#~' key on UK keyboards
+        mapKeys[XKB_KEY_equal] = Key::EQUALS;		// the '+' key on any keyboard
+        mapKeys[XKB_KEY_comma] = Key::COMMA;			// the comma key on any keyboard
+        mapKeys[XKB_KEY_minus] = Key::MINUS;			// the minus key on any keyboard			
+
+        mapKeys[XKB_KEY_Caps_Lock] = Key::CAPS_LOCK;
     }
 
     Host_Linux_Wayland::~Host_Linux_Wayland()
@@ -8971,6 +8874,9 @@ namespace olc::host
             xdg_surface_destroy(wayland_window.surface_xdg);
             wl_surface_destroy(wayland_window.surface);
         }
+
+        xkb_state_unref(kb_state);
+        xkb_context_unref(kb_context);
 
         wl_display_disconnect(display);
     }
@@ -9044,6 +8950,11 @@ namespace olc::host
         return true;
     }
 
+    olc::KeyboardLayout Host_Linux_Wayland::GetKeyboardLayout() const
+    {
+        return olc::KeyboardLayout::QWERTY_US;
+    }
+
     void Host_Linux_Wayland::registry_handle_global(wl_registry* registry, uint32_t name, const char* interface, uint32_t version)
     {
         if(std::strcmp(interface, wl_compositor_interface.name) == 0) {
@@ -9058,6 +8969,9 @@ namespace olc::host
         if(std::strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0) {
             decoration_manager = static_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, version));
         }
+        if(std::strcmp(interface, wl_keyboard_interface.name) == 0) {
+            keyboard = static_cast<wl_keyboard*>(wl_registry_bind(registry, name, &wl_keyboard_interface, version));
+        }
     }
     
     void Host_Linux_Wayland::registry_handle_global_remove(wl_registry* registry, uint32_t name)
@@ -9070,6 +8984,11 @@ namespace olc::host
         if (capabilities & WL_SEAT_CAPABILITY_POINTER && pointer == nullptr) {
             pointer = wl_seat_get_pointer(seat);
             wl_pointer_add_listener(pointer, &wayland::pointer_listener, this);
+        }
+
+        if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD && keyboard == nullptr) {
+            keyboard = wl_seat_get_keyboard(seat);
+            wl_keyboard_add_listener(keyboard, &wayland::keyboard_listener, this);
         }
     }
 
@@ -9304,6 +9223,102 @@ namespace olc::host
     {
         //auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
         //host->pointer_axis_relative_direction(pointer, axis, direction);
+    }
+
+    // Keyboard Callbacks
+    void Host_Linux_Wayland::keyboard_keymap_callback(void* data, wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_keymap(keyboard, format, fd, size);
+    }
+
+    void Host_Linux_Wayland::keyboard_keymap(wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size)
+    {
+        if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
+            close(fd);
+            return;
+        }
+
+        char* keymap_string = static_cast<char*>(mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0));
+        if (keymap_string == MAP_FAILED) {
+            close(fd);
+            return;
+        }
+
+        xkb_keymap* keymap = xkb_keymap_new_from_string(kb_context, keymap_string, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+        munmap(keymap_string, size);
+        close(fd);
+
+        if (!keymap) {
+            return;
+        }
+
+        // Unreference the previous state if it exists and we got a new keymap from the server
+        xkb_state_unref(kb_state);
+        kb_state = xkb_state_new(keymap);
+        xkb_keymap_unref(keymap);
+    }
+
+    void Host_Linux_Wayland::keyboard_enter_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_enter(keyboard, serial, surface, keys);
+    }
+
+    void Host_Linux_Wayland::keyboard_enter(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys)
+    {
+        // Currently do nothing
+    }
+
+    void Host_Linux_Wayland::keyboard_leave_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_leave(keyboard, serial, surface);
+    }
+
+    void Host_Linux_Wayland::keyboard_leave(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface)
+    {
+        // Currently do nothing
+    }
+
+    void Host_Linux_Wayland::keyboard_key_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_key(keyboard, serial, time, key, state);
+    }
+
+    void Host_Linux_Wayland::keyboard_key(wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
+    {
+        const auto sym = xkb_state_key_get_one_sym(kb_state, key + 8); // XKB keys are offset by 8
+        auto itr = mapKeys.find(sym);
+        if(itr != mapKeys.end()) {
+            auto olc_key = itr->second;
+            auto* pge_window = mapUID2OlcWindow[active_window_id];
+            pge_window->olc_OnKeyPress(olc_key, state == WL_KEYBOARD_KEY_STATE_PRESSED);
+        }
+    }
+
+    void Host_Linux_Wayland::keyboard_modifiers_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_modifiers(keyboard, serial, mods_depressed, mods_latched, mods_locked, group);
+    }
+
+    void Host_Linux_Wayland::keyboard_modifiers(wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
+    {
+        xkb_state_update_mask(kb_state,
+            mods_depressed & ~(1), // Just like X11, ignore the shift key
+            mods_latched,
+            mods_locked,
+            0,
+            0,
+            group);
+    }
+
+    void Host_Linux_Wayland::keyboard_repeat_info_callback(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay)
+    {
+        // auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        // host->keyboard_repeat_info(keyboard, rate, delay);
     }
 
     // XDG Callbacks
@@ -10458,6 +10473,10 @@ namespace olc::apis::opengl
 		bLoaded &= (_glGetInternalformativ = OGL_LOAD(glGetInternalformativ)) != nullptr;
 		bLoaded &= (_glGetShaderiv = OGL_LOAD(glGetShaderiv)) != nullptr;
 
+#if OLC_HOST == OLC_HOST_WINDOWS
+		bLoaded &= (_wglSwapIntervalEXT = OGL_LOAD(wglSwapIntervalEXT)) != nullptr;
+#endif
+
 		
 		return bLoaded;
 	}
@@ -10620,6 +10639,13 @@ namespace olc::apis::opengl
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		::glPolygonMode(face, mode);
 		CheckError();
+#endif
+	}
+
+	void gl::glSwapInterval(GLsizei n)
+	{
+#if OLC_HOST == OLC_HOST_WINDOWS
+		_wglSwapIntervalEXT(n);
 #endif
 	}
 
@@ -11111,12 +11137,6 @@ void main()
 			lastError = RendererError::FailedToSwitchRenderContext;
 			return false;
 		}
-
-		//// Set Vertical Sync
-		//glSwapInterval = OGL_LOAD(glSwapInterval);
-		//if (locSwapInterval && !bVSYNC) locSwapInterval(0);
-		//bSync = bVSYNC;
-
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
@@ -11204,6 +11224,20 @@ void main()
 			std::cout << "Error: Could not Load OpenGL!\n";
 			lastError = RendererError::NoError;
 			return false;
+		}
+
+		// Configure Swap Interval (VSync)
+		if (config.VerticalSync)
+		{
+			// Enable VSync - lock to display refresh
+			// May also be governed by OS / driver settings
+			// and desktop compositor settings
+			gl.glSwapInterval(1);
+		}
+		else
+		{
+			// Disable VSync - run like the clappers!
+			gl.glSwapInterval(0);
 		}
 		
 
@@ -12054,6 +12088,8 @@ void olc::Draw2D::ProcessGPUTasks()
 	for (const auto& task : vecGPUTasks.data)
 		pRenderer->DoGPUTask(task);
 
+	drawMetrics.nGPUTasks += uint32_t(vecGPUTasks.data.size());
+
 	vecGPUTasks.data.clear();
 }
 
@@ -12070,6 +12106,8 @@ void Draw2D::PrepareTargetForSW()
 		// Image is now CPU bound
 		pTarget->BindCPU();
 
+		drawMetrics.nGPUtoCPUTransfers++;
+
 		// Create a scanline buffer the height of this target
 		vScanlines.resize(size_t(pTarget->Size().y), {});
 	}
@@ -12084,6 +12122,8 @@ void Draw2D::PrepareTargetForHW()
 
 		// Image is now GPU bound
 		pTarget->BindGPU();
+
+		drawMetrics.nCPUtoGPUTransfers++;
 	}
 }
 
@@ -12099,6 +12139,8 @@ void Draw2D::PrepareImageForSW(olc::Image& image)
 
 		// Image is now CPU bound
 		image.BindCPU();
+
+		drawMetrics.nGPUtoCPUTransfers++;
 	}
 }
 
@@ -12111,6 +12153,8 @@ void Draw2D::PrepareImageForHW(olc::Image& image)
 
 		// Image is now GPU bound
 		image.BindGPU();
+
+		drawMetrics.nCPUtoGPUTransfers++;
 	}
 
 	// Only resolve MSAA if this image is NOT the current render target
@@ -12125,6 +12169,9 @@ bool olc::Draw2D::SetShader(const olc::gpu::Shader& shader)
 {
 	// Finish all drawing with current shader
 	ProcessGPUTasks();
+
+	drawMetrics.nShaderChanges++;
+
 	// Set new shader
 	return pRenderer->ApplyShader(shader);
 }
@@ -12132,12 +12179,12 @@ bool olc::Draw2D::SetShader(const olc::gpu::Shader& shader)
 bool olc::Draw2D::ResetShader()
 {
 	ProcessGPUTasks();
+	drawMetrics.nShaderChanges++;
 	return pRenderer->ApplyDefaultShader();
 }
 
 bool olc::Draw2D::SetShaderUniform(const std::string& name, const float value)
 {
-
 	return pRenderer->SetUniform(name, value);
 }
 
@@ -12155,6 +12202,16 @@ bool olc::Draw2D::SetShaderTexture(const uint32_t nSlot, olc::Image& image)
 {
 	PrepareImageForHW(image);
 	return pRenderer->AssignTextureSource(nSlot, image.GetGPUID());	
+}
+
+void olc::Draw2D::ResetDrawMetrics()
+{
+	drawMetrics = sDrawMetrics();
+}
+
+olc::Draw2D::sDrawMetrics olc::Draw2D::GetDrawMetrics() const
+{
+	return drawMetrics;
 }
 
 void olc::Draw2D::WorldReset()
@@ -14833,11 +14890,11 @@ namespace olc::hw
 
                 {olc::Key::OEM_1, {";", ":", ";", ";"}},
                 {olc::Key::OEM_2, {"/", "?", "/", "/"}},
-                {olc::Key::OEM_3, {"\'","\"", "\'", "\'"}},
+                {olc::Key::OEM_3, {"`","~", "`", "`"}},
                 {olc::Key::OEM_4, {"[", "{", "[", "["}},
                 {olc::Key::OEM_5, {"\\", "|", "\\", "\\"}},
                 {olc::Key::OEM_6, {"]", "}", "]", "]"}},
-                {olc::Key::OEM_7, {"#", "~", "#", "#"}},
+                {olc::Key::OEM_7, {"'", "\"", "'", "'"}},
 
                 // Give these keys glyphs so they can be interpreted in text editing
                 {olc::Key::TAB, {"\t", "\t", "\t", "\t"}},
@@ -15147,48 +15204,41 @@ namespace olc::imload
             return false; // File does not exist
         }
 
-        try {
-            // Create macOS API wrapper image loader
-            olc::apis::macos::ImageLoader loader;
-            
-            // Load the image file
-            if (!loader.loadFromFile(sFileName) || !loader.isLoaded()) {
-                return false; // Failed to load file
-            }
-            
-            // Get image dimensions and info
-            int width, height, bytesPerPixel;
-            loader.getImageInfo(width, height, bytesPerPixel);
-            
-            if (width <= 0 || height <= 0) {
-                return false; // Invalid dimensions
-            }
-            
-            // Get raw pixel data from the loader
-            unsigned char* pixelData = imageloader_getPixelData(loader.getCHandle());
-            if (!pixelData) {
-                return false; // Failed to get pixel data
-            }
-            
-            // Create our olc::Image
-            if (!image.Create({width, height})) {
-                return false; // Failed to create image
-            }
-            
-            // Clear and resize the pixel vector
-            image.GetPixels().clear();
-            image.GetPixels().resize(width * height);
-            
-            // Copy pixel data - assuming the loader provides RGBA data
-            // The api_macos should provide RGBA format with 4 bytes per pixel
-            std::memcpy(image.GetPixels().data(), pixelData, width * height * 4);
-            
-            return true;
+        // Create macOS API wrapper image loader
+        olc::apis::macos::ImageLoader loader;
+        
+        if (!loader.loadFromFile(sFileName) || !loader.isLoaded()) {
+            return false; // Failed to load file
         }
-        catch (const std::exception& e) {
-            // Handle any exceptions from the wrapper
-            return false;
+        
+        // Get image dimensions and info
+        int width, height, bytesPerPixel;
+        loader.getImageInfo(width, height, bytesPerPixel);
+        
+        if (width <= 0 || height <= 0) {
+            return false; // Invalid dimensions
         }
+        
+        // Get raw pixel data from the loader
+        unsigned char* pixelData = imageloader_getPixelData(loader.getCHandle());
+        if (!pixelData) {
+            return false; // Failed to get pixel data
+        }
+        
+        // Create our olc::Image
+        if (!image.Create({width, height})) {
+            return false; // Failed to create image
+        }
+        
+        // Clear and resize the pixel vector
+        image.GetPixels().clear();
+        image.GetPixels().resize(width * height);
+        
+        // The api_macos will provide RGBA format with 4 bytes per pixel
+        std::memcpy(image.GetPixels().data(), pixelData, width * height * 4);
+        
+        return true;
+
     }
 
     bool ImageLoader_MacOS::CreateImageFromMemory(olc::Image& image, const uint8_t* data, const size_t bytes)

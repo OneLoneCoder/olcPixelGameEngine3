@@ -17,6 +17,7 @@ namespace X11
 {
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <X11/XKBlib.h>
 #include <GL/glx.h>
 }
 
@@ -42,6 +43,8 @@ namespace olc::host
         
         
         bool ConnectHostResourceToRenderer() override;
+        
+        olc::KeyboardLayout GetKeyboardLayout() const override;
 
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
@@ -49,6 +52,8 @@ namespace olc::host
         std::unordered_map<size_t, X11::Window> mapUID2X11Window;
         std::unordered_map<X11::Window, olc::Window*> mapX11Window2PTR;
         std::atomic<bool> terminate {false};
+
+        std::unordered_map<uint32_t, olc::Key> mapKeys;
     };
 }
 

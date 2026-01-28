@@ -6,10 +6,8 @@
 //! START IMPLEMENTATION
 namespace olc::host {
 
-    bool Host_Apple_MacOS::StartSystemEventLoop(bool bBlockIfPossible)
-    {
+    bool Host_Apple_MacOS::StartSystemEventLoop(bool bBlockIfPossible){
         (void)(bBlockIfPossible); // Remove unused variable warning
-        //TODO: Johnngy63 find out what bBlockIfPossible is supposed to do
 
         // Create MacOS Application instance
         pMacApplication = std::make_unique<olc::apis::macos::Application>();
@@ -45,10 +43,7 @@ namespace olc::host {
         return true;
     }
 
-    bool Host_Apple_MacOS::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
-    {
-         // Update the PGE window with the actual window size given by MacOS
-        
+    bool Host_Apple_MacOS::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen){       
         pPGEwindow = pWindow;
         pPGEwindow->SetWindowPosition(vWindowPos);
         pPGEwindow->SetWindowSize(vWindowSize); // Temporary small size to avoid large window on creation
@@ -63,17 +58,14 @@ namespace olc::host {
     }
 
 
-    bool Host_Apple_MacOS::CloseWindowFrame(olc::Window* pWindow)
-    {
-        // TODO: Gracefully close the window and clean up resources
+    bool Host_Apple_MacOS::CloseWindowFrame(olc::Window* pWindow){
         if (!pMacOSWindow) return false;
         if (!pWindow) return false;
         pWindow->olc_OnWindowClose();
         return true;
     }
 
-    bool Host_Apple_MacOS::UpdateWindowFrameTitle(olc::Window* pWindow)
-    {
+    bool Host_Apple_MacOS::UpdateWindowFrameTitle(olc::Window* pWindow){
         if (!pMacOSWindow) return false;
         dispatch_async(dispatch_get_main_queue(), ^{
             pMacOSWindow->setTitle(pWindow->GetWindowTitle().c_str());
@@ -81,9 +73,7 @@ namespace olc::host {
         return true;
     }
 
-    std::vector<void*> Host_Apple_MacOS::GetHostWindowDescriptor(olc::Window* pWindow)
-    {
-               
+    std::vector<void*> Host_Apple_MacOS::GetHostWindowDescriptor(olc::Window* pWindow){
         // While the PGE is running, if there are pending main thread tasks, process them, this causes PGE to wait
         bSkipFrame = ExecutePendingMainThreadTasks();
         
@@ -244,7 +234,6 @@ namespace olc::host {
         }
         vPendingMainThreadTasks.clear();
         
-        // Release any locks on the PGE
         // 4. Main Thread unlocks PGE Thread
         {
             std::lock_guard<std::mutex> lock(pgeThreadPendingTasksMutex);
@@ -252,49 +241,34 @@ namespace olc::host {
             isMainThreadResetting = false; // Reset main thread flag
         }
         pgeThreadResetCondition.notify_all();  // Wake up PGE thread
-
         return res;
-        
     }
 
 //------ Events Handlers -----
 
     void Host_Apple_MacOS::MacApplicationEventsHandler()
     {
-        // Application event handling code here
-        // Set application delegate event handlers
-       pMacApplication->setWillFinishLaunchingCallback([]() {
-           //std::cout << "--> Application delegate: Will finish launching" << std::endl;
-       });
+       pMacApplication->setWillFinishLaunchingCallback([]() { });
        
        pMacApplication->setDidFinishLaunchingCallback([&]() {
-           //std::cout << "--> Application delegate: Did finish launching" << std::endl;
            // Queue the Create OpenGL context task
            vPendingMainThreadTasks.push_back(CREATE_OPENGL_RENDERER);
        });
        
        pMacApplication->setWillTerminateCallback([&]() {
-           //std::cout << "--> Application delegate: Will terminate" << std::endl;
            // TODO: Johnngy63 - Implement olc_OnDestory in window.h/cpp
-           
        });
        
-       pMacApplication->setDidBecomeActiveCallback([]() {
-           //std::cout << "--> Application delegate: Did become active" << std::endl;
-       });
+       pMacApplication->setDidBecomeActiveCallback([]() { });
        
-       pMacApplication->setWillResignActiveCallback([]() {
-           //std::cout << "--> Application delegate: Will resign active" << std::endl;
-       });
+       pMacApplication->setWillResignActiveCallback([]() { });
         
     }
 
     void Host_Apple_MacOS::MacWindowEventsHandler()
     {
-        // Window event handling code here
         pMacOSWindow->setWindowDidResizeCallback([&]() {
             AddPendingMainThreadTask(RESIZE_WINDOW);
-            
         });
 
         pMacOSWindow->setWindowWillCloseCallback([&]() {
@@ -310,16 +284,13 @@ namespace olc::host {
 
         pMacOSWindow->setWindowDidResignKeyCallback([&]() {
             //TODO: Johnngy63 - Implement olc_OnWindowFocus in window.h/cpp
-            
         });
        
         pMacOSWindow->setWindowDidMiniaturizeCallback([&]() {
-            //TODO: Johnngy63 - Implement olc_OnWindowMinimize in window.h/cpp if needed
             AddPendingMainThreadTask(MINIMIZE_WINDOW);
         });
        
         pMacOSWindow->setWindowDidDeminiaturizeCallback([&]() {
-            //TODO: Johnngy63 - Implement olc_OnWindowFocus in window.h/cpp if needed
             AddPendingMainThreadTask(DEMINIMIZE_WINDOW);
         });
         
@@ -423,7 +394,6 @@ namespace olc::host {
         });
         
     }
-
 
 }
 //! END IMPLEMENTATION

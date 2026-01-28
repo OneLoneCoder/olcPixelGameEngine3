@@ -9,6 +9,61 @@ namespace olc::host
         XInitThreads();
         olc_Display = XOpenDisplay(NULL);
         olc_WindowRoot = DefaultRootWindow(olc_Display);
+
+        mapKeys[NoSymbol] = Key::NONE;
+
+        int keyTracker = static_cast<int>(Key::A);
+        uint32_t uppercase = static_cast<uint32_t>(XK_A);
+        uint32_t lowercase = static_cast<uint32_t>(XK_a);
+
+        for (; uppercase <= static_cast<uint32_t>(XK_Z); ++uppercase, ++lowercase)
+        {
+            mapKeys[uppercase] = (Key)keyTracker;
+            mapKeys[lowercase] = (Key)keyTracker;
+            ++keyTracker;
+        }
+
+        mapKeys[XK_F1] = Key::F1; mapKeys[XK_F2] = Key::F2; mapKeys[XK_F3] = Key::F3; mapKeys[XK_F4] = Key::F4;
+        mapKeys[XK_F5] = Key::F5; mapKeys[XK_F6] = Key::F6; mapKeys[XK_F7] = Key::F7; mapKeys[XK_F8] = Key::F8;
+        mapKeys[XK_F9] = Key::F9; mapKeys[XK_F10] = Key::F10; mapKeys[XK_F11] = Key::F11; mapKeys[XK_F12] = Key::F12;
+
+        mapKeys[XK_Down] = Key::DOWN; mapKeys[XK_Left] = Key::LEFT; mapKeys[XK_Right] = Key::RIGHT; mapKeys[XK_Up] = Key::UP;
+        mapKeys[XK_KP_Enter] = Key::ENTER; mapKeys[XK_Return] = Key::ENTER;
+
+        mapKeys[XK_BackSpace] = Key::BACK; mapKeys[XK_Escape] = Key::ESCAPE; mapKeys[XK_Linefeed] = Key::ENTER;	mapKeys[XK_Pause] = Key::PAUSE;
+        mapKeys[XK_Scroll_Lock] = Key::SCROLL; mapKeys[XK_Tab] = Key::TAB; mapKeys[XK_Delete] = Key::DEL; mapKeys[XK_Home] = Key::HOME;
+        mapKeys[XK_End] = Key::END; mapKeys[XK_Page_Up] = Key::PGUP; mapKeys[XK_Page_Down] = Key::PGDN;	mapKeys[XK_Insert] = Key::INS;
+        mapKeys[XK_Shift_L] = Key::SHIFT; mapKeys[XK_Shift_R] = Key::SHIFT; mapKeys[XK_Control_L] = Key::CTRL; mapKeys[XK_Control_R] = Key::CTRL;
+        mapKeys[XK_space] = Key::SPACE; mapKeys[XK_period] = Key::PERIOD;
+
+        mapKeys[XK_0] = Key::K0; mapKeys[XK_1] = Key::K1; mapKeys[XK_2] = Key::K2; mapKeys[XK_3] = Key::K3; mapKeys[XK_4] = Key::K4;
+        mapKeys[XK_5] = Key::K5; mapKeys[XK_6] = Key::K6; mapKeys[XK_7] = Key::K7; mapKeys[XK_8] = Key::K8; mapKeys[XK_9] = Key::K9;
+
+        mapKeys[XK_KP_0] = Key::NP0; mapKeys[XK_KP_1] = Key::NP1; mapKeys[XK_KP_2] = Key::NP2; mapKeys[XK_KP_3] = Key::NP3; mapKeys[XK_KP_4] = Key::NP4;
+        mapKeys[XK_KP_5] = Key::NP5; mapKeys[XK_KP_6] = Key::NP6; mapKeys[XK_KP_7] = Key::NP7; mapKeys[XK_KP_8] = Key::NP8; mapKeys[XK_KP_9] = Key::NP9;
+        mapKeys[XK_KP_Multiply] = Key::NP_MUL; mapKeys[XK_KP_Add] = Key::NP_ADD; mapKeys[XK_KP_Divide] = Key::NP_DIV; mapKeys[XK_KP_Subtract] = Key::NP_SUB; mapKeys[XK_KP_Decimal] = Key::NP_DECIMAL;
+
+        // These map the keypad when NUMLOCK is off
+        mapKeys[XK_KP_Home] = Key::HOME; mapKeys[XK_KP_End] = Key::END; mapKeys[XK_KP_Up] = Key::UP;
+        mapKeys[XK_KP_Down] = Key::DOWN; mapKeys[XK_KP_Left] = Key::LEFT; mapKeys[XK_KP_Right] = Key::RIGHT;
+        mapKeys[XK_KP_Page_Up] = Key::PGUP; mapKeys[XK_KP_Page_Down] = Key::PGDN; mapKeys[XK_KP_Insert] = Key::INS;
+        mapKeys[XK_KP_Delete] = Key::DEL;
+
+        // These keys vary depending on the keyboard. I've included comments for US and UK keyboard layouts
+        mapKeys[XK_semicolon] = Key::OEM_1;		// On US and UK keyboards this is the ';:' key
+        mapKeys[XK_slash] = Key::OEM_2;			// On US and UK keyboards this is the '/?' key
+        mapKeys[XK_asciitilde] = Key::OEM_3;	// On US keyboard this is the '~' key
+        mapKeys[XK_grave] = Key::OEM_3;	// On US keyboard this is the '`' key
+        mapKeys[XK_bracketleft] = Key::OEM_4;	// On US and UK keyboards this is the '[{' key
+        mapKeys[XK_backslash] = Key::OEM_5;		// On US keyboard this is '\|' key.
+        mapKeys[XK_bracketright] = Key::OEM_6;	// On US and UK keyboards this is the ']}' key
+        mapKeys[XK_apostrophe] = Key::OEM_7;	// On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
+        mapKeys[XK_numbersign] = Key::OEM_8;	// miscellaneous characters. Varies by keyboard. I believe this to be the '#~' key on UK keyboards
+        mapKeys[XK_equal] = Key::EQUALS;		// the '+' key on any keyboard
+        mapKeys[XK_comma] = Key::COMMA;			// the comma key on any keyboard
+        mapKeys[XK_minus] = Key::MINUS;			// the minus key on any keyboard			
+
+        mapKeys[XK_Caps_Lock] = Key::CAPS_LOCK;
     }
 
     bool Host_Linux_X11::StartSystemEventLoop(bool bBlockIfPossible)
@@ -49,24 +104,36 @@ namespace olc::host
                             pge_window->olc_OnWindowSize(olc::vi2d{xce.width, xce.height});
                         }
                     }
-                    // else if (xev.type == KeyPress)
-                    // {
-                    // 	KeySym ks;
+                    else if (xev.type == KeyPress)
+                    {
+                    	KeySym ks;
 
-                    // 	// DragonEye still loves numpads, but this is a better way
-                    // 	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                        // Unset the "shift" bit so that Key and Shift-Key will be mapped to the same olc::key
+                        // since the system kind of assumes this
+                        xev.xkey.state &= ~(1); 
 
-                    // 	if (ks != NoSymbol)
-                    // 		ptrPGE->olc_UpdateKeyState(ks, true);
-                    // }
-                    // else if (xev.type == KeyRelease)
-                    // {
-                    // 	KeySym ks;
-                    // 	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                    	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                        
+                        if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
+                            auto it = mapKeys.find(static_cast<uint32_t>(ks));
+                            if(it != mapKeys.end()) {
+                                pge_window->olc_OnKeyPress(it->second, true);
+                            }
+                        }
+                    }
+                    else if (xev.type == KeyRelease)
+                    {
+                    	KeySym ks;
 
-                    // 	if (ks != NoSymbol)
-                    // 		ptrPGE->olc_UpdateKeyState(ks, false);
-                    // }
+                    	XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+
+                        if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
+                            auto it = mapKeys.find(static_cast<uint32_t>(ks));
+                            if(it != mapKeys.end()) {
+                                pge_window->olc_OnKeyPress(it->second, false);
+                            }
+                        }
+                    }
                     else if (xev.type == ButtonPress)
                     {
                         if(auto* pge_window = get_pge_window(xev.xbutton.window); pge_window) {
@@ -126,11 +193,6 @@ namespace olc::host
 
     bool Host_Linux_X11::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
     {
-		// The user created olc::Window object is the SSoT for what a window
-		// should look like, so get that sort of thing from there
-		olc::vi2d vWinPos = vWindowPos;
-		olc::vi2d vWinSize = vWindowSize;
-
         // Based on the display capabilities, configure the appearance of the window
         // to do this namespacing, both x11 and glx have to be included in the x11 namespace
         GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
@@ -197,6 +259,12 @@ namespace olc::host
     {
         return true;
     }
+
+    olc::KeyboardLayout Host_Linux_X11::GetKeyboardLayout() const {
+        // The objectively correct keyboard layout
+        return olc::KeyboardLayout::QWERTY_US;
+    }
+
 
     // Wait for entire host desktop refresh (for smooooth vsync)
     bool Host_Linux_X11::SyncWithDesktopComposite()

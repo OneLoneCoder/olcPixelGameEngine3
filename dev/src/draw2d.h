@@ -965,6 +965,22 @@ namespace olc
 			// Assign an image to a texture slot for subsequent GPU drawing tasks
 			bool SetShaderTexture(const uint32_t nSlot, olc::Image& image);
 
+		public:
+			struct sDrawMetrics
+			{
+				uint32_t nGPUTasks = 0;
+				uint32_t nGPUtoCPUTransfers = 0;
+				uint32_t nCPUtoGPUTransfers = 0;
+				uint32_t nShaderChanges = 0;
+			};
+
+			void ResetDrawMetrics();
+			sDrawMetrics GetDrawMetrics() const;
+
+		private:
+			sDrawMetrics drawMetrics;
+
+
 
 
 		protected:

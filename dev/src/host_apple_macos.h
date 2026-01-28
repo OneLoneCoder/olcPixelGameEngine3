@@ -34,23 +34,18 @@ namespace olc
 {
     namespace host
     {
-        
         // Manages our MacOS Host
         class Host_Apple_MacOS : public olc::host::Host
         {
         public:
-            
             olc::Window* pPGEwindow = nullptr;                  // Pointer to PGE Window
-            //GLint glSwapInterval = 0;                         // VSync disbaled by default
             
         public:
             Host_Apple_MacOS() = default;
             virtual ~Host_Apple_MacOS() {};
             
         public:
-            // Check/Get last error
             HostError GetLastError() const { return lastError; }
-
 
         public:
             virtual bool StartSystemEventLoop(bool bBlockIfPossible = false) override;
@@ -59,7 +54,6 @@ namespace olc
 			virtual bool UpdateWindowFrameTitle(olc::Window* pWindow) override;
 
 			virtual std::vector<void*> GetHostWindowDescriptor(olc::Window* pWindow) override;
-			
 			
 			virtual bool ConnectHostResourceToRenderer() override;
 
@@ -70,7 +64,6 @@ namespace olc
 			HostError lastError = HostError::None;
 
         public:
-          
             // MacOS Application and Window pointers
             std::unique_ptr<olc::apis::macos::Application> pMacApplication = nullptr;
             std::unique_ptr<olc::apis::macos::Window> pMacOSWindow = nullptr;
@@ -80,9 +73,7 @@ namespace olc
             void* pMacGLConextObj = nullptr;
             std::once_flag intialAppFlag;
     
-            
-        private:
-                       
+        private:      
             enum MAINTASKS{
                 NONE,
                 CREATE_OPENGL_RENDERER,
@@ -102,7 +93,7 @@ namespace olc
             
             std::vector<void*> vMacOSWindowDescriptors; // Vector to hold window descriptors
             bool enableVSync = false;                   // VSync enabled flag
-            bool bSkipFrame = false;                     // Flag to indicate if frame should be skipped 
+            bool bSkipFrame = false;                    // Flag to indicate if frame should be skipped 
 
             // Thread synchronization for PGE Thread V Main thread
             mutable std::mutex      mainThreadPendingTasksMutex;    // Mutex for main thread pending tasks
@@ -121,7 +112,6 @@ namespace olc
                 double height = 600.0;
             } frameBounds;
 
-             // TODO: Should these be private?
             void MacApplicationEventsHandler();
             void MacWindowEventsHandler();
             void MacEventsHandler();

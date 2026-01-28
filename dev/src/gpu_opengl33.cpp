@@ -251,12 +251,6 @@ void main()
 			lastError = RendererError::FailedToSwitchRenderContext;
 			return false;
 		}
-
-		//// Set Vertical Sync
-		//glSwapInterval = OGL_LOAD(glSwapInterval);
-		//if (locSwapInterval && !bVSYNC) locSwapInterval(0);
-		//bSync = bVSYNC;
-
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
@@ -344,6 +338,20 @@ void main()
 			std::cout << "Error: Could not Load OpenGL!\n";
 			lastError = RendererError::NoError;
 			return false;
+		}
+
+		// Configure Swap Interval (VSync)
+		if (config.VerticalSync)
+		{
+			// Enable VSync - lock to display refresh
+			// May also be governed by OS / driver settings
+			// and desktop compositor settings
+			gl.glSwapInterval(1);
+		}
+		else
+		{
+			// Disable VSync - run like the clappers!
+			gl.glSwapInterval(0);
 		}
 		
 

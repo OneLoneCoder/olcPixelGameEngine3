@@ -61,6 +61,8 @@ void olc::Draw2D::ProcessGPUTasks()
 	for (const auto& task : vecGPUTasks.data)
 		pRenderer->DoGPUTask(task);
 
+	drawMetrics.nGPUTasks += uint32_t(vecGPUTasks.data.size());
+
 	vecGPUTasks.data.clear();
 }
 
@@ -77,6 +79,8 @@ void Draw2D::PrepareTargetForSW()
 		// Image is now CPU bound
 		pTarget->BindCPU();
 
+		drawMetrics.nGPUtoCPUTransfers++;
+
 		// Create a scanline buffer the height of this target
 		vScanlines.resize(size_t(pTarget->Size().y), {});
 	}
@@ -91,6 +95,8 @@ void Draw2D::PrepareTargetForHW()
 
 		// Image is now GPU bound
 		pTarget->BindGPU();
+
+		drawMetrics.nCPUtoGPUTransfers++;
 	}
 }
 
@@ -106,6 +112,8 @@ void Draw2D::PrepareImageForSW(olc::Image& image)
 
 		// Image is now CPU bound
 		image.BindCPU();
+
+		drawMetrics.nGPUtoCPUTransfers++;
 	}
 }
 
@@ -118,6 +126,8 @@ void Draw2D::PrepareImageForHW(olc::Image& image)
 
 		// Image is now GPU bound
 		image.BindGPU();
+
+		drawMetrics.nCPUtoGPUTransfers++;
 	}
 
 	// Only resolve MSAA if this image is NOT the current render target
@@ -132,6 +142,9 @@ bool olc::Draw2D::SetShader(const olc::gpu::Shader& shader)
 {
 	// Finish all drawing with current shader
 	ProcessGPUTasks();
+
+	drawMetrics.nShaderChanges++;
+
 	// Set new shader
 	return pRenderer->ApplyShader(shader);
 }
@@ -139,12 +152,12 @@ bool olc::Draw2D::SetShader(const olc::gpu::Shader& shader)
 bool olc::Draw2D::ResetShader()
 {
 	ProcessGPUTasks();
+	drawMetrics.nShaderChanges++;
 	return pRenderer->ApplyDefaultShader();
 }
 
 bool olc::Draw2D::SetShaderUniform(const std::string& name, const float value)
 {
-
 	return pRenderer->SetUniform(name, value);
 }
 
@@ -162,6 +175,16 @@ bool olc::Draw2D::SetShaderTexture(const uint32_t nSlot, olc::Image& image)
 {
 	PrepareImageForHW(image);
 	return pRenderer->AssignTextureSource(nSlot, image.GetGPUID());	
+}
+
+void olc::Draw2D::ResetDrawMetrics()
+{
+	drawMetrics = sDrawMetrics();
+}
+
+olc::Draw2D::sDrawMetrics olc::Draw2D::GetDrawMetrics() const
+{
+	return drawMetrics;
 }
 
 void olc::Draw2D::WorldReset()

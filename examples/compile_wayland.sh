@@ -15,6 +15,12 @@ then
     exit 1
 fi
 
+if [ $(pkg-config --exists xkbcommon; echo $?) -eq 1 ]
+then
+    echo "You may need to install libxkbcommon-dev via your package manager"
+    exit 1
+fi
+
 # May need to install wayland-protocols to get the xdg-decoration to build
 wayland-scanner private-code /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml xdg-shell.c
 wayland-scanner client-header /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml xdg-shell.h
@@ -24,4 +30,4 @@ wayland-scanner client-header /usr/share/wayland-protocols/unstable/xdg-decorati
 gcc -c xdg-shell.c
 gcc -c xdg-decoration.c
 
-g++ -ggdb -fmax-errors=5 -std=c++20 -DOLC_HOST=3 -I. -lpng -lGL -lwayland-client -lwayland-egl -lEGL -Wall -lpthread $1.cpp xdg-shell.o xdg-decoration.o -o $1
+g++ -ggdb -fmax-errors=5 -std=c++20 -DOLC_HOST=3 -I.  -o $1 $1.cpp $(pkg-config --libs xkbcommon) -lpng -lGL -lwayland-client -lwayland-egl -lEGL -Wall -lpthread xdg-shell.o xdg-decoration.o

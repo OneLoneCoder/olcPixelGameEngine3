@@ -44,7 +44,7 @@ namespace olc
 		// Allow the window to be resized by user
 		bool bResizeable = true;
 		// Synchronise rendering with monitor
-		bool bVSync = false;
+		bool bVSync = OLC_DEFAULT_VSYNC;
 		// Behave like a host window, resizing the screen in response to window resize
 		bool bRealWindow = false;
 		// Ensure aspect ratio of "screen" is mainatined regardless of window size

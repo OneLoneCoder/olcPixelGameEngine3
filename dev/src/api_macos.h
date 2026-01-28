@@ -26,7 +26,6 @@
 
 extern "C" {
     // NSRect (OSX rectangle structure same as GCRect C structure)
-    // NSRect structure for window and view frames
     struct NSRect {
         double x{0.0}, y{0.0};
         double width{800.0}, height{600.0};
@@ -69,16 +68,15 @@ extern "C" {
     void window_getContentViewFrame      (const struct Window* self, double* x, double* y, double* width, double* height);
     void window_setContentViewFrame      (struct Window* self, double* x, double* y, double* width, double* height);
     
-
     // OpenGL Renderer API - as implemented in api_macos.c
     struct OpenGLRenderer* opengl_init    (void);
     void opengl_initialize                (struct OpenGLRenderer* self, struct Window* window);
     void opengl_setupContext              (struct OpenGLRenderer* self);
-    void* opengl_getOpenGLContext         (const struct OpenGLRenderer* self);  // Returns id, cast to void*
-    void* opengl_getCGLContextObj         (struct OpenGLRenderer* self);        // Returns CGLContextObj, cast to void*
-    void* opengl_getCGLContextObjPtr      (struct OpenGLRenderer* self);        // Returns CGLContextObj as void*
-    void opengl_makeCurrentContext        (struct OpenGLRenderer* self);        // Make OpenGL context current
-    void opengl_setVsync                  (struct OpenGLRenderer* self, BOOL enabled); // Enable/disable vsync
+    void* opengl_getOpenGLContext         (const struct OpenGLRenderer* self);          // Returns id, cast to void*
+    void* opengl_getCGLContextObj         (struct OpenGLRenderer* self);                // Returns CGLContextObj, cast to void*
+    void* opengl_getCGLContextObjPtr      (struct OpenGLRenderer* self);                // Returns CGLContextObj as void*
+    void opengl_makeCurrentContext        (struct OpenGLRenderer* self);                // Make OpenGL context current
+    void opengl_setVsync                  (struct OpenGLRenderer* self, BOOL enabled);  // Enable/disable vsync
     void opengl_destroy                   (struct OpenGLRenderer* self);
     bool opengl_resetContextForSize       (struct OpenGLRenderer* self, double width, double height);
 
@@ -91,7 +89,6 @@ extern "C" {
     void imageloader_getDetailedInfo            (const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel, int* bytesPerRow, BOOL* hasAlpha);
     BOOL imageloader_isLoaded                   (const struct ImageLoader* self);
     BOOL imageloader_getPixel                   (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha);
-    unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* self);
     
     // Autorelease pool management
     void* objc_autoreleasePoolPush  (void);
@@ -100,14 +97,9 @@ extern "C" {
     // OpenGL functions we might need
     void glDeleteTextures(int n, const unsigned int* textures);
     
-    // ===========================================================================
-    // EVENT HANDLING API
-    // ===========================================================================
-    
     // Event callback function types
     typedef void (*KeyEventCallback)        (unsigned short keyCode, const char* characters, void* userData);
     typedef void (*MouseEventCallback)      (double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData);
-    //typedef void (*MouseMoveEventCallback)  (double x, double y, unsigned int modifierFlags, void* userData);
     
     // Event handler setup
     void window_setKeyDownCallback          (struct Window* self, KeyEventCallback callback, void* userData);
@@ -128,10 +120,6 @@ extern "C" {
     void window_enableEventHandling     (struct Window* self);
     void window_disableEventHandling    (struct Window* self);
     
-    // ===========================================================================
-    // APPLICATION DELEGATE EVENT HANDLING API
-    // ===========================================================================
-    
     // Application delegate callback function type
     typedef void (*ApplicationDelegateCallback)(void* userData);
     
@@ -141,10 +129,6 @@ extern "C" {
     void application_setWillTerminateCallback       (struct Application* self, ApplicationDelegateCallback callback, void* userData);
     void application_setDidBecomeActiveCallback     (struct Application* self, ApplicationDelegateCallback callback, void* userData);
     void application_setWillResignActiveCallback    (struct Application* self, ApplicationDelegateCallback callback, void* userData);
-
-    // ===========================================================================
-    // WINDOW DELEGATE EVENT HANDLING API
-    // ===========================================================================
     
     // Window delegate callback function type
     typedef void (*WindowDelegateCallback)(void* userData);

@@ -28,6 +28,15 @@ namespace olc::host
             .axis_value120 = Host_Linux_Wayland::pointer_axis_value120_callback,
             .axis_relative_direction = Host_Linux_Wayland::pointer_axis_relative_direction_callback
         };
+
+        static const wl_keyboard_listener keyboard_listener {
+            .keymap = Host_Linux_Wayland::keyboard_keymap_callback,
+            .enter = Host_Linux_Wayland::keyboard_enter_callback,
+            .leave = Host_Linux_Wayland::keyboard_leave_callback,
+            .key = Host_Linux_Wayland::keyboard_key_callback,
+            .modifiers = Host_Linux_Wayland::keyboard_modifiers_callback,
+            .repeat_info = Host_Linux_Wayland::keyboard_repeat_info_callback
+        };
     }
 
     namespace xdg {
@@ -66,6 +75,64 @@ namespace olc::host
         
         xdg_wm_base_add_listener(xdg_wm, &xdg::xdg_base_listener, this);
         wl_seat_add_listener(seat, &wayland::seat_listener, this);
+
+        kb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+
+        // Setup the keymap with XKB codes, which are basically the same as the X11 codes
+        mapKeys[XKB_KEY_NoSymbol] = Key::NONE;
+
+        int keyTracker = static_cast<int>(Key::A);
+        uint32_t uppercase = static_cast<uint32_t>(XKB_KEY_A);
+        uint32_t lowercase = static_cast<uint32_t>(XKB_KEY_a);
+
+        for (; uppercase <= static_cast<uint32_t>(XKB_KEY_Z); ++uppercase, ++lowercase)
+        {
+            mapKeys[uppercase] = (Key)keyTracker;
+            mapKeys[lowercase] = (Key)keyTracker;
+            ++keyTracker;
+        }
+
+        mapKeys[XKB_KEY_F1] = Key::F1; mapKeys[XKB_KEY_F2] = Key::F2; mapKeys[XKB_KEY_F3] = Key::F3; mapKeys[XKB_KEY_F4] = Key::F4;
+        mapKeys[XKB_KEY_F5] = Key::F5; mapKeys[XKB_KEY_F6] = Key::F6; mapKeys[XKB_KEY_F7] = Key::F7; mapKeys[XKB_KEY_F8] = Key::F8;
+        mapKeys[XKB_KEY_F9] = Key::F9; mapKeys[XKB_KEY_F10] = Key::F10; mapKeys[XKB_KEY_F11] = Key::F11; mapKeys[XKB_KEY_F12] = Key::F12;
+
+        mapKeys[XKB_KEY_Down] = Key::DOWN; mapKeys[XKB_KEY_Left] = Key::LEFT; mapKeys[XKB_KEY_Right] = Key::RIGHT; mapKeys[XKB_KEY_Up] = Key::UP;
+        mapKeys[XKB_KEY_KP_Enter] = Key::ENTER; mapKeys[XKB_KEY_Return] = Key::ENTER;
+
+        mapKeys[XKB_KEY_BackSpace] = Key::BACK; mapKeys[XKB_KEY_Escape] = Key::ESCAPE; mapKeys[XKB_KEY_Linefeed] = Key::ENTER;	mapKeys[XKB_KEY_Pause] = Key::PAUSE;
+        mapKeys[XKB_KEY_Scroll_Lock] = Key::SCROLL; mapKeys[XKB_KEY_Tab] = Key::TAB; mapKeys[XKB_KEY_Delete] = Key::DEL; mapKeys[XKB_KEY_Home] = Key::HOME;
+        mapKeys[XKB_KEY_End] = Key::END; mapKeys[XKB_KEY_Page_Up] = Key::PGUP; mapKeys[XKB_KEY_Page_Down] = Key::PGDN;	mapKeys[XKB_KEY_Insert] = Key::INS;
+        mapKeys[XKB_KEY_Shift_L] = Key::SHIFT; mapKeys[XKB_KEY_Shift_R] = Key::SHIFT; mapKeys[XKB_KEY_Control_L] = Key::CTRL; mapKeys[XKB_KEY_Control_R] = Key::CTRL;
+        mapKeys[XKB_KEY_space] = Key::SPACE; mapKeys[XKB_KEY_period] = Key::PERIOD;
+
+        mapKeys[XKB_KEY_0] = Key::K0; mapKeys[XKB_KEY_1] = Key::K1; mapKeys[XKB_KEY_2] = Key::K2; mapKeys[XKB_KEY_3] = Key::K3; mapKeys[XKB_KEY_4] = Key::K4;
+        mapKeys[XKB_KEY_5] = Key::K5; mapKeys[XKB_KEY_6] = Key::K6; mapKeys[XKB_KEY_7] = Key::K7; mapKeys[XKB_KEY_8] = Key::K8; mapKeys[XKB_KEY_9] = Key::K9;
+
+        mapKeys[XKB_KEY_KP_0] = Key::NP0; mapKeys[XKB_KEY_KP_1] = Key::NP1; mapKeys[XKB_KEY_KP_2] = Key::NP2; mapKeys[XKB_KEY_KP_3] = Key::NP3; mapKeys[XKB_KEY_KP_4] = Key::NP4;
+        mapKeys[XKB_KEY_KP_5] = Key::NP5; mapKeys[XKB_KEY_KP_6] = Key::NP6; mapKeys[XKB_KEY_KP_7] = Key::NP7; mapKeys[XKB_KEY_KP_8] = Key::NP8; mapKeys[XKB_KEY_KP_9] = Key::NP9;
+        mapKeys[XKB_KEY_KP_Multiply] = Key::NP_MUL; mapKeys[XKB_KEY_KP_Add] = Key::NP_ADD; mapKeys[XKB_KEY_KP_Divide] = Key::NP_DIV; mapKeys[XKB_KEY_KP_Subtract] = Key::NP_SUB; mapKeys[XKB_KEY_KP_Decimal] = Key::NP_DECIMAL;
+
+        // These map the keypad when NUMLOCK is off
+        mapKeys[XKB_KEY_KP_Home] = Key::HOME; mapKeys[XKB_KEY_KP_End] = Key::END; mapKeys[XKB_KEY_KP_Up] = Key::UP;
+        mapKeys[XKB_KEY_KP_Down] = Key::DOWN; mapKeys[XKB_KEY_KP_Left] = Key::LEFT; mapKeys[XKB_KEY_KP_Right] = Key::RIGHT;
+        mapKeys[XKB_KEY_KP_Page_Up] = Key::PGUP; mapKeys[XKB_KEY_KP_Page_Down] = Key::PGDN; mapKeys[XKB_KEY_KP_Insert] = Key::INS;
+        mapKeys[XKB_KEY_KP_Delete] = Key::DEL;
+
+        // These keys vary depending on the keyboard. I've included comments for US and UK keyboard layouts
+        mapKeys[XKB_KEY_semicolon] = Key::OEM_1;		// On US and UK keyboards this is the ';:' key
+        mapKeys[XKB_KEY_slash] = Key::OEM_2;			// On US and UK keyboards this is the '/?' key
+        mapKeys[XKB_KEY_asciitilde] = Key::OEM_3;	// On US keyboard this is the '~' key
+        mapKeys[XKB_KEY_grave] = Key::OEM_3;	// On US keyboard this is the '`' key
+        mapKeys[XKB_KEY_bracketleft] = Key::OEM_4;	// On US and UK keyboards this is the '[{' key
+        mapKeys[XKB_KEY_backslash] = Key::OEM_5;		// On US keyboard this is '\|' key.
+        mapKeys[XKB_KEY_bracketright] = Key::OEM_6;	// On US and UK keyboards this is the ']}' key
+        mapKeys[XKB_KEY_apostrophe] = Key::OEM_7;	// On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
+        mapKeys[XKB_KEY_numbersign] = Key::OEM_8;	// miscellaneous characters. Varies by keyboard. I believe this to be the '#~' key on UK keyboards
+        mapKeys[XKB_KEY_equal] = Key::EQUALS;		// the '+' key on any keyboard
+        mapKeys[XKB_KEY_comma] = Key::COMMA;			// the comma key on any keyboard
+        mapKeys[XKB_KEY_minus] = Key::MINUS;			// the minus key on any keyboard			
+
+        mapKeys[XKB_KEY_Caps_Lock] = Key::CAPS_LOCK;
     }
 
     Host_Linux_Wayland::~Host_Linux_Wayland()
@@ -77,6 +144,9 @@ namespace olc::host
             xdg_surface_destroy(wayland_window.surface_xdg);
             wl_surface_destroy(wayland_window.surface);
         }
+
+        xkb_state_unref(kb_state);
+        xkb_context_unref(kb_context);
 
         wl_display_disconnect(display);
     }
@@ -150,6 +220,11 @@ namespace olc::host
         return true;
     }
 
+    olc::KeyboardLayout Host_Linux_Wayland::GetKeyboardLayout() const
+    {
+        return olc::KeyboardLayout::QWERTY_US;
+    }
+
     void Host_Linux_Wayland::registry_handle_global(wl_registry* registry, uint32_t name, const char* interface, uint32_t version)
     {
         if(std::strcmp(interface, wl_compositor_interface.name) == 0) {
@@ -164,6 +239,9 @@ namespace olc::host
         if(std::strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0) {
             decoration_manager = static_cast<zxdg_decoration_manager_v1*>(wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, version));
         }
+        if(std::strcmp(interface, wl_keyboard_interface.name) == 0) {
+            keyboard = static_cast<wl_keyboard*>(wl_registry_bind(registry, name, &wl_keyboard_interface, version));
+        }
     }
     
     void Host_Linux_Wayland::registry_handle_global_remove(wl_registry* registry, uint32_t name)
@@ -176,6 +254,11 @@ namespace olc::host
         if (capabilities & WL_SEAT_CAPABILITY_POINTER && pointer == nullptr) {
             pointer = wl_seat_get_pointer(seat);
             wl_pointer_add_listener(pointer, &wayland::pointer_listener, this);
+        }
+
+        if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD && keyboard == nullptr) {
+            keyboard = wl_seat_get_keyboard(seat);
+            wl_keyboard_add_listener(keyboard, &wayland::keyboard_listener, this);
         }
     }
 
@@ -410,6 +493,102 @@ namespace olc::host
     {
         //auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
         //host->pointer_axis_relative_direction(pointer, axis, direction);
+    }
+
+    // Keyboard Callbacks
+    void Host_Linux_Wayland::keyboard_keymap_callback(void* data, wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_keymap(keyboard, format, fd, size);
+    }
+
+    void Host_Linux_Wayland::keyboard_keymap(wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size)
+    {
+        if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
+            close(fd);
+            return;
+        }
+
+        char* keymap_string = static_cast<char*>(mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0));
+        if (keymap_string == MAP_FAILED) {
+            close(fd);
+            return;
+        }
+
+        xkb_keymap* keymap = xkb_keymap_new_from_string(kb_context, keymap_string, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+        munmap(keymap_string, size);
+        close(fd);
+
+        if (!keymap) {
+            return;
+        }
+
+        // Unreference the previous state if it exists and we got a new keymap from the server
+        xkb_state_unref(kb_state);
+        kb_state = xkb_state_new(keymap);
+        xkb_keymap_unref(keymap);
+    }
+
+    void Host_Linux_Wayland::keyboard_enter_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_enter(keyboard, serial, surface, keys);
+    }
+
+    void Host_Linux_Wayland::keyboard_enter(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface, wl_array* keys)
+    {
+        // Currently do nothing
+    }
+
+    void Host_Linux_Wayland::keyboard_leave_callback(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_leave(keyboard, serial, surface);
+    }
+
+    void Host_Linux_Wayland::keyboard_leave(wl_keyboard* keyboard, uint32_t serial, wl_surface* surface)
+    {
+        // Currently do nothing
+    }
+
+    void Host_Linux_Wayland::keyboard_key_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_key(keyboard, serial, time, key, state);
+    }
+
+    void Host_Linux_Wayland::keyboard_key(wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
+    {
+        const auto sym = xkb_state_key_get_one_sym(kb_state, key + 8); // XKB keys are offset by 8
+        auto itr = mapKeys.find(sym);
+        if(itr != mapKeys.end()) {
+            auto olc_key = itr->second;
+            auto* pge_window = mapUID2OlcWindow[active_window_id];
+            pge_window->olc_OnKeyPress(olc_key, state == WL_KEYBOARD_KEY_STATE_PRESSED);
+        }
+    }
+
+    void Host_Linux_Wayland::keyboard_modifiers_callback(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
+    {
+        auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        host->keyboard_modifiers(keyboard, serial, mods_depressed, mods_latched, mods_locked, group);
+    }
+
+    void Host_Linux_Wayland::keyboard_modifiers(wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
+    {
+        xkb_state_update_mask(kb_state,
+            mods_depressed & ~(1), // Just like X11, ignore the shift key
+            mods_latched,
+            mods_locked,
+            0,
+            0,
+            group);
+    }
+
+    void Host_Linux_Wayland::keyboard_repeat_info_callback(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay)
+    {
+        // auto* host = reinterpret_cast<Host_Linux_Wayland*>(data);
+        // host->keyboard_repeat_info(keyboard, rate, delay);
     }
 
     // XDG Callbacks

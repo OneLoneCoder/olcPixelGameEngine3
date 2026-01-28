@@ -169,11 +169,11 @@ namespace olc::hw
 
                 {olc::Key::OEM_1, {";", ":", ";", ";"}},
                 {olc::Key::OEM_2, {"/", "?", "/", "/"}},
-                {olc::Key::OEM_3, {"\'","\"", "\'", "\'"}},
+                {olc::Key::OEM_3, {"`","~", "`", "`"}},
                 {olc::Key::OEM_4, {"[", "{", "[", "["}},
                 {olc::Key::OEM_5, {"\\", "|", "\\", "\\"}},
                 {olc::Key::OEM_6, {"]", "}", "]", "]"}},
-                {olc::Key::OEM_7, {"#", "~", "#", "#"}},
+                {olc::Key::OEM_7, {"'", "\"", "'", "'"}},
 
                 // Give these keys glyphs so they can be interpreted in text editing
                 {olc::Key::TAB, {"\t", "\t", "\t", "\t"}},
