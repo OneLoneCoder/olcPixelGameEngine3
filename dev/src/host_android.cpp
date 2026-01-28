@@ -2,7 +2,6 @@
 
 //! START IMPLEMENTATION
 #include <android/input.h>
-#include <jni.h>
 
 namespace olc::host
 {
@@ -117,6 +116,7 @@ namespace olc::host
     }();
 
     AndroidApp* Host_Android::androidApp = nullptr;
+    JavaVM* JNI::jvm = nullptr;
 
     static void Android_onAppCmd(struct android_app* app, int32_t cmd)
     {
@@ -227,15 +227,17 @@ namespace olc::host
             int32_t keyCode = AKeyEvent_getKeyCode(event);
             int32_t action = AKeyEvent_getAction(event);
 
-            if (keyCode >= 0 && keyCode < ANDROID_KEY_MAX && AndroidKeyMap[keyCode] != Key::NONE)
+            olc::Key key = ((keyCode > 0) && keyCode < ANDROID_KEY_MAX) ? AndroidKeyMap[keyCode] : Key::NONE;
+
+            if (key != Key::NONE)
             {
                 if (action == AKEY_EVENT_ACTION_DOWN)
                 {
-                    pgeWindow->olc_OnKeyPress(AndroidKeyMap[keyCode], true);
+                    pgeWindow->olc_OnKeyPress(key, true);
                 }
                 else if (action == AKEY_EVENT_ACTION_UP)
                 {
-                    pgeWindow->olc_OnKeyPress(AndroidKeyMap[keyCode], false);
+                    pgeWindow->olc_OnKeyPress(key, false);
                 }
             }
 
@@ -294,77 +296,54 @@ namespace olc::host
 
     olc::KeyboardLayout Host_Android::GetKeyboardLayout() const
     {
-        ANativeActivity* activity = androidApp->activity;
-        JavaVM* vm = activity->vm;
-        JNIEnv* env = nullptr;
+        JNIObject activity(androidApp->activity->clazz);
+        JNIEnv* env = JNI::GetEnv();
 
-        vm->AttachCurrentThread(&env, nullptr);
-
-        jobject activityObj = activity->clazz;
-        jclass activityClass = env->GetObjectClass(activityObj);
-
-        jmethodID getSystemService = env->GetMethodID(
-            activityClass,
+        auto param = JNIString("input_method");
+        JNIObject imm = activity.Call<JNIObject>(
             "getSystemService",
-            "(Ljava/lang/String;)Ljava/lang/Object;"
+            "(Ljava/lang/String;)Ljava/lang/Object;",
+            *param
         );
 
-        jstring serviceName = env->NewStringUTF("input_method");
-        jobject immObj = env->CallObjectMethod(activityObj, getSystemService, serviceName);
+        std::string result = "";
 
-        std::string result = "unknown";
-
-        if (immObj && !env->ExceptionCheck()) {
-            jclass immClass = env->GetObjectClass(immObj);
-
-            jmethodID getSubtype = env->GetMethodID(
-                immClass,
+        if (*imm) {
+            JNIObject subType = imm.Call<JNIObject>(
                 "getCurrentInputMethodSubtype",
                 "()Landroid/view/inputmethod/InputMethodSubtype;"
             );
-
-            jobject subtypeObj = env->CallObjectMethod(immObj, getSubtype);
-
-            if (subtypeObj && !env->ExceptionCheck()) {
-                jclass subtypeClass = env->GetObjectClass(subtypeObj);
-
-                jmethodID getLocale = env->GetMethodID(
-                    subtypeClass,
+            if (*subType) {
+                JNIObject localeStr = subType.Call<JNIObject>(
                     "getLocale",
                     "()Ljava/lang/String;"
                 );
-
-                jstring localeStr = (jstring)env->CallObjectMethod(subtypeObj, getLocale);
-
-                if (localeStr) {
-                    const char* chars = env->GetStringUTFChars(localeStr, nullptr);
-                    result = chars;
-                    env->ReleaseStringUTFChars(localeStr, chars);
-                    env->DeleteLocalRef(localeStr);
+                
+                if (*localeStr) {
+                    JNIString localeStrObj(static_cast<jstring>(*localeStr));
+                    result = localeStrObj;
                 }
-
-                env->DeleteLocalRef(subtypeClass);
-                env->DeleteLocalRef(subtypeObj);
             }
-
-            env->DeleteLocalRef(immClass);
-            env->DeleteLocalRef(immObj);
         }
 
-        env->DeleteLocalRef(serviceName);
-        env->DeleteLocalRef(activityClass);
-
-        vm->DetachCurrentThread();
+        JNI::Detach();
 
         auto countryCodePos = result.substr(result.find('_') + 1);
-        if (countryCodePos.find("US") != std::string::npos) {
+        if (countryCodePos.find("US") != std::string::npos)
+        {
             return olc::KeyboardLayout::QWERTY_US;
-        } else if (countryCodePos.find("UK") != std::string::npos ||
-                   countryCodePos.find("GB") != std::string::npos) {
+        }
+        else if (countryCodePos.find("UK") != std::string::npos ||
+                   countryCodePos.find("GB") != std::string::npos)
+        {
             return olc::KeyboardLayout::QWERTY_UK;
-        } else if (countryCodePos.find("DE") != std::string::npos) {
+        }
+        else if (countryCodePos.find("DE") != std::string::npos)
+        {
             return olc::KeyboardLayout::QWERTZ;
-        } else if (countryCodePos.find("FR") != std::string::npos) {
+        }
+        else if (countryCodePos.find("FR") != std::string::npos)
+        {
             return olc::KeyboardLayout::AZERTY;
         }
 
@@ -375,11 +354,116 @@ namespace olc::host
 #endif
     }
 
+    void Host_Android::ShowKeyboard(bool bShow)
+    {
+        JNIObject activity(androidApp->activity->clazz);
+
+        auto param = JNIString("input_method");
+        auto imm = activity.Call<JNIObject>(
+            "getSystemService",
+            "(Ljava/lang/String;)Ljava/lang/Object;",
+            *param
+        );
+        if (!imm) return;
+
+        auto window = activity.Call<JNIObject>(
+            "getWindow",
+            "()Landroid/view/Window;"
+        );
+        if (!window) return;
+
+        auto decor = window.Call<JNIObject>(
+            "getDecorView",
+            "()Landroid/view/View;"
+        );
+        if (!decor) return;
+
+        if (bShow)
+        {
+            decor.Call<jboolean>(
+                "requestFocus",
+                "()Z"
+            );
+            imm.Call<jboolean>(
+                "showSoftInput",
+                "(Landroid/view/View;I)Z",
+                *decor,
+                0
+            );
+        }
+        else
+        {
+            auto token = decor.Call<JNIObject>(
+                "getWindowToken",
+                "()Landroid/os/IBinder;"
+            );
+            if (!token) return;
+            imm.Call<jboolean>(
+                "hideSoftInputFromWindow",
+                "(Landroid/os/IBinder;I)Z",
+                *token,
+                0
+            );
+        }
+
+        JNI::Detach();
+    }
+
     Host_Android::Host_Android()
     {
         androidApp->onAppCmd = Android_onAppCmd;
         androidApp->onInputEvent = Android_onInputEvent;
         androidApp->userData = this;
+    }
+
+    void JNI::Init(AndroidApp *app)
+    {
+        jvm = app->activity->vm;
+    }
+
+    void JNI::Detach()
+    {
+        jvm->DetachCurrentThread();
+    }
+
+    JNIEnv* JNI::GetEnv()
+    {
+        JNIEnv* env = nullptr;
+        if (jvm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK)
+        {
+            jvm->AttachCurrentThread(&env, nullptr);
+        }
+        return env;
+    }
+
+    JNIObject::JNIObject(jobject obj)
+    {
+        this->obj = JNI::GetEnv()->NewGlobalRef(obj);
+    }
+
+    JNIObject::~JNIObject()
+    {
+        if (obj)
+        {
+            JNI::GetEnv()->DeleteGlobalRef(obj);
+        }
+        obj = nullptr;
+    }
+
+    JNIObject::JNIObject(JNIObject&& other) noexcept
+    {
+        obj = other.obj;
+        other.obj = nullptr;
+    }
+
+    JNIObject &JNIObject::operator=(JNIObject&& other) noexcept
+    {
+        if (this != &other) {
+            if (obj) JNI::GetEnv()->DeleteGlobalRef(obj);
+            obj = other.obj;
+            other.obj = nullptr;
+        }
+        return *this;
     }
     
 }
@@ -389,6 +473,7 @@ void android_main(struct android_app* app)
     char arg0[] = "olcPixelGameEngine 3.0";
     char* argv[] = { arg0, nullptr };
     
+    olc::host::JNI::Init(app);
     olc::host::Host_Android::androidApp = app;
 
     (void)main(1, argv);

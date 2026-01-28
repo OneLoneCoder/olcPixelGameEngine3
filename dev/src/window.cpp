@@ -4,6 +4,10 @@
 #include "gpu_iface.h"
 #include "imload_iface.h"
 
+#if OLC_HOST == OLC_HOST_ANDROID
+#include "host_android.h"
+#endif
+
 //! START IMPLEMENTATION
 namespace olc
 {
@@ -121,6 +125,11 @@ namespace olc
 		pHost->UpdateWindowFrameTitle(this);
 		return false;
 	}
+
+    olc::host::FRIENDLY_HOST *Window::GetHost() const
+    {
+		return dynamic_cast<olc::host::FRIENDLY_HOST*>(pHost);
+    }
 
 };
 //! END IMPLEMENTATION

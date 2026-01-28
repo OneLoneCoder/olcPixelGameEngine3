@@ -181,6 +181,9 @@ public:
 		if (keyboard.GetKey(olc::Key::RIGHT).bHeld)
 			vPosition.x += 50.0f * fElapsedTime;
 
+        if (keyboard.GetKey(olc::Key::SPACE).bPressed)
+            GetHost()->ShowKeyboard(true);
+
 		draw.FilledCircle(vPosition.round(), 10.0f);
 
 

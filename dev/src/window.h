@@ -127,6 +127,7 @@ namespace olc
 	
 	protected:
 		olc::host::Host* pHost = nullptr;
+		olc::host::FRIENDLY_HOST* GetHost() const;
 
 	protected:
 		olc::hw::Mouse mouse;
