@@ -1,7 +1,30 @@
 #define OLC_PGE3_APPLICATION
 #include "olcPixelGameEngine3.h"
 
+#include <string>
+#include <sstream>
 #include <android/log.h>
+
+#include "linalg.h"
+using namespace linalg::aliases;
+
+#define DEG2RAD(x) ((x) * (M_PI / 180.0f))
+
+static std::vector<std::string> SplitString(const std::string& s, char delimiter) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+struct Vertex {
+    float4 position, color;
+    float2 texCoord;
+    float3 normal;
+};
 
 class Example : public olc::PixelGameEngine
 {
@@ -11,154 +34,105 @@ public:
 
     }
 
-// protected:
-//     // We accumulate total time for some animation
-//     float fTotalTime = 0.0f;
-
-//     olc::gpu::Shader_GLSL33 shaderExample;
-//     olc::Image imgWithoutFX;
-
-//     olc::Image imgGameScene;
-
-//     olc::vf2d vShockwaveOrigin;
-//     float fShockwaveTime = 1000.0f;
-
-// public:
-//     // Called once at the start, so create things here
-//     bool OnUserCreate() override
-//     {
-
-//         // Custom pixel shader main() function and uniforms
-//         std::string custom_ps_main =
-//                 R"(
-// 		uniform vec2 sw_origin;
-// 		uniform float sw_radius;
-
-// 		float wave(vec2 p)
-// 		{
-// 			float waveAmplitude = 1.;
-// 			float waveThickness = 0.075;
-// 			float waveRadius = sw_radius * 0.5;
-
-// 			float distanceFromOrigin = length(p);
-// 			float distanceFromWave = abs(waveRadius - distanceFromOrigin);
-
-// 			if (distanceFromWave <= waveThickness)
-// 			{
-// 				//             wave                    gate                          height
-// 				return cos(distanceFromWave) * (waveThickness - distanceFromWave) * waveAmplitude;
-// 			}
-// 			else
-// 			{
-// 				return 0.;
-// 			}
-// 		}
-
-// 		void main()
-// 		{
-// 			// Expanding shockwave centered on origin effect
-
-// 			// get pixel position relative to shockwave origin
-// 			vec2 p = oTex - sw_origin;
-
-// 			// offset sample position radially by wave "height"
-// 			float h = wave(p);
-// 			vec2 samplePos = oTex + normalize(p) * h;
-
-// 			// Sample underlying texture
-// 			vec4 texColour = texture(pgeTexture0, samplePos) * oCol;
-
-// 			// knock out some red to give a blueish shockwave tint
-// 			texColour.r *= (1.0 - h * 10.0);
-// 			pixel = vec4(texColour.rgb * texColour.a, texColour.a);
-// 		}
-// 		)";
-
-
-//         // Construct pixel shader from default header, but use custom main()
-//         shaderExample.SetPixelShaderSource(
-//                 olc::gpu::Shader::PS_DefaultHeader() +
-//                 custom_ps_main);
-
-//         // Just use the PGE3 default vertex shader
-//         shaderExample.SetVertexShaderSource(
-//                 olc::gpu::Shader::VS_DefaultHeader() +
-//                 olc::gpu::Shader::VS_DefaultMain()
-//         );
-
-//         // Check for shader compile errors
-//         std::string sResult = shaderExample.Compile();
-//         if (sResult != "OK")
-//         {
-//             std::cout << "Error compiling shader: " << sResult << std::endl;
-//             return false;
-//         }
-
-//         // Add custom uniforms used by custom shader. The "system"
-//         // will have taken care of required PGE3 uniforms
-//         shaderExample.CreateUniform("sw_origin");
-//         shaderExample.CreateUniform("sw_radius");
-
-//         // Create off-screen image to draw to
-//         CreateImage(imgWithoutFX, GetDefaultImage().Size());
-
-//         // Load a fake game scene to demonstrate effect on
-//         CreateImageFromFile(imgGameScene, "gamescene.png");
-//         return true;
-//     }
-
-//     // Called every frame, so update things here
-//     bool OnUserUpdate(float fElapsedTime) override
-//     {
-//         // DO SIMULATED GAME LOGIC HERE
-
-//         // For this demo, shockwave always exists and expands
-//         fShockwaveTime += fElapsedTime * 2.0f;
-//         if (mouse.GetButton(0).bPressed)
-//         {
-//             vShockwaveOrigin = mouse.GetPosition();
-//             fShockwaveTime = 0.0f;
-//         }
-
-//         // NOW DRAW SCENE
-
-//         // Set rendering target to off-screen image, we will draw to this
-//         // entirely normally, then apply a custom shader when we draw the
-//         // off-screen image to the screen
-//         draw.SetTarget(imgWithoutFX);
-
-//         // DO ALL GAME DRAWING HERE
-
-//         // Draw a simulated fake game screen
-//         draw.Image(imgGameScene, { 0, 0 });
-
-
-
-//         // Copy image to screen with new shader
-//         draw.SetTarget(GetDefaultImage());
-
-//         // Set the custom shader
-//         draw.SetShader(shaderExample);
-//         draw.SetShaderUniform("sw_origin", vShockwaveOrigin / olc::vf2d(imgGameScene.Size()));
-//         draw.SetShaderUniform("sw_radius", fShockwaveTime);
-
-//         // Present image with shader effect - this is required
-//         // because here is where the shader is actually applied
-//         draw.Image(imgWithoutFX, { 0, 0 });
-
-//         // Successful frame
-//         return true;
-//     }
 protected:
-	
-	olc::vf2d vPosition;
-	std::string sText;
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
+
+    GLuint vao, vbo, ebo;
+
+    olc::gpu::Shader_GLSL33 shader;
+
+    float4x4 projMatrix;
+    float4 rotation{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+    float yRot = 0.0f;
+
 
 public:
 	// Called once at the start, so create things here
 	bool OnUserCreate() override
-	{
-		vPosition = ScreenSize() / 2;
+    {
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+        glGenVertexArrays(1, &vao);
+
+        LoadModel("monkey.obj");
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint16_t), indices.data(), GL_STATIC_DRAW);
+
+        glBindVertexArray(0);
+
+        projMatrix = linalg::perspective_matrix<float>(
+            DEG2RAD(60.0f),
+            static_cast<float>(ScreenSize().x) / static_cast<float>(ScreenSize().y),
+            0.01f, 600.0f
+        );
+
+        std::string vss = R"(
+layout (location = 3) in vec3 aNorm;
+out vec3 vNorm;
+out vec3 oWPos;
+uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projMatrix;
+
+void main() {
+    vec4 worldPos = modelMatrix * vec4(aPos.xyz, 1.0);
+    oWPos = worldPos.xyz;
+
+    mat3 normalMatrix = mat3(modelMatrix);
+    vNorm = normalize(normalMatrix * aNorm);
+
+    gl_Position = projMatrix * viewMatrix * worldPos;
+
+    oTex = aTex;
+}
+)";
+        std::string fss = R"(
+in vec3 vNorm;
+in vec3 oWPos;
+void main() {
+    vec3 N = normalize(vNorm);
+
+    vec3 L = normalize(-oWPos);
+
+    float diffuse = max(dot(N, L), 0.0);
+    pixel = vec4(oTex.x, oTex.y, 0.0, 1.0);
+}
+)";
+
+        shader.SetVertexShaderSource(
+            olc::gpu::Shader::VS_DefaultHeader() + vss
+        );
+        shader.SetPixelShaderSource(
+            olc::gpu::Shader::PS_DefaultHeader() + fss
+        );
+
+        std::string result = shader.Compile();
+        __android_log_print(
+            ANDROID_LOG_ERROR,
+            "SHADER COMPILER",
+            "%s", result.c_str()
+        );
+
+        shader.CreateUniform("modelMatrix");
+        shader.CreateUniform("viewMatrix");
+        shader.CreateUniform("projMatrix");
+
 		return true;
 	}
 
@@ -168,60 +142,103 @@ public:
 		// Clear whole screen
 		draw.Clear(olc::Colour::VERY_DARK_BLUE);
 
-		// Move position with arrow keys
-		if (keyboard.GetKey(olc::Key::UP).bHeld)	
-			vPosition.y -= 50.0f * fElapsedTime;
+        draw.SetShader(shader);
 
-		if (keyboard.GetKey(olc::Key::DOWN).bHeld)
-			vPosition.y += 50.0f * fElapsedTime;
+        float4x4 modelMat = linalg::rotation_matrix(rotation);
+        float4x4 viewMat = linalg::translation_matrix(float3{ 0.0f, 0.0f, -5.0f });
 
-		if (keyboard.GetKey(olc::Key::LEFT).bHeld)
-			vPosition.x -= 50.0f * fElapsedTime;
+        glUniformMatrix4fv(shader.GetUniform("modelMatrix"), 1, GL_FALSE, &modelMat.x.x);
+        glUniformMatrix4fv(shader.GetUniform("viewMatrix"), 1, GL_FALSE, &viewMat.x.x);
+        glUniformMatrix4fv(shader.GetUniform("projMatrix"), 1, GL_FALSE, &projMatrix.x.x);
 
-		if (keyboard.GetKey(olc::Key::RIGHT).bHeld)
-			vPosition.x += 50.0f * fElapsedTime;
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
+        glBindVertexArray(0);
 
-        if (keyboard.GetKey(olc::Key::SPACE).bPressed)
-            GetHost()->ShowKeyboard(true);
-
-		draw.FilledCircle(vPosition.round(), 10.0f);
-
-
-		// Capture text input from keyboard
-		// Note: this is specifically for text entry and shouldnt
-		// be used for key polling.
-		for (const auto& key : keyboard.GetKeyCache())
-		{
-			// Each olc::Key has a glyph associated with it
-			// depending on the current keyboard layout, which
-			// can be queried via GetKeyGlyph()
-			if (key == olc::Key::BACK && !sText.empty())
-				sText.pop_back();
-			else
-				sText += keyboard.GetKeyGlyph(key, keyboard.GetKey(olc::Key::SHIFT).bHeld);
-		}
-
-		// Display current keyboard layout
-		std::string sKeyboardType;
-		auto kbl = pHost->GetKeyboardLayout();
-		if(kbl == olc::KeyboardLayout::QWERTY_UK)
-			sKeyboardType = "QWERTY UK";
-		else if (kbl == olc::KeyboardLayout::QWERTY_US)
-			sKeyboardType = "QWERTY US";
-		else if (kbl == olc::KeyboardLayout::AZERTY)
-			sKeyboardType = "AZERTY";
-		else if (kbl == olc::KeyboardLayout::QWERTZ)
-			sKeyboardType = "QWERTZ";
-		else
-			sKeyboardType = "UNKNOWN";
-
-		draw.StringProp({ 10, 5 }, "Keyboard Layout: " + sKeyboardType, olc::Colour::YELLOW);
-		draw.StringProp({ 10,20 }, sText, olc::Colour::GREEN);
-		
+        rotation = linalg::rotation_quat({ 0.0f, 1.0f, 0.0f }, yRot);
+        yRot += fElapsedTime;
 
 		// Successful frame
 		return true;
 	}
+
+    void LoadModel(const char* sFileName) {
+        using VertexIDs = std::tuple<int, int, int>;
+        using Face = std::array<VertexIDs, 3>;
+
+        auto modelFileRaw = GetHost()->OpenTextFile(sFileName);
+        auto modelStream = std::stringstream(modelFileRaw);
+
+        std::vector<float3> positions, normals;
+        std::vector<float2> texCoords;
+        std::vector<Face> faces;
+
+        std::string line;
+        while (std::getline(modelStream, line)) {
+            std::stringstream lineStream(line);
+
+            std::string type; lineStream >> type;
+            if (type == "v") {
+                float3 position;
+                lineStream >> position.x >> position.y >> position.z;
+                positions.push_back(position);
+            } else if (type == "vn") {
+                float3 normal;
+                lineStream >> normal.x >> normal.y >> normal.z;
+                normals.push_back(normal);
+            } else if (type == "vt") {
+                float2 texCoord;
+                lineStream >> texCoord.x >> texCoord.y;
+                texCoords.push_back(texCoord);
+            } else if (type == "f") {
+                // Assume 3 vertices per face
+                // handle all OBJ cases: v or v/vt or v/vt/vn or v//vn
+
+                std::string v1, v2, v3;
+                lineStream >> v1 >> v2 >> v3;
+
+                auto parseVert = [](std::string vert) -> VertexIDs  {
+                    auto spl = SplitString(vert, '/');
+                    std::string v = "1", vt = "1", vn = "1";
+
+                    if (spl.size() == 1) {
+                        v = spl[0];
+                    } else if (spl.size() == 2) {
+                        v = spl[0];
+                        vt = spl[1];
+                    } else if (spl.size() == 3) {
+                        v = spl[0];
+                        if (spl[1].empty()) {
+                            vn = spl[2];
+                        } else {
+                            vt = spl[1];
+                            vn = spl[2];
+                        }
+                    }
+
+                    return { std::stoi(v)-1, std::stoi(vt)-1, std::stoi(vn)-1 };
+                };
+
+                faces.push_back({ parseVert(v1), parseVert(v2), parseVert(v3) });
+            }
+        }
+
+        vertices.clear();
+        indices.clear();
+
+        uint16_t index = 0;
+        for (auto face : faces) {
+            for (int i = 0; i < 3; i++) {
+                auto vert = face[i];
+                auto pos = positions[std::get<0>(vert)];
+                auto tex = texCoords[std::get<1>(vert)];
+                auto norm = normals[std::get<2>(vert)];
+
+                vertices.push_back({ { pos.x, pos.y, pos.z, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, tex, norm });
+                indices.push_back(index++);
+            }
+        }
+    }
 };
 
 int main(int argc, char** argv) {
@@ -230,9 +247,8 @@ int main(int argc, char** argv) {
     // Construct demo application
     Example demo;
 
-    // Create "screen" of 256x240 "pixels"
     // with a pixel size of 4x4 actual screen pixels
-    if (demo.Construct({ 256, 240 }, { 4, 4 })) {
+    if (demo.Construct({ 270, 548 }, { 4, 4 })) {
         demo.Start();
     }
 

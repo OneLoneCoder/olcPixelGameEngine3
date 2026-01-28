@@ -46,6 +46,10 @@ namespace olc::host
 
         void ShowKeyboard(bool bShow);
 
+        // TODO: Temporary file loading support
+        std::vector<uint8_t> OpenFile(const std::string& sFileName);
+        std::string OpenTextFile(const std::string& sFileName);
+
         static AndroidApp* androidApp;
     protected:
         olc::Window* pgeWindow = nullptr;

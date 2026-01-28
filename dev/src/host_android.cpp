@@ -2,6 +2,7 @@
 
 //! START IMPLEMENTATION
 #include <android/input.h>
+#include <android/asset_manager.h>
 
 namespace olc::host
 {
@@ -465,7 +466,44 @@ namespace olc::host
         }
         return *this;
     }
-    
+
+    std::vector<uint8_t> Host_Android::OpenFile(const std::string &sFileName)
+    {
+        AAsset* asset = AAssetManager_open(
+            androidApp->activity->assetManager,
+            sFileName.c_str(),
+            AASSET_MODE_STREAMING
+        );
+        if (!asset) {
+            return {};
+        }
+
+        off_t size = AAsset_getLength(asset);
+        std::vector<uint8_t> buffer(size);
+        AAsset_read(asset, buffer.data(), size);
+        AAsset_close(asset);
+
+        return buffer;
+    }
+
+    std::string Host_Android::OpenTextFile(const std::string &sFileName)
+    {
+        AAsset* asset = AAssetManager_open(
+            androidApp->activity->assetManager,
+            sFileName.c_str(),
+            AASSET_MODE_STREAMING
+        );
+        if (!asset) {
+            return {};
+        }
+
+        off_t size = AAsset_getLength(asset);
+        std::string content(size, '\0');
+        AAsset_read(asset, content.data(), size);
+        AAsset_close(asset);
+
+        return content;
+    }
 }
 
 void android_main(struct android_app* app)
