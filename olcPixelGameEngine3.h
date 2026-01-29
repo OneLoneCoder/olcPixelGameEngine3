@@ -106,13 +106,13 @@
 */
 
 
-#include <concepts>
 #include <cmath>
 #include <cstdint>
 #include <algorithm>
 #include <string>
 #include <unordered_map>
 #include <iostream>
+#include <concepts>
 #include <array>
 #include <vector>
 #include <memory>
@@ -265,13 +265,6 @@
 
 template<typename... Args>
 inline constexpr void olc_IgnoreUnused(Args&&...) noexcept {}
-
-
-namespace olc
-{
-	template <typename T>
-	concept numeric = std::integral<T> || std::floating_point<T>;
-}
 
 
 #if !defined(PGE_PIXEL_DECLARED)
@@ -588,6 +581,9 @@ namespace olc
 #if !defined(PGE_VECTOR2D_DECLARED)
 namespace olc
 {
+	template <typename T>
+	concept numeric = std::integral<T> || std::floating_point<T>;
+
 	/*
 		A complete 2D geometric vector structure, with a variety
 		of useful utility functions and operator overloads
@@ -11317,18 +11313,25 @@ void main()
 
 		// Create a Frame Buffer Object for off-screen rendering things
 		gl.glGenFramebuffers(1, (GLuint*)&nDefaultFBO);
-		gl.glBindFramebuffer(36160U, nDefaultFBO); // GL_FRAMEBUFFER
+		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO); // GL_FRAMEBUFFER
 		// Attach 4 colour buffers
-		std::array<GLenum, 4> attachments = { {36064U, 36065U, 36066U, 36067U} };
+		std::array<GLenum, 4> attachments = 
+		{ {
+			gl.GL_COLOR_ATTACHMENT0_X,
+			gl.GL_COLOR_ATTACHMENT0_X + 1,
+			gl.GL_COLOR_ATTACHMENT0_X + 2,
+			gl.GL_COLOR_ATTACHMENT0_X + 3
+		} };
+
 		gl.glDrawBuffers(4, attachments.data());
 		// Unlink them from any existing image textures
-		//gl.glFramebufferTexture2D(36160U, attachments[0], GL_TEXTURE_2D, 0, 0);
-		//gl.glFramebufferTexture2D(36160U, attachments[1], GL_TEXTURE_2D, 0, 0);
-		//gl.glFramebufferTexture2D(36160U, attachments[2], GL_TEXTURE_2D, 0, 0);
-		//gl.glFramebufferTexture2D(36160U, attachments[3], GL_TEXTURE_2D, 0, 0);
-		// Unbind the FBO
-		gl.glBindFramebuffer(36160U, 0);
+		//gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER_X, attachments[0], GL_TEXTURE_2D, 0, 0);
+		//gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER_X, attachments[1], GL_TEXTURE_2D, 0, 0);
+		//gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER_X, attachments[2], GL_TEXTURE_2D, 0, 0);
+		//gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER_X, attachments[3], GL_TEXTURE_2D, 0, 0);
 
+		// Unbind the FBO
+		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, 0);
 
 		// Create FBOs for MSAA resolve operations
 		gl.glGenFramebuffers(1, &nResolveFBO_Draw);

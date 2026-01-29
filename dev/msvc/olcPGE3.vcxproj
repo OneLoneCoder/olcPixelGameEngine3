@@ -176,7 +176,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\utilities\olcUTIL3_Animate2D.h" />
+    <ClInclude Include="..\..\utilities\olcUTIL3_Camera2D.h" />
     <ClInclude Include="..\..\utilities\olcUTIL3_GameMode.h" />
+    <ClInclude Include="..\..\utilities\olcUTIL3_Geometry2D.h" />
     <ClInclude Include="..\src\api_macos.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -190,7 +193,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\src\api_opengl.h" />
-    <ClInclude Include="..\src\concepts.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\core.h" />
     <ClInclude Include="..\src\draw2d.h" />
