@@ -99,6 +99,10 @@ namespace olc
 
 			const Shader* pCurrentShader = nullptr;
 
+#if OLC_HOST == OLC_HOST_ANDROID
+			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
+#endif
+
 		};
 	}
 }

@@ -46,7 +46,7 @@ namespace olc::host
 
         void ShowKeyboard(bool bShow);
 
-        // TODO: Temporary file loading support
+        // TODO: file loading support (temporaru)
         std::vector<uint8_t> OpenFile(const std::string& sFileName);
         std::string OpenTextFile(const std::string& sFileName);
 

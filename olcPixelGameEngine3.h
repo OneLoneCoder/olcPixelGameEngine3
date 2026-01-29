@@ -251,7 +251,7 @@
 #define OLC_DEFAULT_KEYBOARD_LAYOUT olc::KeyboardLayout::QWERTY_UK
 
 #define OLC_GPU_MAX_VERTICES 8192
-#define OLC_GPU_ERRORCHECK 0
+#define OLC_GPU_ERRORCHECK 1
 #define OLC_MSAA_SAMPLES 4
 #define OLC_DEFAULT_CIRCLE_FACETS 16
 #define OLC_DEFAULT_VSYNC true
@@ -4794,7 +4794,7 @@ namespace olc::host
 
         void ShowKeyboard(bool bShow);
 
-        // TODO: Temporary file loading support
+        // TODO: file loading support (temporaru)
         std::vector<uint8_t> OpenFile(const std::string& sFileName);
         std::string OpenTextFile(const std::string& sFileName);
 
@@ -5392,6 +5392,10 @@ namespace olc
 			std::unordered_map<uint32_t, uint32_t> mapTextureToRenderbuffer;
 
 			const Shader* pCurrentShader = nullptr;
+
+#if OLC_HOST == OLC_HOST_ANDROID
+			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
+#endif
 
 		};
 	}
@@ -10506,10 +10510,12 @@ namespace olc::apis::opengl
 				sLocation << "OGL33 Error: GL_INVALID_FRAMEBUFFER_OPERATION\n"; break;
 			case GL_OUT_OF_MEMORY:
 				sLocation << "OGL33 Error: GL_OUT_OF_MEMORY\n"; break;
+#if OLC_HOST != OLC_HOST_ANDROID
 			case GL_STACK_UNDERFLOW:
 				sLocation << "OGL33 Error: GL_STACK_UNDERFLOW\n"; break;
 			case GL_STACK_OVERFLOW:
 				sLocation << "OGL33 Error: GL_STACK_OVERFLOW\n"; break;
+#endif
 			}
 			bWasError = true;
 
@@ -11178,38 +11184,39 @@ void main()
 	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(os_win_id[1]);
 #endif
 
-    EGLint const attribute_list[] = {
+	glRenderContext.display = eglGetDisplay(display);
+	if(glRenderContext.display == EGL_NO_DISPLAY) {
+		std::cout << "Could not create EGL Display" << std::endl;
+	}
+
+	eglInitialize(glRenderContext.display, nullptr, nullptr);
+
 #if OLC_HOST == OLC_HOST_ANDROID
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-#endif
+	glRenderContext.config = FindBestConfig(glRenderContext.display, OLC_MSAA_SAMPLES);
+#else
+	EGLint num_config;
+	EGLint const attribute_list[] = {
         EGL_RED_SIZE, 8,
         EGL_GREEN_SIZE, 8,
         EGL_BLUE_SIZE, 8,
         EGL_ALPHA_SIZE, 8,
         EGL_DEPTH_SIZE, 16,
-#if OLC_HOST != OLC_HOST_ANDROID
         EGL_SAMPLE_BUFFERS, 1,
         EGL_SAMPLES, OLC_MSAA_SAMPLES,
-#endif
         EGL_NONE
     };
-	EGLint const context_config[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_NONE};
-	EGLint num_config;
-
-	glRenderContext.display = eglGetDisplay(display);
-	if(glRenderContext.display == EGL_NO_DISPLAY) {
-		std::cout << "Could not create EGL Display" << std::endl;
-	}
-	eglInitialize(glRenderContext.display, nullptr, nullptr);
 	eglChooseConfig(glRenderContext.display, attribute_list, &glRenderContext.config, 1, &num_config);
-	
+#endif
+
+	EGLint const context_config[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_NONE};
+
 	/* create an EGL rendering context */
 	glRenderContext.context = eglCreateContext(glRenderContext.display, glRenderContext.config, EGL_NO_CONTEXT, context_config);
 	glRenderContext.surface = eglCreateWindowSurface(glRenderContext.display, glRenderContext.config, window_handle, nullptr);
 	if(glRenderContext.surface == EGL_NO_SURFACE) {
 		std::cout << "Could not create EGL Surface" << std::endl;
 	}
+
 	if(!eglMakeCurrent(glRenderContext.display, glRenderContext.surface, glRenderContext.surface, glRenderContext.context))
 	{
 		lastError = RendererError::FailedToCreateRenderContext;
@@ -12016,13 +12023,59 @@ void main()
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
-		eglSwapInterval(glRenderContext.display, bVerticalSyncNow ? 1 : 0);
-		eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
+	eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
 #endif
 
 		return true;
 	}
 
+#if OLC_HOST == OLC_HOST_ANDROID
+    EGLConfig Renderer_OGL33::FindBestConfig(EGLDisplay display, int desiredMultisamples)
+    {
+		EGLint numConfigs;
+		EGLConfig bestConfig = nullptr;
+		EGLConfig fallbackConfig = nullptr;
+
+		// Define attribute list for desired configuration
+    	EGLint const attribs[] = {
+			EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+			EGL_RED_SIZE, 8,
+			EGL_GREEN_SIZE, 8,
+			EGL_BLUE_SIZE, 8,
+			EGL_ALPHA_SIZE, 8,
+			EGL_DEPTH_SIZE, 16,
+        	EGL_NONE
+    	};
+
+		// Get all matching configurations
+		eglChooseConfig(display, attribs, nullptr, 0, &numConfigs);
+
+		std::vector<EGLConfig> configs(numConfigs);
+		eglChooseConfig(display, attribs, configs.data(), numConfigs, &numConfigs);
+
+		// Evaluate configurations to find the best that matches desired multisampling
+		for (const auto& config : configs) {
+			EGLint sampleBuffers = 0;
+			EGLint samples = 0;
+
+			eglGetConfigAttrib(display, config, EGL_SAMPLE_BUFFERS, &sampleBuffers);
+			eglGetConfigAttrib(display, config, EGL_SAMPLES, &samples);
+
+			if (sampleBuffers > 0 && samples == desiredMultisamples) {
+				bestConfig = config;
+				break; // Found the best match
+			}
+
+			// Keep track of a fallback configuration
+			if (fallbackConfig == nullptr) {
+				fallbackConfig = config;
+			}
+		}
+
+		return bestConfig ? bestConfig : fallbackConfig;
+    }
+#endif
 
 }
 #endif

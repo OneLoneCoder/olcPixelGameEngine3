@@ -285,7 +285,6 @@ public:
 
         draw.FilledCircle(vPosition.round(), 10.0f);
 
-
         // Capture text input from keyboard
         // Note: this is specifically for text entry and shouldnt
         // be used for key polling.

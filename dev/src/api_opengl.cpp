@@ -105,10 +105,12 @@ namespace olc::apis::opengl
 				sLocation << "OGL33 Error: GL_INVALID_FRAMEBUFFER_OPERATION\n"; break;
 			case GL_OUT_OF_MEMORY:
 				sLocation << "OGL33 Error: GL_OUT_OF_MEMORY\n"; break;
+#if OLC_HOST != OLC_HOST_ANDROID
 			case GL_STACK_UNDERFLOW:
 				sLocation << "OGL33 Error: GL_STACK_UNDERFLOW\n"; break;
 			case GL_STACK_OVERFLOW:
 				sLocation << "OGL33 Error: GL_STACK_OVERFLOW\n"; break;
+#endif
 			}
 			bWasError = true;
 
