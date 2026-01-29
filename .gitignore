@@ -51,31 +51,8 @@ xcuserdata/
 build/
 
 # Android
-*.apk
-*.aab
-*.ap_
-*.dex
-*.class
-
-# Gradle
-.gradle/
-/dev/android/build/
-/dev/android/app/build/
-/dev/android/.gradle/
-local.properties
-
-# Android Studio / IntelliJ
-*.iml
+/dev/android
 .idea/
-.navigation/
-captures/
-output.json
-.kotlin/
-
-# NDK
-obj/
-.externalNativeBuild/
-.cxx/
-
-# olcPixelGameEngine3.h from inside dev/android
-/dev/android/**/olcPixelGameEngine3.h
+*.iml
+/local.properties
+/.gradle
