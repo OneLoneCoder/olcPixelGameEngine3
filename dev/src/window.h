@@ -16,6 +16,7 @@
 #include "draw2d.h"
 #include "hw_mouse.h"
 #include "hw_keyboard.h"
+#include "hw_touch.h"
 //! END CUSTOMHEADER
 
 //! START DECLARATION
@@ -97,7 +98,10 @@ namespace olc
 		// Set Keyboard State
 		virtual bool olc_OnKeyPress(const olc::Key key, const bool bPressed);
 
-
+		// Set Touch Device State
+		virtual bool olc_OnTouch(const int nTouch, const bool bPressed);
+		virtual bool olc_OnTouchMove(const int nTouch, const olc::vf2d& vPos);
+		virtual bool olc_OnTouchActive(const uint32_t nTouches);
 
 	public:
 		bool olc_ShouldRemove() const;
@@ -131,7 +135,7 @@ namespace olc
 	protected:
 		olc::hw::Mouse mouse;
 		olc::hw::Keyboard keyboard;
-
+		olc::hw::Touch touch;
 	};
 }
 #define PGE_WINDOW_DECLARED 1

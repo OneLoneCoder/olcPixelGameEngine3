@@ -70,6 +70,7 @@ namespace olc
 		// Input Changes
 		mouse.UpdateState();
 		keyboard.UpdateState();
+		touch.UpdateState();
 		
 		draw.SetGPU(pRenderer);
 		draw.SetTarget(GetDefaultImage());
@@ -270,6 +271,22 @@ namespace olc
 		return true;
 	}
 
+    bool PGEWindow::olc_OnTouchMove(const int nTouch, const olc::vf2d &vPos)
+    {
+		olc::vf2d pos = vPos;
+
+		// TODO: Concept in v2d prevents this from being cleaner
+		// Full screen windows may have different scaling
+		pos.x -= static_cast<float>(vViewPos.x);
+		pos.y -= static_cast<float>(vViewPos.y);
+
+		touch.SetPosition(
+			nTouch,
+			(olc::vf2d(pos) / olc::vf2d(vWindowSize - (vViewPos * 2)) * olc::vf2d(GetDefaultImage().Size()))
+			.clamp({ 0.0f, 0.0f }, olc::vf2d(olc::vi2d(GetDefaultImage().Size()) - 1)));
+
+        return true;
+    }
 
 
 
@@ -591,5 +608,6 @@ namespace olc
         }
 #endif
     }
+
 }
 //! END IMPLEMENTATION

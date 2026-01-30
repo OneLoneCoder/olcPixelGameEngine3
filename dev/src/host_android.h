@@ -88,6 +88,25 @@ namespace olc::host
         jobject operator *() const { return obj; }
         operator bool() const { return obj != nullptr; }
 
+        template <typename... Args>
+        void CallVoid(
+            const std::string& methodName,
+            const std::string& methodSig,
+            Args&&... args
+        )
+        {
+            JNIEnv* env = JNI::GetEnv();
+            jclass objClass = env->GetObjectClass(obj);
+            jmethodID methodID = env->GetMethodID(
+                objClass,
+                methodName.c_str(),
+                methodSig.c_str()
+            );
+            env->DeleteLocalRef(objClass);
+
+            env->CallVoidMethod(obj, methodID, std::forward<Args>(args)...);
+        }
+
         template <typename R, typename... Args>
         R Call(
             const std::string& methodName,
@@ -104,74 +123,65 @@ namespace olc::host
             );
             env->DeleteLocalRef(objClass);
 
-            R result{};
-            
-            if constexpr (std::is_same_v<R, void>)
-            {
-                env->CallVoidMethod(obj, methodID, std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jint>)
-            {
-                result = env->CallIntMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jboolean>)
-            {
-                result = env->CallBooleanMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jbyte>)
-            {
-                result = env->CallByteMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jchar>)
-            {
-                result = env->CallCharMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jshort>)
-            {
-                result = env->CallShortMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jlong>)
-            {
-                result = env->CallLongMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jfloat>)
-            {
-                result = env->CallFloatMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jdouble>)
-            {
-                result = env->CallDoubleMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jobject> || std::is_same_v<R, JNIObject>)
-            {
-                jobject callResult = env->CallObjectMethod(obj, methodID, std::forward<Args>(args)...);
+            auto FnErrorCheck = [env](R result) {
                 if (env->ExceptionCheck())
                 {
                     env->ExceptionDescribe();
                     env->ExceptionClear();
-                    return {};
+                    return R{};
                 }
+                return result;
+            };
+            
+            if constexpr (std::is_same_v<R, jint>)
+            {
+                return FnErrorCheck(env->CallIntMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jboolean>)
+            {
+                return FnErrorCheck(env->CallBooleanMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jbyte>)
+            {
+                return FnErrorCheck(env->CallByteMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jchar>)
+            {
+                return FnErrorCheck(env->CallCharMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jshort>)
+            {
+                return FnErrorCheck(env->CallShortMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jlong>)
+            {
+                return FnErrorCheck(env->CallLongMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jfloat>)
+            {
+                return FnErrorCheck(env->CallFloatMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jdouble>)
+            {
+                return FnErrorCheck(env->CallDoubleMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jobject> || std::is_same_v<R, JNIObject>)
+            {
+                jobject callResult = env->CallObjectMethod(obj, methodID, std::forward<Args>(args)...);
                 if constexpr (std::is_same_v<R, jobject>)
                 {
-                    result = callResult;
+                    return FnErrorCheck(callResult);
                 }
                 else // JNIObject
                 {
-                    result = JNIObject(callResult);
+                    return FnErrorCheck(JNIObject(callResult));
                 }
             }
             else
             {
                 static_assert(sizeof(R) == 0, "Unsupported return type in JNIObject::Call");
-            }
-            
-            if (env->ExceptionCheck())
-            {
-                env->ExceptionDescribe();
-                env->ExceptionClear();
                 return {};
             }
-            return result;
         }
 
     private:

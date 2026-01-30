@@ -122,5 +122,22 @@ namespace olc
 		return false;
 	}
 
+    bool Window::olc_OnTouch(const int nTouch, const bool bPressed)
+    {
+		touch.SetTouch(nTouch, bPressed);
+        return false;
+    }
+
+    bool Window::olc_OnTouchMove(const int nTouch, const olc::vf2d &vPos)
+    {
+		touch.SetPosition(nTouch, vPos / olc::vf2d(GetWindowSize()));
+        return false;
+    }
+    
+	bool Window::olc_OnTouchActive(const uint32_t nTouches)
+    {
+		touch.SetActiveTouches(nTouches);
+        return false;
+    }
 };
 //! END IMPLEMENTATION

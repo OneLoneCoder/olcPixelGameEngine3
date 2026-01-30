@@ -106,6 +106,7 @@ namespace olc
 
 	protected:
 		bool olc_OnMouseMove(const olc::vi2d& vMousePos) override;
+		bool olc_OnTouchMove(const int nTouch, const olc::vf2d& vPos) override;
 
 	public:
 		virtual bool olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime);

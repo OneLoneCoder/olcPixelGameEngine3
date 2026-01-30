@@ -113,6 +113,7 @@
 
 
 #define OLC_MOUSE_BUTTONS 5
+#define OLC_TOUCH_POINTS 10
 
 #define OLC_DEFAULT_KEYBOARD_LAYOUT olc::KeyboardLayout::QWERTY_UK
 

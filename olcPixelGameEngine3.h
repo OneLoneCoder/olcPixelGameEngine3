@@ -247,6 +247,7 @@
 
 
 #define OLC_MOUSE_BUTTONS 5
+#define OLC_TOUCH_POINTS 10
 
 #define OLC_DEFAULT_KEYBOARD_LAYOUT olc::KeyboardLayout::QWERTY_UK
 
@@ -2929,6 +2930,46 @@ namespace olc
 #define PGE_HW_KEYBOARD_DECLARED 1
 #endif
 
+#if !defined(PGE_HW_TOUCH_DECLARED)
+namespace olc
+{
+    // Forward declare for friendship
+	class Window;
+	class PGEWindow;
+
+    namespace hw
+    {
+        class Touch
+        {
+            friend class olc::Window;
+            friend class olc::PGEWindow;
+        public:
+            Touch() = default;
+
+        public:
+            const Button& GetTouch(const int nTouch) const;
+            const olc::vf2d& GetPosition(const int nTouch) const;
+            uint32_t GetActiveTouches() const;
+
+        protected:
+            std::unordered_map<int32_t, Button> touches{};
+            std::unordered_map<int32_t, olc::vf2d> positions{};
+            std::unordered_map<int32_t, bool> touches_new{};
+            std::unordered_map<int32_t, bool> touches_old{};
+            uint32_t nActiveTouches = 0;
+
+            std::vector<int32_t> GetTouchIDs() const;
+
+        private:
+            void SetPosition(const int nTouch, const olc::vf2d& pos);
+            void SetTouch(const int nTouch, bool state);
+            void SetActiveTouches(const uint32_t nTouches);
+            void UpdateState();
+        };
+    }
+}
+#endif
+
 #if !defined(PGE_WINDOW_DECLARED)
 
 #if OLC_HOST == OLC_HOST_WINDOWS
@@ -3007,7 +3048,10 @@ namespace olc
 		// Set Keyboard State
 		virtual bool olc_OnKeyPress(const olc::Key key, const bool bPressed);
 
-
+		// Set Touch Device State
+		virtual bool olc_OnTouch(const int nTouch, const bool bPressed);
+		virtual bool olc_OnTouchMove(const int nTouch, const olc::vf2d& vPos);
+		virtual bool olc_OnTouchActive(const uint32_t nTouches);
 
 	public:
 		bool olc_ShouldRemove() const;
@@ -3041,7 +3085,7 @@ namespace olc
 	protected:
 		olc::hw::Mouse mouse;
 		olc::hw::Keyboard keyboard;
-
+		olc::hw::Touch touch;
 	};
 }
 #define PGE_WINDOW_DECLARED 1
@@ -3219,6 +3263,7 @@ namespace olc
 
 	protected:
 		bool olc_OnMouseMove(const olc::vi2d& vMousePos) override;
+		bool olc_OnTouchMove(const int nTouch, const olc::vf2d& vPos) override;
 
 	public:
 		virtual bool olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime);
@@ -3422,6 +3467,7 @@ extern "C" {
     void application_activate            (struct Application* self);
     void application_run                 (struct Application* self);
     void application_destroy             (struct Application* self);
+    const char* application_getSystemLocale (struct Application* self);
     
     // Window API - as implemented in api_macos.c
     struct Window* window_init           (double x, double y, double width, double height);
@@ -3470,7 +3516,7 @@ extern "C" {
     void glDeleteTextures(int n, const unsigned int* textures);
     
     // Event callback function types
-    typedef void (*KeyEventCallback)        (unsigned short keyCode, const char* characters, void* userData);
+    typedef void (*KeyEventCallback)        (unsigned short keyCode, const char* characters, unsigned int modifierFlags, void* userData);
     typedef void (*MouseEventCallback)      (double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData);
     
     // Event handler setup
@@ -3594,6 +3640,12 @@ namespace olc {
                 
                 void run() noexcept {
                     if (app_) application_run(app_);
+                }
+
+                // Add this method to get system locale
+                std::string getSystemLocale() const {
+                    const char* localeC = application_getSystemLocale(app_);
+                    return localeC ? std::string(localeC) : std::string("en_GB");
                 }
                 
                 // Get underlying C handle
@@ -4132,10 +4184,11 @@ namespace olc {
             struct KeyEvent {
                 unsigned short keyCode;
                 std::string characters;
-                
-                KeyEvent(unsigned short code, const char* chars) noexcept
-                    : keyCode(code), characters(chars ? chars : "") {}
-                
+                unsigned int modifierFlags;
+
+                KeyEvent(unsigned short code, const char* chars, unsigned int mods) noexcept
+                    : keyCode(code), characters(chars ? chars : ""), modifierFlags(mods) {}
+
                 // Move constructor and assignment for better performance
                 KeyEvent(KeyEvent&&) noexcept = default;
                 KeyEvent& operator=(KeyEvent&&) noexcept = default;
@@ -4189,10 +4242,10 @@ namespace olc {
                
                 // Template helpers for static callbacks to reduce code duplication
                 template<typename EventType, typename HandlerType>
-                static void keyCallback(unsigned short keyCode, const char* characters, void* userData, HandlerType EventHandler::*handler) {
+                static void keyCallback(unsigned short keyCode, const char* characters, unsigned int modifierFlags, void* userData, HandlerType EventHandler::*handler) {
                     auto* eventHandler = static_cast<EventHandler*>(userData);
                     if (eventHandler && (eventHandler->*handler)) {
-                        (eventHandler->*handler)(KeyEvent(keyCode, characters));
+                        (eventHandler->*handler)(KeyEvent(keyCode, characters, modifierFlags));
                     }
                 }
                 
@@ -4205,12 +4258,12 @@ namespace olc {
                 }
                 
                 // Static callback functions for C API
-                static void keyDownCallback(unsigned short keyCode, const char* characters, void* userData) {
-                    keyCallback<KeyEvent>(keyCode, characters, userData, &EventHandler::keyDownHandler_);
+                static void keyDownCallback(unsigned short keyCode, const char* characters, unsigned int modifierFlags, void* userData) {
+                    keyCallback<KeyEvent>(keyCode, characters, modifierFlags, userData, &EventHandler::keyDownHandler_);
                 }
-                
-                static void keyUpCallback(unsigned short keyCode, const char* characters, void* userData) {
-                    keyCallback<KeyEvent>(keyCode, characters, userData, &EventHandler::keyUpHandler_);
+
+                static void keyUpCallback(unsigned short keyCode, const char* characters, unsigned int modifierFlags, void* userData) {
+                    keyCallback<KeyEvent>(keyCode, characters, modifierFlags, userData, &EventHandler::keyUpHandler_);
                 }
                 
                 static void mouseDownCallback(double x, double y, int buttonNumber, unsigned int modifierFlags, void* userData) {
@@ -4388,7 +4441,7 @@ namespace olc
             olc::Window* pPGEwindow = nullptr;                  // Pointer to PGE Window
             
         public:
-            Host_Apple_MacOS() = default;
+            Host_Apple_MacOS();
             virtual ~Host_Apple_MacOS() {};
             
         public:
@@ -4407,6 +4460,8 @@ namespace olc
 			// Wait for entire host desktop refresh (for smooooth vsync),
 			virtual bool SyncWithDesktopComposite() override;
 
+            virtual olc::KeyboardLayout GetKeyboardLayout() const override;
+
         protected:
 			HostError lastError = HostError::None;
 
@@ -4419,6 +4474,9 @@ namespace olc
 
             void* pMacGLConextObj = nullptr;
             std::once_flag intialAppFlag;
+            
+            // Map of system keycodes to olc::Keycodes
+            std::unordered_map<int32_t, olc::Key> mapKeys;
     
         private:      
             enum MAINTASKS{
@@ -4463,6 +4521,12 @@ namespace olc
             void MacWindowEventsHandler();
             void MacEventsHandler();
             void MacOpenGLContextEventsHandler();
+            
+            /*
+             Note for Mac Users: Apple-branded extended keyboards often do not have a physical "NumLock" key; they act as "NumLock On" by default.
+             This behavior (where the key triggers the function flag) is more common when using third-party mechanical keyboards or specialized numpads on macOS.
+             */
+            void ModifiersFlagsHandler(const olc::apis::macos::KeyEvent& data, bool pressed);
             
         };
     }
@@ -4846,6 +4910,25 @@ namespace olc::host
         jobject operator *() const { return obj; }
         operator bool() const { return obj != nullptr; }
 
+        template <typename... Args>
+        void CallVoid(
+            const std::string& methodName,
+            const std::string& methodSig,
+            Args&&... args
+        )
+        {
+            JNIEnv* env = JNI::GetEnv();
+            jclass objClass = env->GetObjectClass(obj);
+            jmethodID methodID = env->GetMethodID(
+                objClass,
+                methodName.c_str(),
+                methodSig.c_str()
+            );
+            env->DeleteLocalRef(objClass);
+
+            env->CallVoidMethod(obj, methodID, std::forward<Args>(args)...);
+        }
+
         template <typename R, typename... Args>
         R Call(
             const std::string& methodName,
@@ -4862,74 +4945,65 @@ namespace olc::host
             );
             env->DeleteLocalRef(objClass);
 
-            R result{};
-            
-            if constexpr (std::is_same_v<R, void>)
-            {
-                env->CallVoidMethod(obj, methodID, std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jint>)
-            {
-                result = env->CallIntMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jboolean>)
-            {
-                result = env->CallBooleanMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jbyte>)
-            {
-                result = env->CallByteMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jchar>)
-            {
-                result = env->CallCharMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jshort>)
-            {
-                result = env->CallShortMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jlong>)
-            {
-                result = env->CallLongMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jfloat>)
-            {
-                result = env->CallFloatMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jdouble>)
-            {
-                result = env->CallDoubleMethod(obj, methodID,  std::forward<Args>(args)...);
-            }
-            else if constexpr (std::is_same_v<R, jobject> || std::is_same_v<R, JNIObject>)
-            {
-                jobject callResult = env->CallObjectMethod(obj, methodID, std::forward<Args>(args)...);
+            auto FnErrorCheck = [env](R result) {
                 if (env->ExceptionCheck())
                 {
                     env->ExceptionDescribe();
                     env->ExceptionClear();
-                    return {};
+                    return R{};
                 }
+                return result;
+            };
+            
+            if constexpr (std::is_same_v<R, jint>)
+            {
+                return FnErrorCheck(env->CallIntMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jboolean>)
+            {
+                return FnErrorCheck(env->CallBooleanMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jbyte>)
+            {
+                return FnErrorCheck(env->CallByteMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jchar>)
+            {
+                return FnErrorCheck(env->CallCharMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jshort>)
+            {
+                return FnErrorCheck(env->CallShortMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jlong>)
+            {
+                return FnErrorCheck(env->CallLongMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jfloat>)
+            {
+                return FnErrorCheck(env->CallFloatMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jdouble>)
+            {
+                return FnErrorCheck(env->CallDoubleMethod(obj, methodID,  std::forward<Args>(args)...));
+            }
+            else if constexpr (std::is_same_v<R, jobject> || std::is_same_v<R, JNIObject>)
+            {
+                jobject callResult = env->CallObjectMethod(obj, methodID, std::forward<Args>(args)...);
                 if constexpr (std::is_same_v<R, jobject>)
                 {
-                    result = callResult;
+                    return FnErrorCheck(callResult);
                 }
                 else // JNIObject
                 {
-                    result = JNIObject(callResult);
+                    return FnErrorCheck(JNIObject(callResult));
                 }
             }
             else
             {
                 static_assert(sizeof(R) == 0, "Unsupported return type in JNIObject::Call");
-            }
-            
-            if (env->ExceptionCheck())
-            {
-                env->ExceptionDescribe();
-                env->ExceptionClear();
                 return {};
             }
-            return result;
         }
 
     private:
@@ -6072,6 +6146,135 @@ namespace olc::host
 #if OLC_HOST == OLC_HOST_MACOS
 namespace olc::host {
 
+
+    // NSEventModifierFlags values
+    constexpr unsigned int NSEventModifierNoFlags        = 1 << 8;  // 0x100
+    constexpr unsigned int NSEventModifierFlagCapsLock   = 1 << 16; // 0x10000
+    constexpr unsigned int NSEventModifierFlagShift      = 1 << 17; // 0x20000
+    constexpr unsigned int NSEventModifierFlagControl    = 1 << 18; // 0x40000
+    constexpr unsigned int NSEventModifierFlagOption     = 1 << 19; // 0x80000
+    constexpr unsigned int NSEventModifierFlagCommand    = 1 << 20; // 0x100000
+    constexpr unsigned int NSEventModifierFlagNumericPad = 1 << 21; // 0x200000
+    constexpr unsigned int NSEventModifierFlagHelp       = 1 << 22; // 0x400000
+    constexpr unsigned int NSEventModifierFlagFunction   = 1 << 23; // 0x800000
+
+
+    Host_Apple_MacOS::Host_Apple_MacOS()
+    {
+         // Reference: https://eastmanreference.com/complete-list-of-applescript-key-codes
+        mapKeys[0x00] = Key::NONE;
+
+        // Map macOS key codes to olc::Key codes
+        mapKeys[0] = Key::A;
+        mapKeys[11] = Key::B;
+        mapKeys[8] = Key::C;
+        mapKeys[2] = Key::D;
+        mapKeys[14] = Key::E;
+        mapKeys[3] = Key::F;
+        mapKeys[5] = Key::G;
+        mapKeys[4] = Key::H;
+        mapKeys[34] = Key::I;
+        mapKeys[38] = Key::J;
+        mapKeys[40] = Key::K;
+        mapKeys[37] = Key::L;
+        mapKeys[46] = Key::M;
+        mapKeys[45] = Key::N;
+        mapKeys[31] = Key::O;
+        mapKeys[35] = Key::P;
+        mapKeys[12] = Key::Q;
+        mapKeys[15] = Key::R;
+        mapKeys[1] = Key::S;
+        mapKeys[17] = Key::T;
+        mapKeys[32] = Key::U;
+        mapKeys[9] = Key::V;
+        mapKeys[13] = Key::W;
+        mapKeys[7] = Key::X;
+        mapKeys[16] = Key::Y;
+        mapKeys[6] = Key::Z;
+
+        // Numeric keys
+        mapKeys[29] = Key::K0;
+        mapKeys[18] = Key::K1;
+        mapKeys[19] = Key::K2;
+        mapKeys[20] = Key::K3;
+        mapKeys[21] = Key::K4;
+        mapKeys[23] = Key::K5;
+        mapKeys[22] = Key::K6;
+        mapKeys[26] = Key::K7;
+        mapKeys[28] = Key::K8;
+        mapKeys[25] = Key::K9;
+
+        // Function Keys
+        mapKeys[122] = Key::F1;
+        mapKeys[120] = Key::F2;
+        mapKeys[99] = Key::F3;
+        mapKeys[118] = Key::F4;
+        mapKeys[96] = Key::F5;
+        mapKeys[97] = Key::F6;
+        mapKeys[98] = Key::F7;
+        mapKeys[100] = Key::F8;
+        mapKeys[101] = Key::F9;
+        mapKeys[109] = Key::F10;
+        mapKeys[103] = Key::F11;
+        mapKeys[111] = Key::F12;
+
+        // Arrow Keys
+        mapKeys[125] = Key::DOWN;
+        mapKeys[123] = Key::LEFT;
+        mapKeys[124] = Key::RIGHT;
+        mapKeys[126] = Key::UP;
+
+        // Other Keys
+        mapKeys[51] = Key::BACK;        // Delete (Backspace)
+        mapKeys[53] = Key::ESCAPE;      // Escape
+        mapKeys[36] = Key::ENTER;       // Return
+        mapKeys[113] = Key::PAUSE;      // F16 (often used as pause)
+        mapKeys[107] = Key::SCROLL;     // F14 (scroll lock equivalent)
+        mapKeys[48] = Key::TAB;         // Tab
+        mapKeys[117] = Key::DEL;        // Forward Delete
+        mapKeys[115] = Key::HOME;       // Home
+        mapKeys[119] = Key::END;        // End
+        mapKeys[116] = Key::PGUP;       // Page Up
+        mapKeys[121] = Key::PGDN;       // Page Down
+        mapKeys[114] = Key::INS;        // Help (Insert equivalent)
+        mapKeys[56] = Key::SHIFT;       // Left Shift
+        mapKeys[59] = Key::CTRL;        // Left Control
+        mapKeys[49] = Key::SPACE;       // Space
+        mapKeys[57] = Key::CAPS_LOCK;   // Caps Lock
+
+        // Numpad
+        mapKeys[82] = Key::NP0;
+        mapKeys[83] = Key::NP1;
+        mapKeys[84] = Key::NP2;
+        mapKeys[85] = Key::NP3;
+        mapKeys[86] = Key::NP4;
+        mapKeys[87] = Key::NP5;
+        mapKeys[88] = Key::NP6;
+        mapKeys[89] = Key::NP7;
+        mapKeys[91] = Key::NP8;
+        mapKeys[92] = Key::NP9;
+        mapKeys[67] = Key::NP_MUL;      // Numpad *
+        mapKeys[69] = Key::NP_ADD;      // Numpad +
+        mapKeys[75] = Key::NP_DIV;      // Numpad /
+        mapKeys[78] = Key::NP_SUB;      // Numpad -
+        mapKeys[65] = Key::NP_DECIMAL;  // Numpad .
+
+        // Symbol Keys (OEM equivalents)
+        mapKeys[41] = Key::OEM_1;       // On US and UK keyboards this is the ';:' key
+        mapKeys[44] = Key::OEM_2;       // On US and UK keyboards this is the '/?' key
+        mapKeys[50] = Key::OEM_3;       // On US and UK keyboards this is the '`~' key (Grave accent `)
+        mapKeys[33] = Key::OEM_4;       // On US and UK keyboards this is the '[{' key
+        mapKeys[42] = Key::OEM_5;       // On US keyboard this is '\|' key. 
+        mapKeys[30] = Key::OEM_6;       // On US and UK keyboards this is the ']}' key
+        mapKeys[39] = Key::OEM_7;       // On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key (TODO: I think MAC is always @)
+        mapKeys[10] = Key::OEM_8;       // Section sign § (varies by keyboard)
+        mapKeys[24] = Key::EQUALS;      // Equal sign =
+        mapKeys[43] = Key::COMMA;       // Comma ,
+        mapKeys[27] = Key::MINUS;       // Minus -
+        mapKeys[47] = Key::PERIOD;      // Period .
+
+    }
+
     bool Host_Apple_MacOS::StartSystemEventLoop(bool bBlockIfPossible){
         (void)(bBlockIfPossible); // Remove unused variable warning
 
@@ -6172,6 +6375,35 @@ namespace olc::host {
         
         return enableVSync;
     }
+
+    olc::KeyboardLayout Host_Apple_MacOS::GetKeyboardLayout() const
+    {
+        // Get system locale from MacOS Application
+        // We need to wait until the application has launched to get the keyboard layout
+        // Therefore this function is called again from setDidFinishLaunchingCallback event
+        if (pMacApplication)
+        {
+            std::string locale = pMacApplication->getSystemLocale();
+            if (locale == "en_GB")
+            {
+                return olc::KeyboardLayout::QWERTY_UK;
+            }
+            else if (locale == "en_US")
+            {
+                return olc::KeyboardLayout::QWERTY_US;
+            }
+            else if (locale == "fr_FR")
+            {
+                return olc::KeyboardLayout::AZERTY;
+            }
+            else if (locale == "de_DE")
+            {
+                return olc::KeyboardLayout::QWERTZ;
+            }
+        }
+        // Default to QWERTY if unknown
+        return olc::KeyboardLayout::QWERTY_UK;
+    }   
 
 // ------- Priavate Main Thread Task Handling for MacOS Host -------
 
@@ -6319,6 +6551,8 @@ namespace olc::host {
        pMacApplication->setDidFinishLaunchingCallback([&]() {
            // Queue the Create OpenGL context task
            vPendingMainThreadTasks.push_back(CREATE_OPENGL_RENDERER);
+           // We need to wait until the application has launched to get the keyboard layout
+           pPGEwindow->keyboard.UseKeyboardLayout(GetKeyboardLayout());
        });
        
        pMacApplication->setWillTerminateCallback([&]() {
@@ -6362,6 +6596,20 @@ namespace olc::host {
         
     }
 
+    void Host_Apple_MacOS::ModifiersFlagsHandler(const olc::apis::macos::KeyEvent& event, bool pressed) {
+        
+        if (event.modifierFlags & NSEventModifierFlagCapsLock) {
+            pPGEwindow->olc_OnKeyPress(Key::CAPS_LOCK, pressed);
+        }
+        if (event.modifierFlags & NSEventModifierFlagShift) {
+            pPGEwindow->olc_OnKeyPress(Key::SHIFT, pressed);
+        }
+        if (event.modifierFlags & NSEventModifierFlagControl) {
+            pPGEwindow->olc_OnKeyPress(Key::CTRL, pressed);
+        }
+        
+    }
+
 
     void Host_Apple_MacOS::MacEventsHandler()
     {
@@ -6369,43 +6617,15 @@ namespace olc::host {
         // Reference: https://eastmanreference.com/complete-list-of-applescript-key-codes
 
         // Set up keyboard event handlers
-        pMacOSEventHandler->onKeyDown([](const olc::apis::macos::KeyEvent& event) {
-            std::cout << "Key Down - Code: " << event.keyCode
-                        << ", Chars: '" << event.characters << "'" << std::endl;
-            
-            // Handle special keys
-            switch (event.keyCode) {
-                case 53: // Escape
-                    std::cout << "Escape key pressed!" << std::endl;
-                    break;
-                case 36: // Return
-                    std::cout << "Return key pressed!" << std::endl;
-                    break;
-                case 49: // Space
-                    std::cout << "Space key pressed!" << std::endl;
-                    break;
-                case 123: // Left arrow
-                    std::cout << "Left arrow pressed!" << std::endl;
-                    break;
-                case 124: // Right arrow
-                    std::cout << "Right arrow pressed!" << std::endl;
-                    break;
-                case 125: // Down arrow
-                    std::cout << "Down arrow pressed!" << std::endl;
-                    break;
-                case 126: // Up arrow
-                    std::cout << "Up arrow pressed!" << std::endl;
-                    break;
-                default:
-                    if (!event.characters.empty()) {
-                        std::cout << "Character key: '" << event.characters << "'" << std::endl;
-                    }
-                    break;
-            }
+        pMacOSEventHandler->onKeyDown([&](const olc::apis::macos::KeyEvent& event) {
+            ModifiersFlagsHandler(event, true);
+            pPGEwindow->olc_OnKeyPress(mapKeys[event.keyCode], true);
         });
         
-        pMacOSEventHandler->onKeyUp([](const olc::apis::macos::KeyEvent& event) {
-            std::cout << "Key Up - Code: " << event.keyCode << std::endl;
+        pMacOSEventHandler->onKeyUp([&](const olc::apis::macos::KeyEvent& event) {
+            ModifiersFlagsHandler(event, false);
+            pPGEwindow->olc_OnKeyPress(mapKeys[event.keyCode], false);
+
         });
         
         // Set up mouse event handlers
@@ -6581,6 +6801,12 @@ static constexpr const char* kBytesPerRowSel                    = "bytesPerRow";
 static constexpr const char* kHasAlphaSel                       = "hasAlpha";
 static constexpr const char* kBitmapDataSel                     = "bitmapData";
 
+// NSLocale class and method names
+static constexpr const char* kNSLocaleClass                     = "NSLocale";
+static constexpr const char* kCurrentLocaleSel                  = "currentLocale";
+static constexpr const char* kLocaleIdentifierSel               = "localeIdentifier";
+
+
 // Default values and configuration settings 
 static constexpr const char* kWindowTitle                       = "C macOS OpenGL Framework";
 static constexpr double kDefaultWindowWidth                     = 800.0;
@@ -6645,6 +6871,9 @@ namespace ObjectiveCSEL {
     // NSImage, NSBitmapImageRep, and image data access selectors
     static SEL initWithContentsOfFileSel, representationsSel, countSel, objectAtIndexSel, pixelsWideSel, pixelsHighSel, bitsPerPixelSel, bytesPerRowSel, hasAlphaSel, bitmapDataSel = nullptr;
 
+    // NSLocale selectors
+    static SEL currentLocaleSel, localeIdentifierSel = nullptr;
+    
     // Initialize all selectors - called once at startup
     void initializeSelectors() {
         if (allocSel) return; // Already initialized
@@ -6751,6 +6980,10 @@ namespace ObjectiveCSEL {
         bytesPerRowSel                     = sel_registerName(kBytesPerRowSel);
         hasAlphaSel                        = sel_registerName(kHasAlphaSel);
         bitmapDataSel                      = sel_registerName(kBitmapDataSel);
+
+        // NSLocale selectors
+        currentLocaleSel                   = sel_registerName(kCurrentLocaleSel);
+        localeIdentifierSel                = sel_registerName(kLocaleIdentifierSel);
     }
 
     // Ensures we only initialize selectors once (Thread-safe)
@@ -7001,6 +7234,7 @@ struct Application {
     void (*activate)    (struct Application* self){nullptr};
     void (*run)         (struct Application* self){nullptr};
     void (*destroy)     (struct Application* self){nullptr};
+    const char* (*getSystemLocale)(struct Application* self){nullptr};
     
     Application() = default;
     
@@ -7027,8 +7261,8 @@ struct Window {
     const char* title{nullptr};     // Window title string
 
     // Event callback function pointers with nullptr initialization
-    void (*keyDownCallback)          (unsigned short keyCode, const char* characters, void* userData){nullptr};
-    void (*keyUpCallback)            (unsigned short keyCode, const char* characters, void* userData){nullptr};
+    void (*keyDownCallback)          (unsigned short keyCode, const char* characters, unsigned int modifierFlags, void* userData){nullptr};
+    void (*keyUpCallback)            (unsigned short keyCode, const char* characters, unsigned int modifierFlags, void* userData){nullptr};
     void (*mouseDownCallback)        (double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
     void (*mouseUpCallback)          (double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
     void (*mouseMovedCallback)       (double x, double y, int buttonNumber,  unsigned int modifierFlags, void* userData){nullptr};
@@ -7193,6 +7427,7 @@ id createApplicationDelegate() {
 struct KeyEventData {
     unsigned short keyCode = 0;
     const char* characters = nullptr;
+    unsigned int modifierFlags = 0;
 };
 
 // Extract common key event data from NSEvent
@@ -7201,6 +7436,7 @@ KeyEventData extractKeyEventData(id event) {
     data.keyCode = ((unsigned short(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::keyCodeSel);
     id characters = ((id(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::charactersSel);
     data.characters = ((const char*(*)(id, SEL))objc_msgSend)(characters, ObjectiveCSEL::utf8StringSel);
+    data.modifierFlags = ((unsigned int(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::modifierFlagsSel);
     return data;
 }
 
@@ -7211,7 +7447,7 @@ void view_keyDown(id self, SEL _cmd, id event) {
     KeyEventData data = extractKeyEventData(event);
 
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->keyDownCallback) [[likely]] {
-        gptrNSWindowEvents->keyDownCallback(data.keyCode, data.characters, gptrNSWindowEvents->eventUserData);
+        gptrNSWindowEvents->keyDownCallback(data.keyCode, data.characters, data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
 }
 
@@ -7222,7 +7458,7 @@ void view_keyUp(id self, SEL _cmd, id event) {
     KeyEventData data = extractKeyEventData(event);
     
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->keyUpCallback) [[likely]] {
-        gptrNSWindowEvents->keyUpCallback(data.keyCode, data.characters, gptrNSWindowEvents->eventUserData);
+        gptrNSWindowEvents->keyUpCallback(data.keyCode, data.characters, data.modifierFlags, gptrNSWindowEvents->eventUserData);
     }
 }
 
@@ -7664,6 +7900,26 @@ extern "C" {
         }
     }
 
+     // Get system locale identifier
+    const char* application_getSystemLocale(Application* self) {
+        (void)self; 
+        
+        // Get NSLocale class
+        Class NSLocaleClass = objc_getClass(kNSLocaleClass);
+        
+        // Get current locale
+        id currentLocale = ((id(*)(Class, SEL))objc_msgSend)(NSLocaleClass, ObjectiveCSEL::currentLocaleSel);
+        
+        // Get locale identifier
+        id localeIdentifierNS = ((id(*)(id, SEL))objc_msgSend)(currentLocale, ObjectiveCSEL::localeIdentifierSel);
+        
+        // Convert to C string (en-US, en-GB, en-IE etc)
+        const char* localeIdentifier = ((const char*(*)(id, SEL))objc_msgSend)(localeIdentifierNS, ObjectiveCSEL::utf8StringSel);
+        
+        return localeIdentifier;
+    }
+
+
     // Ensure window has a delegate for window events
     void ensureWindowDelegate(struct Window* self) {
 
@@ -7686,10 +7942,11 @@ extern "C" {
         Application* app = new Application();
 
         // Assign the method pointers
-        app->initialize = application_initialize;
-        app->activate   = application_activate;
-        app->run        = application_run;
-        app->destroy    = application_destroy;
+        app->initialize      = application_initialize;
+        app->activate        = application_activate;
+        app->run             = application_run;
+        app->destroy         = application_destroy;
+        app->getSystemLocale = application_getSystemLocale;
 
         return app;
     }
@@ -8327,12 +8584,12 @@ extern "C" {
     }
 
     // Event callback setter functions
-    void window_setKeyDownCallback(Window* self, void (*callback)(unsigned short, const char*, void*), void* userData) {
+    void window_setKeyDownCallback(Window* self, void (*callback)(unsigned short, const char*, unsigned int, void*), void* userData) {
         self->keyDownCallback = callback;
         self->eventUserData = userData;
     }
 
-    void window_setKeyUpCallback(Window* self, void (*callback)(unsigned short, const char*, void*), void* userData) {
+    void window_setKeyUpCallback(Window* self, void (*callback)(unsigned short, const char*, unsigned int, void*), void* userData) {
         self->keyUpCallback = callback;
         self->eventUserData = userData;
     }
@@ -9936,6 +10193,7 @@ namespace olc::host
 #if OLC_HOST == OLC_HOST_ANDROID
 #include <android/input.h>
 #include <android/asset_manager.h>
+#include <android/window.h>
 
 namespace olc::host
 {
@@ -10117,6 +10375,14 @@ namespace olc::host
             case APP_CMD_INIT_WINDOW:
                 if (app->window) {
                     host->initialized = true;
+
+                    ANativeActivity_setWindowFlags(
+                        app->activity,
+                        AWINDOW_FLAG_FULLSCREEN |
+                        AWINDOW_FLAG_KEEP_SCREEN_ON,
+                        0
+                    );
+
                     __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID",
                                         "APP_CMD_INIT_WINDOW received with Window");
                 }
@@ -10140,21 +10406,57 @@ namespace olc::host
         auto type = AInputEvent_getType(event);
         
         if (type == AINPUT_EVENT_TYPE_MOTION) {
+            auto action = AMotionEvent_getAction(event);
+            auto actionMasked = action & AMOTION_EVENT_ACTION_MASK;
+            auto index = (action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+
             pgeWindow->olc_OnMouseMove({
                 static_cast<int32_t>(AMotionEvent_getX(event, 0)),
                 static_cast<int32_t>(AMotionEvent_getY(event, 0)),
             });
+            
+            // Handle touch events
+            auto pointerCount = AMotionEvent_getPointerCount(event);
+            pgeWindow->olc_OnTouchActive(static_cast<uint32_t>(pointerCount));
 
-            auto action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+            for (size_t i = 0; i < pointerCount && i < OLC_TOUCH_POINTS; i++) {
+                pgeWindow->olc_OnTouchMove(
+                    AMotionEvent_getPointerId(event, i),
+                    {
+                        AMotionEvent_getX(event, i),
+                        AMotionEvent_getY(event, i)
+                    }
+                );
+            }
 
-            switch (action) {
+
+            switch (actionMasked) {
                 case AMOTION_EVENT_ACTION_DOWN:
                 case AMOTION_EVENT_ACTION_POINTER_DOWN:
+                    pgeWindow->olc_OnTouch(
+                        AMotionEvent_getPointerId(event, index),
+                        true
+                    );
                     pgeWindow->olc_OnMouseButton(0, true); // Left button
                     break;
                 case AMOTION_EVENT_ACTION_UP:
                 case AMOTION_EVENT_ACTION_POINTER_UP:
+                    pgeWindow->olc_OnTouch(
+                        AMotionEvent_getPointerId(event, index),
+                        false
+                    );
                     pgeWindow->olc_OnMouseButton(0, false); // Left button
+                    break;
+                case AMOTION_EVENT_ACTION_MOVE:
+                    for (size_t i = 0; i < pointerCount && i < OLC_TOUCH_POINTS; i++) {
+                        pgeWindow->olc_OnTouchMove(
+                            AMotionEvent_getPointerId(event, i),
+                            {
+                                AMotionEvent_getX(event, i),
+                                AMotionEvent_getY(event, i)
+                            }
+                        );
+                    }
                     break;
                 case AMOTION_EVENT_AXIS_WHEEL:
                     // Handle mouse wheel
@@ -10163,6 +10465,14 @@ namespace olc::host
                         if (vScroll != 0.0f) {
                             pgeWindow->olc_OnMouseWheel(static_cast<int32_t>(vScroll * 120.0f));
                         }
+                    }
+                    break;
+                case AMOTION_EVENT_ACTION_CANCEL:
+                    for (size_t i = 0; i < pointerCount && i < OLC_TOUCH_POINTS; i++) {
+                        pgeWindow->olc_OnTouch(
+                            AMotionEvent_getPointerId(event, i),
+                            false
+                        );
                     }
                     break;
                 default:
@@ -14147,6 +14457,7 @@ namespace olc
 		// Input Changes
 		mouse.UpdateState();
 		keyboard.UpdateState();
+		touch.UpdateState();
 		
 		draw.SetGPU(pRenderer);
 		draw.SetTarget(GetDefaultImage());
@@ -14347,6 +14658,22 @@ namespace olc
 		return true;
 	}
 
+    bool PGEWindow::olc_OnTouchMove(const int nTouch, const olc::vf2d &vPos)
+    {
+		olc::vf2d pos = vPos;
+
+		// TODO: Concept in v2d prevents this from being cleaner
+		// Full screen windows may have different scaling
+		pos.x -= static_cast<float>(vViewPos.x);
+		pos.y -= static_cast<float>(vViewPos.y);
+
+		touch.SetPosition(
+			nTouch,
+			(olc::vf2d(pos) / olc::vf2d(vWindowSize - (vViewPos * 2)) * olc::vf2d(GetDefaultImage().Size()))
+			.clamp({ 0.0f, 0.0f }, olc::vf2d(olc::vi2d(GetDefaultImage().Size()) - 1)));
+
+        return true;
+    }
 
 
 
@@ -14668,6 +14995,7 @@ namespace olc
         }
 #endif
     }
+
 }
 #define PGE_CORE_IMPLEMENTED 1
 #endif
@@ -15195,6 +15523,115 @@ namespace olc::hw
 #define PGE_HW_KEYBOARD_IMPLEMENTED 1
 #endif
 
+#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HW_TOUCH_IMPLEMENTED)
+namespace olc::hw
+{
+    const Button& Touch::GetTouch(const int nTouch) const
+    {
+        auto ids = GetTouchIDs();
+        auto id = std::find(ids.begin(), ids.end(), nTouch);
+        if (id == ids.end())
+        {
+            static Button emptyButton{};
+            return emptyButton;
+        }
+        
+        return touches.at(*id);
+    }
+
+    const olc::vf2d &Touch::GetPosition(const int nTouch) const
+    {
+        auto ids = GetTouchIDs();
+        auto id = std::find(ids.begin(), ids.end(), nTouch);
+        if (id == ids.end())
+        {
+            static olc::vf2d emptyPosition{};
+            return emptyPosition;
+        }
+        
+        return positions.at(*id);
+    }
+
+    uint32_t Touch::GetActiveTouches() const
+    {
+        return nActiveTouches;
+    }
+
+    void Touch::SetPosition(const int nTouch, const olc::vf2d &pos)
+    {
+        auto it = positions.find(nTouch);
+        if (it == positions.end())
+        {
+            positions.emplace(nTouch, pos);
+            touches_new.emplace(nTouch, false);
+            touches_old.emplace(nTouch, false);
+            touches.emplace(nTouch, Button{});
+        }
+        else
+        {
+            it->second = pos;
+        }
+    }
+
+    void Touch::SetTouch(const int nTouch, bool state)
+    {
+        auto it = touches_new.find(nTouch);
+        if (it == touches_new.end())
+        {
+            touches_new.emplace(nTouch, state);
+            touches_old.emplace(nTouch, false);
+            touches.emplace(nTouch, Button{});
+            positions.emplace(nTouch, olc::vf2d{});
+        }
+        else
+        {
+            it->second = state;
+        }
+    }
+
+    void Touch::UpdateState()
+    {
+        for (auto& [i, btn] : touches)
+        {
+            btn.bPressed = false;
+            btn.bReleased = false;
+            
+            if (touches_new.at(i) != touches_old.at(i))
+            {
+                if (touches_new.at(i))
+                {
+                    btn.bPressed = !btn.bHeld;
+                    btn.bHeld = true;
+                }
+                else
+                {
+                    btn.bReleased = true;
+                    btn.bHeld = false;
+                }
+            }
+            touches_old.at(i) = touches_new.at(i);
+        }
+    }
+
+    void Touch::SetActiveTouches(const uint32_t nTouches)
+    {
+        nActiveTouches = nTouches;
+    }
+    
+    std::vector<int32_t> Touch::GetTouchIDs() const
+    {
+        std::vector<int32_t> ids;
+        ids.reserve(touches.size());
+        for (const auto& [id, _] : touches)
+        {
+            ids.push_back(id);
+        }
+        return ids;
+    }
+}
+#define PGE_HW_TOUCH_IMPLEMENTED 1
+#endif
+
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_WINDOW_IMPLEMENTED)
 namespace olc
 {
@@ -15313,6 +15750,23 @@ namespace olc
 		return false;
 	}
 
+    bool Window::olc_OnTouch(const int nTouch, const bool bPressed)
+    {
+		touch.SetTouch(nTouch, bPressed);
+        return false;
+    }
+
+    bool Window::olc_OnTouchMove(const int nTouch, const olc::vf2d &vPos)
+    {
+		touch.SetPosition(nTouch, vPos / olc::vf2d(GetWindowSize()));
+        return false;
+    }
+    
+	bool Window::olc_OnTouchActive(const uint32_t nTouches)
+    {
+		touch.SetActiveTouches(nTouches);
+        return false;
+    }
 };
 #define PGE_WINDOW_IMPLEMENTED 1
 #endif

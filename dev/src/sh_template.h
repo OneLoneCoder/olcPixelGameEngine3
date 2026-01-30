@@ -136,6 +136,8 @@
 
 //! GRAB hw_keyboard.h DECLARATION
 
+//! GRAB hw_touch.h	DECLARATION
+
 //! GRAB window.h DECLARATION
  
 //! GRAB host_iface.h DECLARATION
@@ -291,6 +293,11 @@
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HW_KEYBOARD_IMPLEMENTED)
 //! GRAB hw_keyboard.cpp IMPLEMENTATION 
 #define PGE_HW_KEYBOARD_IMPLEMENTED 1
+#endif
+
+#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HW_TOUCH_IMPLEMENTED)
+//! GRAB hw_touch.cpp IMPLEMENTATION 
+#define PGE_HW_TOUCH_IMPLEMENTED 1
 #endif
 
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_WINDOW_IMPLEMENTED)

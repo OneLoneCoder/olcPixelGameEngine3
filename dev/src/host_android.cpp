@@ -3,6 +3,7 @@
 //! START IMPLEMENTATION
 #include <android/input.h>
 #include <android/asset_manager.h>
+#include <android/window.h>
 
 namespace olc::host
 {
@@ -184,6 +185,14 @@ namespace olc::host
             case APP_CMD_INIT_WINDOW:
                 if (app->window) {
                     host->initialized = true;
+
+                    ANativeActivity_setWindowFlags(
+                        app->activity,
+                        AWINDOW_FLAG_FULLSCREEN |
+                        AWINDOW_FLAG_KEEP_SCREEN_ON,
+                        0
+                    );
+
                     __android_log_print(ANDROID_LOG_DEBUG, "PGE ANDROID",
                                         "APP_CMD_INIT_WINDOW received with Window");
                 }
@@ -207,21 +216,57 @@ namespace olc::host
         auto type = AInputEvent_getType(event);
         
         if (type == AINPUT_EVENT_TYPE_MOTION) {
+            auto action = AMotionEvent_getAction(event);
+            auto actionMasked = action & AMOTION_EVENT_ACTION_MASK;
+            auto index = (action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+
             pgeWindow->olc_OnMouseMove({
                 static_cast<int32_t>(AMotionEvent_getX(event, 0)),
                 static_cast<int32_t>(AMotionEvent_getY(event, 0)),
             });
+            
+            // Handle touch events
+            auto pointerCount = AMotionEvent_getPointerCount(event);
+            pgeWindow->olc_OnTouchActive(static_cast<uint32_t>(pointerCount));
 
-            auto action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+            for (size_t i = 0; i < pointerCount && i < OLC_TOUCH_POINTS; i++) {
+                pgeWindow->olc_OnTouchMove(
+                    AMotionEvent_getPointerId(event, i),
+                    {
+                        AMotionEvent_getX(event, i),
+                        AMotionEvent_getY(event, i)
+                    }
+                );
+            }
 
-            switch (action) {
+
+            switch (actionMasked) {
                 case AMOTION_EVENT_ACTION_DOWN:
                 case AMOTION_EVENT_ACTION_POINTER_DOWN:
+                    pgeWindow->olc_OnTouch(
+                        AMotionEvent_getPointerId(event, index),
+                        true
+                    );
                     pgeWindow->olc_OnMouseButton(0, true); // Left button
                     break;
                 case AMOTION_EVENT_ACTION_UP:
                 case AMOTION_EVENT_ACTION_POINTER_UP:
+                    pgeWindow->olc_OnTouch(
+                        AMotionEvent_getPointerId(event, index),
+                        false
+                    );
                     pgeWindow->olc_OnMouseButton(0, false); // Left button
+                    break;
+                case AMOTION_EVENT_ACTION_MOVE:
+                    for (size_t i = 0; i < pointerCount && i < OLC_TOUCH_POINTS; i++) {
+                        pgeWindow->olc_OnTouchMove(
+                            AMotionEvent_getPointerId(event, i),
+                            {
+                                AMotionEvent_getX(event, i),
+                                AMotionEvent_getY(event, i)
+                            }
+                        );
+                    }
                     break;
                 case AMOTION_EVENT_AXIS_WHEEL:
                     // Handle mouse wheel
@@ -230,6 +275,14 @@ namespace olc::host
                         if (vScroll != 0.0f) {
                             pgeWindow->olc_OnMouseWheel(static_cast<int32_t>(vScroll * 120.0f));
                         }
+                    }
+                    break;
+                case AMOTION_EVENT_ACTION_CANCEL:
+                    for (size_t i = 0; i < pointerCount && i < OLC_TOUCH_POINTS; i++) {
+                        pgeWindow->olc_OnTouch(
+                            AMotionEvent_getPointerId(event, i),
+                            false
+                        );
                     }
                     break;
                 default:
