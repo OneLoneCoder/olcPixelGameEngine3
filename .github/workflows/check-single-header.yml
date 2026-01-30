@@ -1,0 +1,39 @@
+name: Check Single Header
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    input:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual run'
+
+jobs:
+  CheckSingleHeader:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Move single header to a temporary file
+      run: mv olcPixelGameEngine3.h olcPixelGameEngine3.h~
+
+    - name: Build and run single header amalgamation tool (olcGimmeHead)
+      run: |
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config=Release
+
+    - name: Check that both headers are identical
+      run: |
+        if ! diff -q olcPixelGameEngine3.h olcPixelGameEngine3.h~ > /dev/null; then
+          echo "Error: olcPixelGameEngine3.h does not match the source files."
+          echo
+          echo "Push a commit that has the updated single header!"
+          echo          
+          exit 1
+        fi
+
