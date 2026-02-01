@@ -171,6 +171,11 @@ namespace olc::host
         return true;
     }
 
+    void Host_Web_Emscripten::TerminateSystemEventLoop()
+    {
+        std::cout << "Emscripten: TerminateSystemEventLoop called, but not used.\n";
+    }    
+
     bool Host_Web_Emscripten::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
     {
         std::cout << "Emscripten: AddWindowFrame called.\n";
