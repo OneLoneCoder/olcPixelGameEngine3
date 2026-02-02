@@ -5692,11 +5692,24 @@ namespace olc::imload
 #endif
 
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_STB_IMAGE
+#if OLC_HOST == OLC_HOST_ANDROID
+#include <android/asset_manager.h>
+#endif
+
 #if !defined(PGE_IMAGELOADER_LIB_PNG_DECLARED)
 namespace olc::imload
 {
     class ImageLoader_STB_Image : public ImageLoader
-    {	
+    {
+    public:
+        ImageLoader_STB_Image() = default;
+#if OLC_HOST == OLC_HOST_ANDROID
+        ImageLoader_STB_Image(AAssetManager* assetManager) : assetManager(assetManager) {}
+    protected:
+        AAssetManager* assetManager = nullptr;
+#endif
+    
+    public:
         // Create an image resource based on an image file asset on disk
         bool CreateImageFromFile(olc::Image& image, const std::string& sFileName) override;
 
@@ -16399,7 +16412,29 @@ namespace olc::imload
     bool ImageLoader_STB_Image::CreateImageFromFile(olc::Image& image, const std::string& sFileName)
     {
         std::cout << "ImageLoader: using stb image to load " << sFileName << ".\n";
+
+#if OLC_HOST == OLC_HOST_ANDROID
+        AAsset* asset = AAssetManager_open(assetManager, sFileName, AASSET_MODE_BUFFER);
+        if(!asset)
+        {
+            std::cout << "Error: failed to load image <" << sFileName << "> - file not found.\n";
+            return false;
+        }
+    
+        size_t size = AAsset_getLength(asset);
+        unsigned char* buffer = new unsigned char[size];
+        AAsset_read(asset, buffer, size);
+        AAsset_close(asset);
         
+        bool result = CreateImageFromMemory(image, buffer, size);
+        delete[] buffer;
+        
+        return result;
+
+#else
+        stbi_uc* pixelData = nullptr;
+        int width = 0, height = 0, cmp = 0;
+
         // Open file
         if(!std::filesystem::exists(sFileName))
         {
@@ -16407,20 +16442,19 @@ namespace olc::imload
             return false;
         }
         
-        stbi_uc* bytes = nullptr;
-        int width = 0, height = 0, cmp = 0;
-        bytes = stbi_load(sFileName.c_str(), &width, &height, &cmp, 4);
-
-        if(!bytes)
+        pixelData = stbi_load(sFileName.c_str(), &width, &height, &cmp, 4);
+        
+        if(!pixelData)
         {
             std::cout << "Error: failed to load image <" << sFileName << "> - failed to allocate memory.\n";
             return false;
         }
         
         image.Create({width, height});
-        std::memcpy(reinterpret_cast<void*>(image.Data()), bytes, width * height * 4);
+        std::memcpy(reinterpret_cast<void*>(image.Data()), pixelData, width * height * 4);
 
-        delete[] bytes;
+        delete[] pixelData;
+#endif
         
         return true;
     }
@@ -16428,12 +16462,30 @@ namespace olc::imload
     // Create an image resource based on an image file asset in memory
     bool ImageLoader_STB_Image::CreateImageFromMemory(olc::Image& image, const uint8_t* data, const size_t bytes)
     {
-        return false;
+        stbi_uc* pixelData = nullptr;
+        int width = 0, height = 0, cmp = 0;
+        pixelData = stbi_load_from_memory(data, bytes, &width, &height, &cmp, 4);
+
+        image.Create({width, height});
+        std::memcpy(reinterpret_cast<void*>(image.Data()), pixelData, width * height * 4);
+        
+        delete[] pixelData;
+
+        return true;
     }
     
     // Create an image resource based on an image file asset in memory
     bool ImageLoader_STB_Image::CreateImageFromMemory(olc::Image& image, const std::vector<uint8_t>& data)
     {
+        stbi_uc* pixelData = nullptr;
+        int width = 0, height = 0, cmp = 0;
+        pixelData = stbi_load_from_memory(data.data(), data.size(), &width, &height, &cmp, 4);
+
+        image.Create({width, height});
+        std::memcpy(reinterpret_cast<void*>(image.Data()), pixelData, width * height * 4);
+        
+        delete[] pixelData;
+
         return false;
     }
     

@@ -9,11 +9,24 @@
 //! END STDHEADER
 
 //! START DECLARATION
+#if OLC_HOST == OLC_HOST_ANDROID
+#include <android/asset_manager.h>
+#endif
+
 #if !defined(PGE_IMAGELOADER_LIB_PNG_DECLARED)
 namespace olc::imload
 {
     class ImageLoader_STB_Image : public ImageLoader
-    {	
+    {
+    public:
+        ImageLoader_STB_Image() = default;
+#if OLC_HOST == OLC_HOST_ANDROID
+        ImageLoader_STB_Image(AAssetManager* assetManager) : assetManager(assetManager) {}
+    protected:
+        AAssetManager* assetManager = nullptr;
+#endif
+    
+    public:
         // Create an image resource based on an image file asset on disk
         bool CreateImageFromFile(olc::Image& image, const std::string& sFileName) override;
 
