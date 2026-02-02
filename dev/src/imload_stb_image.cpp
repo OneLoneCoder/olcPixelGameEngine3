@@ -87,7 +87,7 @@ namespace olc::imload
         
         delete[] pixelData;
 
-        return false;
+        return true;
     }
     
     // Store an image as a file asset on disk
