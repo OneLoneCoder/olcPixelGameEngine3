@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <array>
+#include <vector>
 #include <cmath>
 //! END STDHEADER
 

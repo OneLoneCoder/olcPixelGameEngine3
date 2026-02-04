@@ -18,6 +18,10 @@
 #include "imload_macos.h"
 #endif
 
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_X11 || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+#include "imload_lib_png.h"
+#endif
+
 #include "gputask.h"
 #include "gpu_iface.h"
 #include "gpu_opengl33.h"

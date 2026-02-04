@@ -1,4 +1,5 @@
 #pragma once
+#include "core.h"
 
 //! START STDHEADER GLOBAL
 #include <atomic>

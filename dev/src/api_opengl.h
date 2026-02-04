@@ -12,6 +12,12 @@
 #include <source_location>
 //! END STDHEADER
 
+// deliberately outside of single header scope
+#if OLC_HOST == OLC_HOST_LINUX_X11
+namespace X11 {
+	#include <GL/glx.h>
+}
+#endif
 
 //! START OPENGL_CONFIG
 
@@ -27,9 +33,7 @@
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
 	#include <GL/gl.h>
-	#if OLC_HOST == OLC_HOST_LINUX_X11
-		#define OGL_LOAD(t) reinterpret_cast<t##_t*>(X11::glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
-	#endif
+	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(X11::glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND

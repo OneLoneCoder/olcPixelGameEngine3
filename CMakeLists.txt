@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 project(olcPixelGameEngine VERSION 3.0.0)
 
 option(BUILD_EXAMPLES "Build example programs" OFF)
+option(BUILD_TEST "Build multi header test program" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,4 +52,8 @@ add_dependencies(olcPixelGameEngine3 CopyHeader)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if(BUILD_TEST)
+    add_subdirectory(dev/tests)
 endif()

@@ -5170,9 +5170,7 @@ namespace olc::host
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
 	#include <GL/gl.h>
-	#if OLC_HOST == OLC_HOST_LINUX_X11
-		#define OGL_LOAD(t) reinterpret_cast<t##_t*>(X11::glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
-	#endif
+	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(X11::glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND
@@ -12306,7 +12304,7 @@ void main()
 	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
 #else
 	const auto wayland_window = reinterpret_cast<olc::host::WaylandWindow*>(os_win_id[0]);
-	EGLNativeWindowType window_handle = wayland_window->window;
+	EGLNativeWindowType window_handle = reinterpret_cast<EGLNativeWindowType>(wayland_window->window);
 	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(os_win_id[1]);
 #endif
 
