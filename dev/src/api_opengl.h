@@ -17,6 +17,7 @@
 namespace X11 {
 	#include <GL/glx.h>
 }
+using namespace X11;
 #endif
 
 //! START OPENGL_CONFIG
