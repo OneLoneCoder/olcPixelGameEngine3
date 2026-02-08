@@ -1,132 +1,631 @@
-/*
-	olc::PixelGameEngine3 Example - Keybaord (sic :P)
-
-	Demonstrates using the keyboard input system
-
-	Licenced under the OLC-3 License
-*/
-
-
-// Define OLC_PGE3_APPLICATION to include the implementation of 
-// the Pixel Game Engine as part of this translation unit
 #define OLC_PGE3_APPLICATION
 #include "olcpge3.h"
 
-// Example application demonstrating keyboard input. This class
-// overrides the olc::PixelGameEngine base class by implementing
-// the OnUserCreate() and OnUserUpdate() functions
-class Example_Keyboard : public olc::PixelGameEngine
+
+class SecondWindow : public olc::PGEWindow
 {
 public:
-	Example_Keyboard()
-	{
 
-	}
-
-protected:
-	
-	olc::vf2d vPosition;
-	std::string sText;
-
-public:
-	// Called once at the start, so create things here
+	// Return true if window is to continue
 	bool OnUserCreate() override
 	{
-		vPosition = ScreenSize() / 2;
+
+		return false;
+	}
+
+	// Return true if window is to continue
+	bool OnUserUpdate(float fElapsedTime) override
+	{
+		fTotalTime += fElapsedTime;
+
+		draw.Clear(olc::Colour::RED);
+		draw.WorldRotate(fTotalTime, GetScreen().Size() / 2);
+		draw.FilledRect({ 10,10 }, { 20,20 }, olc::Colour::BLUE);
 		return true;
 	}
 
-	// Called every frame, so update things here
-	bool OnUserUpdate(float fElapsedTime) override
+
+	float fTotalTime = 0;
+};
+
+
+class Example : public olc::PixelGameEngine
+{
+public:
+	Example()
 	{
-		auto metrics = draw.GetDrawMetrics();
-		draw.ResetDrawMetrics();
 
-		// Clear whole screen
-		draw.Clear(olc::Colour::VERY_DARK_BLUE);
+	}
 
-		// Move position with arrow keys
-		if (keyboard.GetKey(olc::Key::UP).bHeld)	
-			vPosition.y -= 50.0f * fElapsedTime;
+	olc::Image imTest;
 
-		if (keyboard.GetKey(olc::Key::DOWN).bHeld)
-			vPosition.y += 50.0f * fElapsedTime;
+	olc::Image imLogo;
+	olc::Image imTemp;
 
-		if (keyboard.GetKey(olc::Key::LEFT).bHeld)
-			vPosition.x -= 50.0f * fElapsedTime;
+	olc::Image imSampleTest;
 
-		if (keyboard.GetKey(olc::Key::RIGHT).bHeld)
-			vPosition.x += 50.0f * fElapsedTime;
+	olc::Image imLowRes;
+	olc::Image imHighResSprite;
 
-		draw.FilledCircle(vPosition.round(), 10.0f);
+	void CreateSampleTestImage(olc::Image& image, const olc::vi2d& s)
+	{
+		CreateImage(image, s);
+		draw.SetTarget(image);
 
+		draw.Clear(olc::Colour::WHITE);
 
-		// Capture text input from keyboard
-		// Note: this is specifically for text entry and shouldnt
-		// be used for key polling.
-		for (const auto& key : keyboard.GetKeyCache())
+		std::vector<olc::Pixel> vColours = {
+			olc::Colour::RED,
+			olc::Colour::YELLOW,
+			olc::Colour::GREEN,
+			olc::Colour::CYAN,
+			olc::Colour::BLUE,
+			olc::Colour::MAGENTA,
+		};
+
+		for (int i = 0; i < s.x/2; i++)
 		{
-			// Each olc::Key has a glyph associated with it
-			// depending on the current keyboard layout, which
-			// can be queried via GetKeyGlyph()
-			if (key == olc::Key::BACK && !sText.empty())
-				sText.pop_back();
-			else
-				sText += keyboard.GetKeyGlyph(key, keyboard.GetKey(olc::Key::SHIFT).bHeld);
+			draw.Rect(olc::vi2d{ i,i }, s - olc::vi2d{ (i * 2)+1 ,(i * 2)+1  },  vColours[i % vColours.size()]);
 		}
 
-		// Display current keyboard layout
-		std::string sKeyboardType;
-		auto kbl = pHost->GetKeyboardLayout();
-		if(kbl == olc::KeyboardLayout::QWERTY_UK)
-			sKeyboardType = "QWERTY UK";
-		else if (kbl == olc::KeyboardLayout::QWERTY_US)
-			sKeyboardType = "QWERTY US";
-		else if (kbl == olc::KeyboardLayout::AZERTY)
-			sKeyboardType = "AZERTY";
-		else if (kbl == olc::KeyboardLayout::QWERTZ)
-			sKeyboardType = "QWERTZ";
-		else
-			sKeyboardType = "UNKNOWN";
+		draw.Pixel({ 0.0,1 }, olc::Colour::BLACK);
 
-		draw.StringProp({ 10, 5 }, "Keyboard Layout: " + sKeyboardType, olc::Colour::YELLOW);
-		draw.StringProp({ 10,20 }, sText, olc::Colour::GREEN);
+	}
+
+	float fAngle = 0.0f;
+
+
+	struct logo
+	{
+		olc::vf2d pos;
+		olc::vf2d vel;
+		float ang = 0;
+		float angvel = 0;
+	};
+	std::vector<logo> vecLogos;
+
+	std::vector<olc::vf2d> vecVerts;
+
+	float fScale = 1.0f;
+
+
+	int nSelectedVert = -1;
+
+	std::shared_ptr<SecondWindow> win2;
+
+	olc::Image imBlend;
+	olc::Image imTempBuffer;
+
+	std::vector<olc::vf2d> vecTestPoints;
+	olc::vf2d vTestPointSize = { 6,6 };
+	int nSelectedPoint = -1;
+
+public:
+	bool OnUserCreate() override
+	{
 		
 
-		// Display frame time and draw metrics
-		draw.String({ 10, 200 },
-			"GPU Tasks: " + std::to_string(metrics.nGPUTasks) + "\n" +
-			"CPU->GPU : " + std::to_string(metrics.nCPUtoGPUTransfers) + "\n" +
-			"GPU->CPU : " + std::to_string(metrics.nGPUtoCPUTransfers) + "\n" +
-			"Shaders  : " + std::to_string(metrics.nShaderChanges));
+		CreateImage(imLowRes, { 256, 240 });
+		CreateImageFromFile(imHighResSprite, "e:/voxel.png");
 
-		if(keyboard.GetKey(olc::Key::ESCAPE).bPressed)
+		//CreateImage(imTest, { 64,64 });
+		CreateImageFromFile(imLogo, "assets/olc.png");
+		CreateImageFromFile(imBlend, "assets/blend.png");
+
+
+		olc::ImageConfig cfg;
+		cfg.MSAA = true;
+		CreateImage(imTempBuffer, { 128, 128 }, cfg);
+
+		CreateSampleTestImage(imSampleTest, { 32, 32 });
+
+		CreateImage(imTemp, { 64, 64 });
+
+		size_t x = 1;
+		vecLogos.resize(x);
+		for (auto& a : vecLogos)
+		{
+			a.pos = olc::vf2d(float(rand() % GetScreen().Size().x), float(rand() % GetScreen().Size().y));
+			//a.vel = olc::vf2d(rand() % 100 - 50, rand() % 100 - 50);
+			a.angvel = 1.1f;
+		}
+
+		vecVerts = {
+			{ 100.0f,  100.0f},
+			{ 200.0f, 100.0f},
+			{ 200.0f, 200.0f},
+			{ 100.0f,  200.0f}
+		};
+
+		
+		vecTestPoints = {
+			{ 16,  16},
+			{ 64, 16},
+			{ 16, 32},
+			{  64,  32 },
+			/*{16, 48},
+			{64, 48},
+			{ 16, 64},
+			{64, 64 }*/
+		};
+
+		return true;
+	}
+
+	bool OnUserUpdate(float fElapsedTime) override
+	{
+		//draw.Line({ 0,0 }, mouse.GetPosition(), olc::Colour::WHITE);
+		//return true;
+
+
+		//if (mouse.GetButton(1).bHeld)
+		{
+			fAngle += 0.5f * fElapsedTime;
+		}
+
+		
+
+		// SW Rastering test
+		draw.SetTarget(imTempBuffer);
+		draw.Clear(olc::Colour::TANGERINE);
+		draw.WorldRotate(fAngle, { 64.0f, 64.0f });// imLowRes.Size() / 2.0f);
+
+		draw.Rect({ 0,0 }, draw.GetTargetSize()-1, olc::Colour::BLACK);
+
+
+		/*draw.FilledTriangle(vecTestPoints[0] - olc::vi2d{64, 48}, vecTestPoints[1] - olc::vi2d{ 64, 48 }, vecTestPoints[2] - olc::vi2d{ 64, 48 },
+			olc::Colour::RED,
+			olc::Colour::GREEN,
+			olc::Colour::BLUE);
+
+		draw.FilledTriangle(vecTestPoints[0] - olc::vi2d{ 64, 48 }, vecTestPoints[2] - olc::vi2d{ 64, 48 }, vecTestPoints[3] - olc::vi2d{ 64, 48 },
+			olc::Colour::RED,
+			olc::Colour::BLUE,
+			olc::Colour::YELLOW);*/
+
+
+		std::vector<olc::vf2d> vecOffsetPoints(vecTestPoints.size());
+		std::transform(
+			vecTestPoints.begin(), vecTestPoints.end(),
+			vecOffsetPoints.begin(),
+			[](const olc::vf2d& v) { return v - olc::vf2d{ 64, 48 }; });
+
+		std::vector<olc::Pixel> vecColours = {
+			olc::Colour::RED,
+			olc::Colour::GREEN,
+			olc::Colour::BLUE,
+			olc::Colour::DARK_YELLOW,
+			olc::Colour::DARK_MAGENTA,
+			olc::Colour::DARK_CYAN,
+			olc::Colour::BLACK,
+			olc::Colour::WHITE
+		};
+
+
+		
+		
+
+		//draw.Triangle(vecTestPoints[0] - olc::vi2d{ 64, 48 }, vecTestPoints[1] - olc::vi2d{ 64, 48 }, vecTestPoints[2] - olc::vi2d{ 64, 48 },
+		//	olc::Colour::BLACK);
+
+		//draw.Triangle(vecTestPoints[0] - olc::vi2d{ 64, 48 }, vecTestPoints[2] - olc::vi2d{ 64, 48 }, vecTestPoints[3] - olc::vi2d{ 64, 48 },
+		//	olc::Colour::BLACK);
+
+		draw.FilledRoundedRect(olc::vf2d{ 10.0f, 10.0f }, olc::vf2d{ 108.0f, 108.0f }, 10.0f, olc::Colour::BLUE, olc::Colour::WHITE, 8);
+		draw.RoundedRect(olc::vf2d{ 10.0f, 10.0f }, olc::vf2d{ 108.0f, 108.0f }, 10.0f, olc::Colour::WHITE, olc::Colour::WHITE, 8);
+
+
+		draw.FilledEllipse(olc::vf2d{ 64.0f, 64.0f }, 30, 20, olc::Colour::RED, olc::Pixel(255, 0, 0, 0), olc::Colour::WHITE, 16);
+		draw.Ellipse(olc::vf2d{ 64.0f, 64.0f }, 30, 20, olc::Colour::BLACK, olc::Colour::WHITE, 16);
+
+
+		draw.FilledCircle(olc::vf2d{ 64.0f, 64.0f }, 15, olc::Colour::GREEN, olc::Pixel(0, 255, 0, 0), olc::Colour::WHITE, 16);
+		draw.Circle(olc::vf2d{ 64.0f, 64.0f }, 17, olc::Colour::BLACK, olc::Colour::WHITE, 16);
+
+
+		olc::vf2d vScaledSize = olc::vf2d{ 8, 8 } / draw.GetWorldTransform().scale();
+		draw.FilledRect(olc::vf2d{ 64.0f, 64.0f } - vScaledSize * 0.5, vScaledSize, olc::Pixel(255, 255, 0, 25));
+		draw.Rect(olc::vf2d{ 64.0f, 64.0f } - vScaledSize * 0.5, vScaledSize, olc::Colour::BLACK);
+
+		draw.FilledPolygon(
+			olc::Structure::Strip,
+			vecOffsetPoints,
+			vecColours);
+
+		draw.Polygon(
+			olc::Structure::Strip,
+			vecOffsetPoints,
+			olc::Colour::BLACK
+		);
+
+	/*	draw.TexturedTriangle(
+			vecTestPoints[0] - olc::vi2d{ 64, 48 }, vecTestPoints[1] - olc::vi2d{ 64, 48 }, vecTestPoints[2] - olc::vi2d{ 64, 48 },
+			olc::Colour::RED,
+			olc::Colour::GREEN,
+			olc::Colour::BLUE,
+			{ 0.0f, 0.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f },
+			imLogo);*/
+
+
+		draw.SetTarget(GetScreen());
+		draw.Clear(olc::Colour::CYAN);
+
+		/*draw.Triangle(vecTestPoints[0], vecTestPoints[1], vecTestPoints[2],
+			olc::Colour::RED,
+			olc::Colour::GREEN,
+			olc::Colour::BLUE);
+
+		draw.Triangle(vecTestPoints[0], vecTestPoints[2], vecTestPoints[3],
+			olc::Colour::RED,
+			olc::Colour::BLUE,
+			olc::Colour::YELLOW);*/
+
+		draw.Polygon(
+			olc::Structure::Strip,
+			vecTestPoints,
+			vecColours);
+
+
+		draw.Image(imTempBuffer, { 64, 48 });
+		draw.ImageQuad(imTempBuffer, vecTestPoints);
+		//draw.Triangle(vecTestPoints[0], vecTestPoints[1], vecTestPoints[2], olc::Colour::BLACK);
+
+
+
+		// Draw 3 triangle points
+		for (int i = 0; i < vecTestPoints.size(); i++)
+		{
+			//draw.Rect(vecTestPoints[i] - (vTestPointSize * 0.5f), vTestPointSize, olc::Colour::MAGENTA);
+
+			draw.FilledCircle(vecTestPoints[i],4, olc::Colour::GREEN, olc::Pixel(0,255,0,0), olc::Colour::WHITE, 16);
+			draw.Circle(vecTestPoints[i], 4, olc::Colour::BLACK, olc::Colour::WHITE, 16);
+		}
+
+		
+
+		// Handle mouse
+		if (mouse.GetButton(0).bPressed)
+		{
+			nSelectedPoint = -1;
+			for (int i = 0; i < vecTestPoints.size(); i++)
+			{
+				if ((mouse.GetPosition() - vecTestPoints[i]).mag2() < 9)
+				{
+					nSelectedPoint = i;
+				}
+			}
+		}
+
+		if (nSelectedPoint != -1 && mouse.GetButton(0).bHeld)
+		{
+			vecTestPoints[nSelectedPoint] = mouse.GetPosition().round();
+		}
+
+		if (mouse.GetButton(0).bReleased)
+		{
+			nSelectedPoint = -1;
+		}
+
+		draw.String({ 10, 10 }, mouse.GetPosition().str(), olc::Colour::BLACK);
+
+		if (keyboard.GetKey(olc::Key::ESCAPE).bPressed)
 			return false; // End application
 
-		// Successful frame
+		return true;
+
+
+		//draw.SetTarget(imTemp);
+		//draw.Clear(olc::Colour::BLANK);
+		//draw.FilledRect({ 20,5 }, { 6, 54 }, olc::Colour::GREEN);
+		//draw.FilledRect({ 0,0 }, imTemp.Size(), olc::Colour::BLANK);
+
+
+		//draw.SetTarget(imgPrimary);
+		//draw.Clear(olc::Colour::BLUE);
+
+
+		//draw.WorldReset();
+		//draw.FilledRect({ 0,0 }, imgPrimary.Size() * olc::vf2d(0.5f, 1.0f), olc::Pixel(0, 0, 0, 1));
+
+
+	//	draw.SetTarget(imTempBuffer);
+	//	draw.Clear(olc::Colour::WHITE);
+	//	draw.Image(imBlend, { 0,0 });
+
+
+	//	draw.SetTarget(GetDefaultImage());
+	//	draw.WorldReset();
+	//	draw.Clear(olc::Colour::TANGERINE);
+	//	//draw.Image(imHighResSprite, mouse.GetPosition());
+
+
+	//	//draw.SetTarget(imLowRes);
+
+	//	//draw.Clear(olc::Colour::BLANK);
+
+	//	if (mouse.GetButton(1).bHeld)
+	//	{		
+	//		fAngle += 0.2f * fElapsedTime;
+	//	}
+
+	//	draw.WorldRotate(fAngle, { 0,0 });// imLowRes.Size() / 2.0f);
+	//	if (mouse.GetButton(2).bPressed)
+	//	{
+	//		auto w = std::make_shared<SecondWindow>();
+	//		//AddChildWindow(w, { 100,100 }, { 2, 2 });
+	//	}
+
+	//	if (mouse.GetWheel() > 0)
+	//	{
+	//		fScale *= 1.1f;
+	//	}
+
+	//	if (mouse.GetWheel() < 0)
+	//	{
+	//		fScale *= 0.9f;
+	//	}
+
+	//	draw.WorldScale({ fScale, fScale });
+	//	//for (int x = 0; x < imgPrimary.Size().x; x++)
+	//	//	for (int y = 0; y < imgPrimary.Size().y; y++)
+	//	//		draw.Pixel(olc::vf2d( x, y ), olc::Pixel(rand() % 255, rand() % 255, rand() % 255));
+
+	// ////  
+	//	//return true;
+
+
+
+
+	//	//std::cout << mouse.GetPosition() << "\n";
+	//	auto vMouse = draw.ScreenToWorld(mouse.GetPosition() );
+
+	//	if (mouse.GetButton(0).bPressed)
+	//	{
+	//		float dist = 100000.0f;
+	//		int idx = -1;
+	//		for (int i = 0; i < 4; i++)
+	//		{
+	//			float d = (vecVerts[i] - vMouse).mag();
+	//			if (d < 8 && d < dist)
+	//			{
+	//				dist = d;
+	//				idx = i;
+	//			}
+	//		}
+	//		nSelectedVert = idx;
+	//	}
+
+	//	
+
+	//	if (nSelectedVert != -1 && mouse.GetButton(0).bHeld)
+	//		vecVerts[nSelectedVert] = vMouse;
+
+	//	if (mouse.GetButton(0).bReleased)
+	//		nSelectedVert = -1;
+
+	////	draw.ImageQuad(imLogo.region({ 0,0 }, { 10,10 }), vecVerts);
+
+	////	draw.Line(vecVerts[0], vecVerts[1], olc::Colour::MAGENTA);
+	////	draw.Line(vecVerts[1], vecVerts[2], olc::Colour::MAGENTA);
+	////	draw.Line(vecVerts[2], vecVerts[3], olc::Colour::MAGENTA);
+	////	draw.Line(vecVerts[3], vecVerts[0], olc::Colour::MAGENTA);
+
+	////	//draw.Image(imTemp, vMouse, { 4,4 });
+
+	////	
+
+	//////draw.Image(olc::fontClassicPGE.imgFont, vMouse);
+
+	////	
+
+	////	std::string sTest = "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...";
+	////	olc::vf2d vSizeMono = draw.GetTextSize(sTest, false, { 1, 2 });
+	////	olc::vf2d vSizeProp = draw.GetTextSize(sTest, true, { 1, 2 });
+
+
+	////	draw.String({ 10.0f, 10.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::Colour::WHITE, { 1, 2 });
+	////	draw.Rect({ 10.0f, 10.0f }, vSizeMono, olc::Colour::GREEN);
+
+	////	draw.StringProp({ 10.0f, 100.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::Colour::BLUE, { 1, 2 });
+	////	draw.Rect({ 10.0f, 100.0f }, vSizeProp, olc::Colour::GREEN);
+
+	////	draw.StringProp({ 10.0f, 200.0f }, "Hello World!\nThe quick brown fox JUMPS over the LaZy dog...", olc::PixelF(0.5f, 0.0f, 0.0f, 0.25f), {1, 2});
+	////	draw.Rect({ 10.0f, 200.0f }, vSizeProp, olc::Colour::GREEN);
+
+	////	//draw.Pixel(vMouse, olc::Colour::GREEN);
+	////	//draw.Line(vMouse, vMouse + 1,  olc::Colour::GREEN);
+	////	
+	////	draw.FilledRect({ 5, 100 }, { 100,100 }, olc::Colour::TANGERINE, olc::Colour::DARK_CYAN, olc::Colour::RED, olc::Colour::GREEN);
+	////	
+	////	draw.FilledRect({ 5,5 }, { 10,10 }, olc::Colour::YELLOW);
+
+
+
+	//////	draw.Rect({ 8,8 }, { 20,20 }, olc::Colour::RED);
+
+	////	if(mouse.GetButton(0).bHeld)
+	////		draw.Line({ 1.0f, 1.0f }, { 25.5f, 25.5f });
+
+
+
+	////	//draw.Image(imTempBuffer, vMouse);
+	////	draw.Image(imSampleTest, vMouse);
+	////	//draw.SetTarget(imgPrimary);
+	////	//draw.WorldReset();
+	////	//draw.Image(imLowRes, { 0,0 }, { 4, 4 });
+
+
+	////	draw.swLine({ 100,100 }, vMouse, olc::Colour::BLACK, olc::Colour::YELLOW);
+
+
+	////	
+
+	////	draw.Rect({ 8,8, }, { 20,20 }, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE, olc::Colour::WHITE);
+	////	draw.swRect({ 7,7, }, { 22,22 }, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE, olc::Colour::WHITE);
+
+	//	for (int i = 0; i < 100; i++)
+	//	{
+	//		// Draw random triangle
+	//		draw.swTexturedTriangle(
+	//			{ float(rand() % GetDefaultImage().Size().x), float(rand() % GetDefaultImage().Size().y) },
+	//			{ float(rand() % GetDefaultImage().Size().x), float(rand() % GetDefaultImage().Size().y) },
+	//			{ float(rand() % GetDefaultImage().Size().x), float(rand() % GetDefaultImage().Size().y) },
+	//			olc::Pixel(rand() % 256, rand() % 256, rand() % 256),
+	//			olc::Pixel(rand() % 256, rand() % 256, rand() % 256),
+	//			olc::Pixel(rand() % 256, rand() % 256, rand() % 256), { 0,0 }, { 0,1 }, { 1, 1 }, imLogo
+	//		);
+	//	}
+
+
+	//	//std::cout << "Mouse Fil: " << vMouse << "\n";
+	//	draw.swFilledTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE);
+	//	//std::cout << "Mouse Fil: " << vMouse << "\n";
+	//	draw.swFilledTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::WHITE);
+	//	//std::cout << "Mouse Tex: " << vMouse << "\n";
+	//	draw.swTexturedTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE, { 0,0 }, { 0,1 }, { 1, 1 }, imHighResSprite);
+
+	//	draw.swTriangle({ 30,30 }, { 250,50 }, vMouse, olc::Colour::RED, olc::Colour::GREEN, olc::Colour::BLUE);
+	//	
+
+	//	//draw.Rect(vMouse, { 100,100 });
+
+	//	/*for (auto& a : vecLogos)
+	//	{
+	//		a.pos += a.vel * fElapsedTime;
+	//		a.ang += a.angvel * fElapsedTime;
+
+	//		if (a.pos.x >= imgPrimary.Size().x - 46)
+	//		{
+	//			a.pos.x = imgPrimary.Size().x - 46;
+	//			a.vel.x *= -1.0f;
+	//		}
+
+	//		if (a.pos.y >= imgPrimary.Size().y - 28)
+	//		{
+	//			a.pos.y = imgPrimary.Size().y - 28;
+	//			a.vel.y *= -1.0f;
+	//		}
+
+	//		if (a.pos.x < 0)
+	//		{
+	//			a.pos.x = 0;
+	//			a.vel.x *= -1.0f;
+	//		}
+
+	//		if (a.pos.y < 0)
+	//		{
+	//			a.pos.y = 0;
+	//			a.vel.y *= -1.0f;
+	//		}
+
+	//		draw.ImageRotated(imLogo, a.pos, a.ang, { 10,10 }, { 2.0f, 4.0f });
+	//	}*/
+	//	
+
+
+	//	/*draw.SetTarget(imTest);
+	//	draw.FilledRect({ 0,0 }, imTest.Size(), olc::Colour::BLUE);
+
+	//	draw.AffineRotate(fAngle, { 32.0f, 32.0f });
+	//	
+	//	draw.Rect({ 5,5 }, { 10,10 }, olc::Colour::YELLOW);
+	//	draw.Line({ 0,0 }, { 20, 20 });
+
+
+	//	draw.SetTarget(imgPrimary);
+	//	draw.AffineReset();
+
+	//	draw.FilledRect({ 0,0 }, imgPrimary.Size(), olc::Colour::VERY_DARK_MAGENTA);
+
+	//	draw.Line({ 0,0 }, imgPrimary.Size() - 1, olc::Colour::RED);
+	//	draw.Line(olc::vf2d( imgPrimary.Size().x - 1, 0 ), olc::vf2d( 0, imgPrimary.Size().y - 1 ), olc::Colour::GREEN);
+	//	
+	//	if(mouse.GetButton(0).bHeld)
+	//		draw.Line({ 0,0 }, mouse.GetPosition(), olc::Colour::TANGERINE);
+
+	//	draw.AffineRotate(fAngle * 0.2f, imgPrimary.Size() * 0.5f);
+	//	draw.Rect({ 0,0 }, imgPrimary.Size());
+	//	draw.Image(imTest, { 10, 10 }, { 64, 64 });
+	//	draw.Image(imTest, { 100, 10 }, { 64, 64 });
+	//	draw.Image(imTest, { 10, 100 }, { 64, 64 });
+
+	//	draw.Image(sprite1, { 100, 100 }, { 64, 64 });
+	//	draw.Image(sprite1.region({ 20.0f, 20.0f }, { 32.0f, 32.0f }), { 200, 100 }, { 32, 32 });		
+	//	draw.Image(sprite1.region({ 20.0f, 20.0f }, { 32.0f, 32.0f }, { 100.0f, 200.0f }, { 150.0f, 180.0f }), { 100, 200 }, { 32, 32 });
+	//	olc::Pixel p = draw.GetPixel(imTest, { 8,5 });
+
+	//	draw.FilledRect({ 200,200 }, { 10,10 }, p);*/
+
+	//	////draw.AffineRotate(fAngle, { 128,120 });
+	//	////draw.AffineOffset({ 10,10 });
+	//	//draw.AffineScale(olc::vf2d(1,1) * (std::sin(fAngle) + 1.1));
+
+	//	//draw.Rect({ 0,0 }, GetSize() - olc::vf2d{1, 1}, olc::Colour::CYAN);
+	//	//draw.FillRect({ 100.0f, 30.0f }, { 20.0f, 50.0f }, olc::Colour::TANGERINE);
+
+	//	   
+
+	//	//for (float i = 0; i < 20; i++)
+	//	//{
+	//	//	draw.AffineRotate(fAngle + (i/50.0f), {128,120});
+	//	//	if (fmod(i,2) == 1)
+	//	//	{
+	//	//		draw.Line({ 0 + i * 4 ,0 + i * 4 }, { 255 - i * 4, 0 + i * 4 }, olc::Colour::RED, olc::Colour::GREEN);
+	//	//		draw.Line({ 255 - i * 4,0 + i * 4 }, { 255 - i * 4, 239 - i * 4 }, olc::Colour::GREEN, olc::Colour::CYAN);
+	//	//		draw.Line({ 255 - i * 4,239 - i * 4 }, { 0 + i * 4, 239 - i * 4 }, olc::Colour::CYAN, olc::Colour::WHITE);
+	//	//		draw.Line({ 0 + i * 4,239 - i * 4 }, { 0 + i * 4, 0 + i * 4 }, olc::Colour::WHITE, olc::Colour::RED);
+	//	//	}
+	//	//	else
+	//	//	{
+	//	//		draw.Line({ 0 + i * 4 ,0 + i * 4 }, { 255 - i * 4, 0 + i * 4 }, olc::Colour::RED);
+	//	//		draw.Line({ 255 - i * 4,0 + i * 4 }, { 255 - i * 4, 239 - i * 4 }, olc::Colour::GREEN);
+	//	//		draw.Line({ 255 - i * 4,239 - i * 4 }, { 0 + i * 4, 239 - i * 4 }, olc::Colour::CYAN);
+	//	//		draw.Line({ 0 + i * 4,239 - i * 4 }, { 0 + i * 4, 0 + i * 4 }, olc::Colour::WHITE);
+	//	//	}
+	//	//}
+
+	//	///*for (int x = 0; x < 100; x++)
+	//	//{
+	//	//	for (int y = 0; y < 100; y++)
+	//	//	{
+	//	//		if (x % 2 == 0)
+	//	//		{
+	//	//			draw.Pixel(olc::vf2d(x, y) + olc::vf2d(100, 100), olc::Colour::YELLOW);
+	//	//		}
+	//	//	}
+	//	//}*/
+
+	//	////draw.Pixel({ -0.5f, -0.25f }, olc::Colour::YELLOW);
+
+	//	//draw.FillRect({ 100.0f, 30.0f }, { 20.0f, 50.0f }, olc::Colour::TANGERINE);
+
+	//	////draw.Pixel({ 0.3f, 0.3f }, olc::Colour::BLACK);
+	//	////draw.Pixel({ 0.32f, 0.3f }, olc::Colour::BLACK);
+	//	////draw.Pixel({ 0.34f, 0.3f }, olc::Colour::BLACK);
+
+
+
+
 		return true;
 	}
 };
 
-
-// Main entry point for the application
 int main()
 {
-	// Construct demo application
-	Example_Keyboard demo;
+	Example demo;
+	//if (demo.Construct({ 256, 240 }, { 4, 4 }))
 
-	// Create "screen" of 256x240 "pixels"
-	// with a pixel size of 4x4 actual screen pixels
-	olc::PGEConfig config;
-	config.bVSync = true;
-	config.vPixelSize = { 4,4 };
-	config.vScreenSize = { 256,240 };
+	olc::PGEConfig cfg;
+	cfg.vPixelSize = { 1,1 };
+	cfg.vScreenSize = { 1024, 960 };
 
-	if (demo.Construct(config))
-	{
-		// Start the application
+	cfg.vPixelSize = { 4,4 };
+	cfg.vScreenSize = { 256, 240 };
+	cfg.bVSync = false;
+
+	//if (demo.Construct({ 1280, 960 }, { 1, 1 }, cfg))
+	if(demo.Construct(cfg))
 		demo.Start();
-	}
 
 	return 0;
 }
