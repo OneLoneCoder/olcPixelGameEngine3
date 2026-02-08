@@ -18,6 +18,7 @@ Header file should now be located at `build/olcPixelGameEngine3.h`.
 ### Available CMake Configuration Flags
 
 * ``-DBUILD_EXAMPLES=ON`` - builds examples, will be located at `build/examples`
+* ``-DBUILD_TEST=ON``     - builds the multi-header for rapid development and a better debugging experience.
 * ``-DBUILD_WAYLAND=ON``  - if examples are built, build them using wayland. Linux ONLY!
 * ``-DUSE_STB=ON``        - build using stb_image for the image loader (See section on STB Image)
 
