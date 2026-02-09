@@ -94,12 +94,12 @@ namespace olc
 		enum class CullMode : uint8_t
 		{
 			// No
-			None = 0,
+			NoCull = 0,
 			// Cull if vertices are listed in clockwise order
 			ClockWise,
 			// Cull if vertices are listed in anticlockwise order
 			CounterClockWise
-		} cullmode = CullMode::None;
+		} cullmode = CullMode::NoCull;
 	};
 }
 #define PGE_GPUTASK_DECLARED 1

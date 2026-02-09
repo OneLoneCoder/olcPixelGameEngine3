@@ -2429,12 +2429,12 @@ namespace olc
 		enum class CullMode : uint8_t
 		{
 			// No
-			None = 0,
+			NoCull = 0,
 			// Cull if vertices are listed in clockwise order
 			ClockWise,
 			// Cull if vertices are listed in anticlockwise order
 			CounterClockWise
-		} cullmode = CullMode::None;
+		} cullmode = CullMode::NoCull;
 	};
 }
 #define PGE_GPUTASK_DECLARED 1
@@ -3632,7 +3632,7 @@ namespace olc
 		mf4d matMVP;
 		olc::vf2d vViewportPos = { 0, 0 };
 		olc::vi2d vViewportSize = { 0, 0 };
-		olc::GPUTask::CullMode cullMode = olc::GPUTask::CullMode::None;
+		olc::GPUTask::CullMode cullMode = olc::GPUTask::CullMode::NoCull;
 		bool bDepth = true;
 
 		olc::Draw2D& draw2d;
@@ -14013,7 +14013,7 @@ void main()
 				
 
 				// Apply Culling modes
-				if (task.cullmode == GPUTask::CullMode::None)
+				if (task.cullmode == GPUTask::CullMode::NoCull)
 				{
 					gl.glDisable(GL_CULL_FACE);
 				}

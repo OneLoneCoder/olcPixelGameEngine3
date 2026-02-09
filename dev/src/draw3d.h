@@ -167,7 +167,7 @@ namespace olc
 		mf4d matMVP;
 		olc::vf2d vViewportPos = { 0, 0 };
 		olc::vi2d vViewportSize = { 0, 0 };
-		olc::GPUTask::CullMode cullMode = olc::GPUTask::CullMode::None;
+		olc::GPUTask::CullMode cullMode = olc::GPUTask::CullMode::NoCull;
 		bool bDepth = true;
 
 		olc::Draw2D& draw2d;

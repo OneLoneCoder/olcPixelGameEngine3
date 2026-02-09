@@ -1092,7 +1092,7 @@ void main()
 				
 
 				// Apply Culling modes
-				if (task.cullmode == GPUTask::CullMode::None)
+				if (task.cullmode == GPUTask::CullMode::NoCull)
 				{
 					gl.glDisable(GL_CULL_FACE);
 				}
