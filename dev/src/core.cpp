@@ -50,6 +50,10 @@
 //! START IMPLEMENTATION
 namespace olc
 {
+	PGEWindow::PGEWindow() : Window(), draw()
+	{
+	}
+
 	bool PGEWindow::Create(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize)
 	{
 		//pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
@@ -248,7 +252,7 @@ namespace olc
 		return imgPrimary;
 	}
 
-	olc::Draw2D& PGEWindow::GetDraw()
+	olc::Draw& PGEWindow::GetDraw()
 	{
 		return draw;
 	}

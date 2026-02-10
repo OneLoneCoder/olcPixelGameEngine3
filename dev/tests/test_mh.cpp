@@ -149,8 +149,93 @@ public:
 			{64, 64 }*/
 		};
 
+		cube = CreateSanityCube();
+
+		CreateImageFromFile(imSanityCube, "../../examples/assets/sanity_cube.png");
+
 		return true;
 	}
+
+	struct mesh
+	{
+		std::vector<olc::vf4d> pos;
+		std::vector<olc::vf4d> norm;
+		std::vector<olc::vf2d> uv;
+		std::vector<olc::Pixel> col;
+		olc::Structure layout = olc::Structure::List;
+	};
+
+	olc::Image imSanityCube;
+
+
+	inline mesh CreateSanityCube()
+	{
+		mesh m;
+
+
+		/*			 5		   6
+				1        2
+
+					 4		   7
+				0		 3
+
+		*/
+
+		m.layout = olc::Structure::List;
+
+		// South
+		m.pos.push_back({ 0,0,0 }); m.norm.push_back({ 0, 0, -1, 0 }); m.uv.push_back({ 0.25, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,0 }); m.norm.push_back({ 0, 0, -1, 0 }); m.uv.push_back({ 0.25, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,0 }); m.norm.push_back({ 0, 0, -1, 0 }); m.uv.push_back({ 0.5, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,0,0 }); m.norm.push_back({ 0, 0, -1, 0 }); m.uv.push_back({ 0.25, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,0 }); m.norm.push_back({ 0, 0, -1, 0 }); m.uv.push_back({ 0.5, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,0 }); m.norm.push_back({ 0, 0, -1, 0 }); m.uv.push_back({ 0.5, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+
+		// East
+		m.pos.push_back({ 1,0,0 }); m.norm.push_back({ 1, 0, 0, 0 }); m.uv.push_back({ 0.5, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,0 }); m.norm.push_back({ 1, 0, 0, 0 }); m.uv.push_back({ 0.5, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,1 }); m.norm.push_back({ 1, 0, 0, 0 }); m.uv.push_back({ 0.75, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,0 }); m.norm.push_back({ 1, 0, 0, 0 }); m.uv.push_back({ 0.5, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,1 }); m.norm.push_back({ 1, 0, 0, 0 }); m.uv.push_back({ 0.75, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,1 }); m.norm.push_back({ 1, 0, 0, 0 }); m.uv.push_back({ 0.75, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+
+		// North
+		m.pos.push_back({ 1,0,1 }); m.norm.push_back({ 0, 0, 1, 0 }); m.uv.push_back({ 0.75, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,1 }); m.norm.push_back({ 0, 0, 1, 0 }); m.uv.push_back({ 0.75, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,1 }); m.norm.push_back({ 0, 0, 1, 0 }); m.uv.push_back({ 1.0, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,1 }); m.norm.push_back({ 0, 0, 1, 0 }); m.uv.push_back({ 0.75, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,1 }); m.norm.push_back({ 0, 0, 1, 0 }); m.uv.push_back({ 1.0, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,0,1 }); m.norm.push_back({ 0, 0, 1, 0 }); m.uv.push_back({ 1.0, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+
+		// West
+		m.pos.push_back({ 0,0,1 }); m.norm.push_back({ -1, 0, 0, 0 }); m.uv.push_back({ 0.0, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,1 }); m.norm.push_back({ -1, 0, 0, 0 }); m.uv.push_back({ 0.0, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,0 }); m.norm.push_back({ -1, 0, 0, 0 }); m.uv.push_back({ 0.25, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,0,1 }); m.norm.push_back({ -1, 0, 0, 0 }); m.uv.push_back({ 0.0, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,0 }); m.norm.push_back({ -1, 0, 0, 0 }); m.uv.push_back({ 0.25, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,0,0 }); m.norm.push_back({ -1, 0, 0, 0 }); m.uv.push_back({ 0.25, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+
+		// Top
+		m.pos.push_back({ 0,1,0 }); m.norm.push_back({ 0, 1, 0, 0 }); m.uv.push_back({ 0.25, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,1 }); m.norm.push_back({ 0, 1, 0, 0 }); m.uv.push_back({ 0.25, 0.0 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,1 }); m.norm.push_back({ 0, 1, 0, 0 }); m.uv.push_back({ 0.5, 0.0 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,1,0 }); m.norm.push_back({ 0, 1, 0, 0 }); m.uv.push_back({ 0.25, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,1 }); m.norm.push_back({ 0, 1, 0, 0 }); m.uv.push_back({ 0.5, 0.0 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,1,0 }); m.norm.push_back({ 0, 1, 0, 0 }); m.uv.push_back({ 0.5, 0.25 }); m.col.push_back(olc::Colour::WHITE);
+
+		// Bottom
+		m.pos.push_back({ 0,0,0 }); m.norm.push_back({ 0, -1, 0, 0 }); m.uv.push_back({ 0.25, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,0 }); m.norm.push_back({ 0, -1, 0, 0 }); m.uv.push_back({ 0.5, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,1 }); m.norm.push_back({ 0, -1, 0, 0 }); m.uv.push_back({ 0.5, 0.75 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,0,0 }); m.norm.push_back({ 0, -1, 0, 0 }); m.uv.push_back({ 0.25, 0.5 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 1,0,1 }); m.norm.push_back({ 0, -1, 0, 0 }); m.uv.push_back({ 0.5, 0.75 }); m.col.push_back(olc::Colour::WHITE);
+		m.pos.push_back({ 0,0,1 }); m.norm.push_back({ 0, -1, 0, 0 }); m.uv.push_back({ 0.25, 0.75 }); m.col.push_back(olc::Colour::WHITE);
+
+		return m;
+	}
+
+	mesh cube;
+	olc::vf4d vCubePos = { 0,0,-5 };
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
@@ -158,7 +243,7 @@ public:
 		//return true;
 
 
-		//if (mouse.GetButton(1).bHeld)
+		if (mouse.GetButton(1).bHeld)
 		{
 			fAngle += 0.5f * fElapsedTime;
 		}
@@ -266,7 +351,7 @@ public:
 			vecColours);
 
 
-		draw.Image(imTempBuffer, { 64, 48 });
+		//draw.Image(imTempBuffer, { 64, 48 });
 		draw.ImageQuad(imTempBuffer, vecTestPoints);
 		//draw.Triangle(vecTestPoints[0], vecTestPoints[1], vecTestPoints[2], olc::Colour::BLACK);
 
@@ -280,6 +365,62 @@ public:
 			draw.FilledCircle(vecTestPoints[i],4, olc::Colour::GREEN, olc::Pixel(0,255,0,0), olc::Colour::WHITE, 16);
 			draw.Circle(vecTestPoints[i], 4, olc::Colour::BLACK, olc::Colour::WHITE, 16);
 		}
+
+
+
+		// Testing matrices
+		olc::mf4d t1, t2, t3;
+		t1.translate(0.0f, 3.0f, 5.0f);
+		t2.translate(0.0f, 6.0f, 0.0f);
+		t3.translate(7.0f, 0.0f, 0.0f);
+
+		olc::vf4d v1 = { 1,0,0,1 };
+		olc::vf4d v2 = t3 * t2 * t1 * v1;
+
+
+		olc::mf4d matProj;
+		olc::mf4d matView;
+		olc::mf4d matWorld;
+
+		draw.SetViewport({ 0,0 }, GetScreen().Size());
+		draw.MatrixReset();
+		matProj.perspective(90.0f * 3.14159f / 180.0f, float(ScreenSize().x) / float(ScreenSize().y), 0.1f, 1000.0f);
+
+		draw.SetProjectionMatrix(matProj);
+		draw.SetViewMatrix(matView);
+
+		if (keyboard.GetKey(olc::Key::LEFT).bHeld)
+			vCubePos.x -= 5.0f * fElapsedTime;
+		if (keyboard.GetKey(olc::Key::RIGHT).bHeld)
+			vCubePos.x += 5.0f * fElapsedTime;
+		if (keyboard.GetKey(olc::Key::UP).bHeld)
+			vCubePos.y += 5.0f * fElapsedTime;
+		if (keyboard.GetKey(olc::Key::DOWN).bHeld)
+			vCubePos.y -= 5.0f * fElapsedTime;
+		if (keyboard.GetKey(olc::Key::Q).bHeld)
+			vCubePos.z += 5.0f * fElapsedTime;
+		if (keyboard.GetKey(olc::Key::A).bHeld)
+			vCubePos.z -= 5.0f * fElapsedTime;
+
+		matWorld.translate(vCubePos);
+		draw.SetModelMatrix(matWorld);
+
+		for(int x = 0; x < 10; x++)
+			for (int y = 0; y < 10; y++)
+				for (int z = 0; z < 10; z++)
+				{
+					matWorld.translate(vCubePos + olc::vf4d(float(x) * 2.0f, float(y) * 2.0f, float(z) * 2.0f, 0));
+					draw.SetModelMatrix(matWorld);
+					//draw.SetMVPMatrix(matProj * matView * matWorld);
+					draw.Mesh(cube.layout, cube.pos, cube.col, cube.uv, imSanityCube);
+				}
+
+
+		//draw3d.Mesh(cube.layout, cube.pos, cube.col);
+
+		draw.Line({ 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },olc::Colour::RED);
+		draw.Line({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, olc::Colour::GREEN);
+		draw.Line({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, olc::Colour::BLUE);
 
 		
 
@@ -619,8 +760,9 @@ int main()
 	cfg.vPixelSize = { 1,1 };
 	cfg.vScreenSize = { 1024, 960 };
 
-	cfg.vPixelSize = { 4,4 };
-	cfg.vScreenSize = { 256, 240 };
+	//cfg.vPixelSize = { 4,4 };
+	//cfg.vScreenSize = { 256, 240 };
+	//cfg.bAntiAliasMainScreen = true;
 	cfg.bVSync = false;
 
 	//if (demo.Construct({ 1280, 960 }, { 1, 1 }, cfg))

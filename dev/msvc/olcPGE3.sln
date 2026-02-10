@@ -7,12 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "olcPGE3", "olcPGE3.vcxproj"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "olcPGE3_BuildSH", "olcPGE3_BuildSH\olcPGE3_BuildSH.vcxproj", "{227300C2-9BC8-4E66-95FC-334A009D449B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9462016E-9662-468F-98F6-CBA5E15D0D82}"
-	ProjectSection(SolutionItems) = preProject
-		..\src\imload_stb_image.cpp = ..\src\imload_stb_image.cpp
-		..\src\imload_stb_image.h = ..\src\imload_stb_image.h
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

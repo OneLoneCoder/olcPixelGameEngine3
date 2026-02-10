@@ -270,7 +270,7 @@ namespace olc::host
     {
         // Based on the display capabilities, configure the appearance of the window
         // to do this namespacing, both x11 and glx have to be included in the x11 namespace
-        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
         olc_VisualInfo = glXChooseVisual(olc_Display, 0, olc_GLAttribs);
         olc_ColourMap = XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
         olc_SetWindowAttribs.colormap = olc_ColourMap;

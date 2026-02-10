@@ -158,43 +158,117 @@ static constexpr const char* kVoidMethodTypeEncoding = "v@:";
 
 namespace ObjectiveCSEL {
      
-    // Application memory management selectors
-    static SEL allocSel, initSel, setDelegateSel, releaseSel, isKindOfClassSel = nullptr;
+// Application memory management selectors
+   static SEL allocSel         = nullptr;
+   static SEL initSel          = nullptr;
+   static SEL setDelegateSel   = nullptr;
+   static SEL releaseSel       = nullptr;
+   static SEL isKindOfClassSel = nullptr;
 
-    // NSApplication lifecycle and management selectors
-    static SEL sharedApplicationSel, activateIgnoringOtherAppsSel, setActivationPolicySel,runSel, terminateSEL = nullptr;
+   // NSApplication lifecycle and management selectors
+   static SEL sharedApplicationSel         = nullptr;
+   static SEL activateIgnoringOtherAppsSel = nullptr;
+   static SEL setActivationPolicySel       = nullptr;
+   static SEL runSel                       = nullptr;
+   static SEL terminateSEL                 = nullptr;
 
-    // NSApplicationDelegate lifecycle methods
-    static SEL applicationWillFinishLaunchingSel, applicationDidFinishLaunchingSel, applicationWillTerminateSel, applicationDidBecomeActiveSel, applicationWillResignActiveSel = nullptr;
+   // NSApplicationDelegate lifecycle methods
+   static SEL applicationWillFinishLaunchingSel = nullptr;
+   static SEL applicationDidFinishLaunchingSel  = nullptr;
+   static SEL applicationWillTerminateSel       = nullptr;
+   static SEL applicationDidBecomeActiveSel     = nullptr;
+   static SEL applicationWillResignActiveSel    = nullptr;
 
-    // NSWindow creation, display, and management selectors
-    static SEL initWithContentRectSel, stringWithUTF8StringSel, setTitleSel, orderFrontRegardlessSel, setAcceptsMouseMovedEventsSel, makeKeyAndOrderFrontSel = nullptr;
-    static SEL makeKeyWindowSel, frameSel, setFrameDisplaySel, setFrameSel, makeFirstResponderSel = nullptr;
+   // NSWindow creation, display, and management selectors
+   static SEL initWithContentRectSel        = nullptr;
+   static SEL stringWithUTF8StringSel       = nullptr;
+   static SEL setTitleSel                   = nullptr;
+   static SEL orderFrontRegardlessSel       = nullptr;
+   static SEL setAcceptsMouseMovedEventsSel = nullptr;
+   static SEL makeKeyAndOrderFrontSel       = nullptr;
+   static SEL makeKeyWindowSel              = nullptr;
+   static SEL frameSel                      = nullptr;
+   static SEL setFrameDisplaySel            = nullptr;
+   static SEL setFrameSel                   = nullptr;
+   static SEL makeFirstResponderSel         = nullptr;
 
-    // NSWindowDelegate lifecycle and event methods selectors
-    static SEL windowDidResizeSel, windowWillCloseSel, windowDidBecomeKeySel, windowDidResignKeySel, windowDidMiniaturizeSel, windowDidDeminiaturizeSel = nullptr;
+   // NSWindowDelegate lifecycle and event methods selectors
+   static SEL windowDidResizeSel        = nullptr;
+   static SEL windowWillCloseSel        = nullptr;
+   static SEL windowDidBecomeKeySel     = nullptr;
+   static SEL windowDidResignKeySel     = nullptr;
+   static SEL windowDidMiniaturizeSel   = nullptr;
+   static SEL windowDidDeminiaturizeSel = nullptr;
 
-    // NSResponder keyboard and mouse event methods selectors
-    static SEL keyDownSel, keyUpSel, mouseDownSel, mouseUpSel, mouseDraggedSel, mouseMovedSel, rightMouseDownSel, rightMouseUpSel, rightMouseDraggedSel, otherMouseDownSel = nullptr;
-    static SEL otherMouseUpSel, otherMouseDraggedSel, scrollWheelSel, deltaXSel, deltaYSel = nullptr;
+   // NSResponder keyboard and mouse event methods selectors
+   static SEL keyDownSel           = nullptr;
+   static SEL keyUpSel             = nullptr;
+   static SEL mouseDownSel         = nullptr;
+   static SEL mouseUpSel           = nullptr;
+   static SEL mouseDraggedSel      = nullptr;
+   static SEL mouseMovedSel        = nullptr;
+   static SEL rightMouseDownSel    = nullptr;
+   static SEL rightMouseUpSel      = nullptr;
+   static SEL rightMouseDraggedSel = nullptr;
+   static SEL otherMouseDownSel    = nullptr;
+   static SEL otherMouseUpSel      = nullptr;
+   static SEL otherMouseDraggedSel = nullptr;
+   static SEL scrollWheelSel       = nullptr;
+   static SEL deltaXSel            = nullptr;
+   static SEL deltaYSel            = nullptr;
 
-    // Managing first responder status and keyboard focus selectors
-    static SEL acceptsFirstResponderSel, becomeFirstResponderSel, canBecomeKeyViewSel, needsPanelToBecomeKeySel, drawRectSel, reshapeSel, updateSel = nullptr;
+   // Managing first responder status and keyboard focus selectors
+   static SEL acceptsFirstResponderSel = nullptr;
+   static SEL becomeFirstResponderSel  = nullptr;
+   static SEL canBecomeKeyViewSel      = nullptr;
+   static SEL needsPanelToBecomeKeySel = nullptr;
+   static SEL drawRectSel              = nullptr;
+   static SEL reshapeSel               = nullptr;
+   static SEL updateSel                = nullptr;
 
-    // NSOpenGL pixel format, view, and context management selectors
-    static SEL initWithAttributesSel, initWithFramePixelFormatSel, setContentViewSel, contentViewSel, boundsSel, convertPointFromViewSel, openGLContextSel, makeCurrentContextSel = nullptr;
-    static SEL setAutoresizingMaskSel, flushBufferSel, displaySel, CGLContextObjSel, setValuesSel = nullptr;
+   // NSOpenGL pixel format, view, and context management selectors
+   static SEL initWithAttributesSel       = nullptr;
+   static SEL initWithFramePixelFormatSel = nullptr;
+   static SEL setContentViewSel           = nullptr;
+   static SEL contentViewSel              = nullptr;
+   static SEL boundsSel                   = nullptr;
+   static SEL convertPointFromViewSel     = nullptr;
+   static SEL openGLContextSel            = nullptr;
+   static SEL makeCurrentContextSel       = nullptr;
+   static SEL setAutoresizingMaskSel      = nullptr;
+   static SEL flushBufferSel              = nullptr;
+   static SEL displaySel                  = nullptr;
+   static SEL CGLContextObjSel            = nullptr;
+   static SEL setValuesSel                = nullptr;
 
-    // Extracting data from NSEvent objects selectors
-    static SEL keyCodeSel, charactersSel, locationInWindowSel, buttonNumberSel, clickCountSel, modifierFlagsSel, utf8StringSel = nullptr;
+   // Extracting data from NSEvent objects selectors
+   static SEL keyCodeSel          = nullptr;
+   static SEL charactersSel       = nullptr;
+   static SEL locationInWindowSel = nullptr;
+   static SEL buttonNumberSel     = nullptr;
+   static SEL clickCountSel       = nullptr;
+   static SEL modifierFlagsSel    = nullptr;
+   static SEL utf8StringSel       = nullptr;
 
-    // NSImage, NSBitmapImageRep, and image data access selectors
-    static SEL initWithContentsOfFileSel, representationsSel, countSel, objectAtIndexSel, pixelsWideSel, pixelsHighSel, bitsPerPixelSel, bytesPerRowSel, hasAlphaSel, bitmapDataSel = nullptr;
+   // NSImage, NSBitmapImageRep, and image data access selectors
+   static SEL initWithContentsOfFileSel = nullptr;
+   static SEL representationsSel        = nullptr;
+   static SEL countSel                  = nullptr;
+   static SEL objectAtIndexSel          = nullptr;
+   static SEL pixelsWideSel             = nullptr;
+   static SEL pixelsHighSel             = nullptr;
+   static SEL bitsPerPixelSel           = nullptr;
+   static SEL bytesPerRowSel            = nullptr;
+   static SEL hasAlphaSel               = nullptr;
+   static SEL bitmapDataSel             = nullptr;
 
-    // NSLocale selectors
-    static SEL currentLocaleSel, localeIdentifierSel = nullptr;
-    
-    // Initialize all selectors - called once at startup
+   // NSLocale selectors
+   static SEL currentLocaleSel               = nullptr;
+   static SEL localeIdentifierSel            = nullptr;
+   static SEL currentInputContextSel         = nullptr;
+   static SEL localizedNameSel               = nullptr;
+
+   // Initialize all selectors - called once at startup
     void initializeSelectors() {
         if (allocSel) return; // Already initialized
         

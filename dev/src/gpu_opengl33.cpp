@@ -260,7 +260,7 @@ void main()
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		const auto window_handle = reinterpret_cast<X11::Window>(os_win_id[0]);
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
-        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
 
 		X11::XVisualInfo* olc_VisualInfo = X11::glXChooseVisual(display, 0, olc_GLAttribs);
 		glRenderContext = X11::glXCreateContext(display, olc_VisualInfo, nullptr, GL_TRUE);
@@ -442,7 +442,17 @@ void main()
 
 		// Create a Frame Buffer Object for off-screen rendering things
 		gl.glGenFramebuffers(1, (GLuint*)&nDefaultFBO);
-		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO); // GL_FRAMEBUFFER
+		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO);
+
+		// Create a shared depth renderbuffer (will be resized dynamically)
+		gl.glGenRenderbuffers(1, &nDepthRBO);
+		gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, nDepthRBO);
+		// Allocate with a default size (will be resized when needed)
+		gl.glRenderbufferStorage(gl.GL_RENDERBUFFER_X, gl.GL_DEPTH_COMPONENT24_X, 1024, 1024);
+		gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER_X, gl.GL_DEPTH_ATTACHMENT_X, gl.GL_RENDERBUFFER_X, nDepthRBO);
+		vCurrentDepthSize = {1024, 1024};
+		nCurrentDepthSamples = 0;
+
 		// Attach 4 colour buffers
 		std::array<GLenum, 4> attachments = 
 		{ {
@@ -466,11 +476,18 @@ void main()
 		gl.glGenFramebuffers(1, &nResolveFBO_Draw);
 		gl.glGenFramebuffers(1, &nResolveFBO_Read);
 
+		// PGE Specific requirements
+
+		// Texturing Enabled
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		gl.glEnable(GL_TEXTURE_2D); // Turn on texturing
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #endif
+		// Alpha Blending Enabled
 		gl.glEnable(GL_BLEND);
+
+		// Front Face is Counter-Clockwise
+		gl.glFrontFace(GL_CCW);
 
 		lastError = RendererError::NoError;
 		return true;
@@ -478,8 +495,15 @@ void main()
 
 	bool Renderer_OGL33::DestroyDevice()
 	{
-		//auto& gl = olc::apis::opengl::gl::Get();
-
+		auto& gl = olc::apis::opengl::gl::Get();
+		
+		// Delete depth renderbuffer
+		if (nDepthRBO != 0)
+		{
+			gl.glDeleteRenderbuffers(1, &nDepthRBO);
+			nDepthRBO = 0;
+		}
+	
 #if OLC_HOST == OLC_HOST_WINDOWS
 		wglDeleteContext(glRenderContext);
 #endif
@@ -797,6 +821,60 @@ void main()
 		// Bind FBO
 		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO);
 
+		// Resize depth buffer to match target texture dimensions
+		olc::vi2d targetSize = mapTextureSizes[texid];
+		int32_t targetSamples = 0;
+
+		// Check if this is an MSAA texture
+		bool bIsMSAA = mapTextureToRenderbuffer.contains(texid);
+		if (bIsMSAA)
+		{
+			// Get the MSAA sample count from the color renderbuffer
+			uint32_t rboId = mapTextureToRenderbuffer[texid];
+			gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, rboId);
+			gl.glGetRenderbufferParameteriv(gl.GL_RENDERBUFFER_X, gl.GL_RENDERBUFFER_SAMPLES_X, &targetSamples);
+		}
+
+		// Only resize if dimensions or sample count changed
+		if (targetSize != vCurrentDepthSize || targetSamples != nCurrentDepthSamples)
+		{
+			gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, nDepthRBO);
+			
+			if (bIsMSAA && targetSamples > 0)
+			{
+				// Allocate MSAA depth buffer
+				gl.glRenderbufferStorageMultisample(
+					gl.GL_RENDERBUFFER_X,
+					targetSamples,
+					gl.GL_DEPTH_COMPONENT24_X,
+					targetSize.x,
+					targetSize.y
+				);
+			}
+			else
+			{
+				// Allocate regular depth buffer
+				gl.glRenderbufferStorage(
+					gl.GL_RENDERBUFFER_X,
+					gl.GL_DEPTH_COMPONENT24_X,
+					targetSize.x,
+					targetSize.y
+				);
+			}
+			
+			// Update tracked size and samples
+			vCurrentDepthSize = targetSize;
+			nCurrentDepthSamples = targetSamples;
+			
+			// Re-attach depth buffer to FBO
+			gl.glFramebufferRenderbuffer(
+				gl.GL_FRAMEBUFFER_X, 
+				gl.GL_DEPTH_ATTACHMENT_X, 
+				gl.GL_RENDERBUFFER_X, 
+				nDepthRBO
+			);
+		}
+
 		// Allocate target buffers - pick the single attachment corresponding to 'slot'
 		std::array<GLenum, 8> attachments =
 		{ { 
@@ -1008,42 +1086,36 @@ void main()
 				
 				// Copy data from CPU to GPU
 				gl.glBufferData(gl.GL_ARRAY_BUFFER_X, sizeof(GPUTask::Vertex) * task.vertexBuffer.size(), task.vertexBuffer.data(), gl.GL_STREAM_DRAW_X);
-				
-				
+								
 				// Configure shader with expected values
-
-
-
-				// Shader: Apply MVP Matrix
-				//gl.glUniformMatrix4fv(shaderDefault.GetUniform("mvp"), 1, true, task.mvpMatrix.data());
-
-				// Shader: Apply Global Tint
 				SetUniform("pgeGlobalTint", task.tint);
-
 				SetUniform("pgeTargetSizeInPixels", vTargetSize);
 				SetUniform("pgeInverseTargetSizeInPixels", (1.0f / vTargetSize));
 				SetUniform("pgeTotalTimeElapsed", fTotalTime);
 
+				
+
 				// Apply Culling modes
-				//if (task.cullmode == GPUTask::CullMode::None)
-				//{
-				//	gl.glCullFace(GL_FRONT);
-				//	gl.glDisable(GL_CULL_FACE);
-				//}
-				//else if (task.cullmode == GPUTask::CullMode::ClockWise)
-				//{
-				//	gl.glCullFace(GL_FRONT);
-				//	gl.glEnable(GL_CULL_FACE);
-				//}
-				//else if (task.cullmode == GPUTask::CullMode::CounterClockWise)
-				//{
-				//	gl.glCullFace(GL_BACK);
-				//	gl.glEnable(GL_CULL_FACE);
-				//}
+				if (task.cullmode == GPUTask::CullMode::None)
+				{
+					gl.glDisable(GL_CULL_FACE);
+				}
+				else if (task.cullmode == GPUTask::CullMode::ClockWise)
+				{
+					gl.glCullFace(GL_FRONT);
+					gl.glEnable(GL_CULL_FACE);
+				}
+				else if (task.cullmode == GPUTask::CullMode::CounterClockWise)
+				{
+					gl.glCullFace(GL_BACK);
+					gl.glEnable(GL_CULL_FACE);
+				}
 
 				//// Apply Depth Testing (if required)
-				//if (task.bDepth)
-				//	gl.glEnable(GL_DEPTH_TEST);
+				if (task.bDepth)
+					gl.glEnable(GL_DEPTH_TEST);
+
+				glDepthFunc(GL_LESS);
 
 				gl.glEnable(GL_BLEND);
 				//gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1052,16 +1124,24 @@ void main()
 				if (task.bWireframe)
 					gl.glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				if (task.structure == olc::Structure::Point)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
-				else if (task.structure == olc::Structure::Line)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
-				else if (task.structure == olc::Structure::LineLoop)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
-				else if (task.structure == olc::Structure::LineList)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+				if (task.bIs3D)
+				{
+					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 2);
+					gl.glUniformMatrix4fv(pCurrentShader->GetUniform("pgeMVP"), 1, true, task.mvpMatrix.data());
+				}
 				else
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 0);
+				{
+					if (task.structure == olc::Structure::Point)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else if (task.structure == olc::Structure::Line)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else if (task.structure == olc::Structure::LineLoop)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else if (task.structure == olc::Structure::LineList)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 0);
+				}
 
 				if (task.structure == olc::Structure::Fan)
 					gl.glDrawArrays(GL_TRIANGLE_FAN, 0, (GLsizei)task.vertexBuffer.size());
@@ -1095,7 +1175,7 @@ void main()
 	bool Renderer_OGL33::ClearViewport(const olc::Pixel col, bool bDepth, bool bStencil)
 	{
 		auto& gl = olc::apis::opengl::gl::Get();
-		gl.glClearColor(float(col.r) / 255.0f, float(col.g) / 255.0f, float(col.b) / 255.0f, float(col.a) / 255.0f);
+		gl.glClearColor(float(col.r) / 255.0f, float(col.g) / 255.0f, float(col.b) / 255.0f, float(col.a) / 255.0f);		
 		gl.glClear(GL_COLOR_BUFFER_BIT | (bDepth ? GL_DEPTH_BUFFER_BIT : 0) | (bStencil ? GL_STENCIL_BUFFER_BIT : 0));		
 		return true;
 	}

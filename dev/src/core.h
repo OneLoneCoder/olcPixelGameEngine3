@@ -21,6 +21,7 @@
 #include "host_iface.h"
 #include "imload_iface.h"
 #include "font.h"
+#include "draw.h"
 //! END CUSTOMHEADER GLOBAL
 
 //! START DECLARATION
@@ -63,6 +64,7 @@ namespace olc
 	class PGEWindow : public Window
 	{
 	public:
+		PGEWindow();
 		bool Create(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize);
 	
 	public:
@@ -95,7 +97,7 @@ namespace olc
 	public:
 		// Returns the image that represents the primary drawing surface
 		olc::Image& GetScreen();
-		olc::Draw2D& GetDraw();
+		olc::Draw& GetDraw();
 
 		// Input devices are handled by a regular olc::Window, but for convenience...
 		olc::hw::Mouse& GetMouse();
@@ -111,8 +113,7 @@ namespace olc
 		virtual bool olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime);
 
 	protected:
-		olc::Draw2D draw;
-		
+		olc::Draw draw;		
 		
 	private:
 		olc::Image imgPrimary;

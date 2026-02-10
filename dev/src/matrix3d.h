@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 //! END STDHEADER
 
 //! START CUSTOMHEADER

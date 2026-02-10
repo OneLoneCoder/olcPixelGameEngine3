@@ -13,7 +13,7 @@
 #include "config.h"
 #include "pixel.h"
 #include "vector2d.h"
-#include "draw2d.h"
+#include "draw.h"
 #include "hw_mouse.h"
 #include "hw_keyboard.h"
 //! END CUSTOMHEADER

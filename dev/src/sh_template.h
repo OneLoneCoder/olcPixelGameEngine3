@@ -100,6 +100,9 @@
 	and the many community contributors that have provided bug fixes, suggestions,
 	criticisms, and encouragement from the OneLoneCoder Discord server, YouTube & GitHub.
 
+	Saladin, if you're out there, I know you would have been a proud contributer to this.
+	I miss you buddy.
+
 	Version History
 	~~~~~~~~~~~~~~~
 	v3.00: It begins...
@@ -114,7 +117,11 @@
 
 //! GRAB vector2d.h DECLARATION
 
+//! GRAB vector4d.h DECLARATION
+
 //! GRAB matrix3d.h DECLARATION
+
+//! GRAB matrix4d.h DECLARATION
 
 //! GRAB transform2d.h DECLARATION
  
@@ -128,7 +135,7 @@
  
 //! GRAB gpu_iface.h DECLARATION
 
-//! GRAB draw2d.h DECLARATION
+//! GRAB draw.h DECLARATION
 
 //! GRAB hw_input.h	DECLARATION
 
@@ -261,10 +268,9 @@
 #define PGE_GPU_IMPLEMENTED 1
 #endif
 
-#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_DRAW2D_IMPLEMENTED)
-//! GRAB draw2d.cpp IMPLEMENTATION 
-//! GRAB draw2d_sw.cpp IMPLEMENTATION 
-#define PGE_DRAW2D_IMPLEMENTED 1
+#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_DRAW_IMPLEMENTED)
+//! GRAB draw.cpp IMPLEMENTATION 
+#define PGE_DRAW_IMPLEMENTED 1
 #endif
 
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_CORE_IMPLEMENTED)

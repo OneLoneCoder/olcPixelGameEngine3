@@ -79,6 +79,9 @@ namespace olc
 		// Use hardware wire drawing
 		bool bWireframe = false;
 
+		// Define how to interpret vertex buffer
+		bool bIs3D = false;
+
 		// Overall biasing colour (great for blends)
 		olc::Pixel tint = olc::Colour::WHITE;
 

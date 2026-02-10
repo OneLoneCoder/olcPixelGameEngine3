@@ -195,7 +195,7 @@
     <ClInclude Include="..\src\api_opengl.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\core.h" />
-    <ClInclude Include="..\src\draw2d.h" />
+    <ClInclude Include="..\src\draw.h" />
     <ClInclude Include="..\src\font.h" />
     <ClInclude Include="..\src\gputask.h" />
     <ClInclude Include="..\src\gpu_iface.h" />
@@ -256,15 +256,16 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="..\src\imload_stb_image.h" />
     <ClInclude Include="..\src\imload_wingdi.h" />
     <ClInclude Include="..\src\matrix3d.h" />
+    <ClInclude Include="..\src\matrix4d.h" />
     <ClInclude Include="..\src\olcpge3.h" />
     <ClInclude Include="..\src\pixel.h" />
     <ClInclude Include="..\src\polyform.h" />
     <ClInclude Include="..\src\sh_template.h" />
     <ClInclude Include="..\src\transform2d.h" />
     <ClInclude Include="..\src\vector2d.h" />
+    <ClInclude Include="..\src\vector4d.h" />
     <ClInclude Include="..\src\window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -276,8 +277,7 @@
     </ClCompile>
     <ClCompile Include="..\src\api_opengl.cpp" />
     <ClCompile Include="..\src\core.cpp" />
-    <ClCompile Include="..\src\draw2d.cpp" />
-    <ClCompile Include="..\src\draw2d_sw.cpp" />
+    <ClCompile Include="..\src\draw.cpp" />
     <ClCompile Include="..\src\font.cpp" />
     <ClCompile Include="..\src\gpu_iface.cpp" />
     <ClCompile Include="..\src\gpu_opengl33.cpp" />
@@ -341,33 +341,11 @@
     </ClCompile>
     <ClCompile Include="..\src\imload_wingdi.cpp" />
     <ClCompile Include="..\src\window.cpp" />
-    <ClCompile Include="..\tests\test_main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\tests\test_matrices.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\tests\test_mh.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\tests\test_pixels.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\tests\test_vector2d.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -100,6 +100,9 @@
 	and the many community contributors that have provided bug fixes, suggestions,
 	criticisms, and encouragement from the OneLoneCoder Discord server, YouTube & GitHub.
 
+	Saladin, if you're out there, I know you would have been a proud contributer to this.
+	I miss you buddy.
+
 	Version History
 	~~~~~~~~~~~~~~~
 	v3.00: It begins...
@@ -947,6 +950,338 @@ namespace olc
 #define PGE_VECTOR2D_DECLARED 1
 #endif
 
+#if !defined(PGE_VECTOR4D_DECLARED)
+namespace olc
+{
+	/*
+		A complete 4D geometric vector structure, with a variety
+		of useful utility functions and operator overloads.
+	*/
+	template<class T>
+	struct v_4d
+	{
+		static_assert(std::is_arithmetic<T>::value, "olc::v_4d<type> must be numeric");
+
+		union
+		{
+#pragma warning(disable:4201) // Top MSVC whinging about anonymous structs
+			struct
+			{
+				// x-axis component
+				T x;
+				// y-axis component
+				T y;
+				// z-axis component
+				T z;
+				// w-axis component
+				T w;
+			};
+#pragma warning(default:4201)
+
+			std::array<T, 4> xyzw = { {0,0,0,1} };
+		};
+
+		// Default constructor
+		inline constexpr v_4d() = default;
+
+		// Specific constructor
+		inline constexpr v_4d(T _x, T _y, T _z, T _w = 1) : x(_x), y(_y), z(_z), w(_w)
+		{}
+
+		inline constexpr v_4d(const v_2d<T>& v, T _z, T _w) : x(v.x), y(v.y), z(_z), w(_w)
+		{}
+
+		inline constexpr v_4d(const v_2d<T>& v1, const v_2d<T>& v2) : x(v1.x), y(v1.y), z(v2.x), w(v2.y)
+		{}
+
+		// Copy constructor
+		inline constexpr v_4d(const v_4d& v) = default;
+
+		// Assignment operator
+		inline constexpr v_4d& operator=(const v_4d& v) = default;
+
+
+		inline constexpr std::array<T, 4> a() const
+		{
+			return xyzw;
+		}
+
+		inline constexpr v_2d<T> xy() const
+		{
+			return v_2d<T>(x, y);
+		}
+
+		inline constexpr v_2d<T> zw() const
+		{
+			return v_2d<T>(z, w);
+		}
+
+		// Returns magnitude of vector
+		inline constexpr auto mag() const
+		{
+			return std::sqrt(x * x + y * y + z * z + w * w);
+		}
+
+		// Returns magnitude squared of vector (useful for fast comparisons)
+		inline constexpr T mag2() const
+		{
+			return x * x + y * y + z * z + w * w;
+		}
+
+		// Returns normalised version of vector
+		inline constexpr v_4d norm() const
+		{
+			auto r = 1 / mag();
+			return v_4d(x * r, y * r, z * r, w * r);
+		}
+
+		// Rounds all components down
+		inline constexpr v_4d floor() const
+		{
+			return v_4d(std::floor(x), std::floor(y), std::floor(z), std::floor(w));
+		}
+
+		// Rounds all components accurately
+		inline constexpr v_4d round() const
+		{
+			return v_4d(std::round(x), std::round(y), std::round(z), std::round(w));
+		}
+
+		// Rounds all components up
+		inline constexpr v_4d ceil() const
+		{
+			return v_4d(std::ceil(x), std::ceil(y), std::ceil(z), std::ceil(w));
+		}
+
+		// Returns 'element-wise' max of this and another vector
+		inline constexpr v_4d max(const v_4d& v) const
+		{
+			return v_4d(std::max(x, v.x), std::max(y, v.y), std::max(z, v.z), std::max(w, v.w));
+		}
+
+		// Returns 'element-wise' min of this and another vector
+		inline constexpr v_4d min(const v_4d& v) const
+		{
+			return v_4d(std::min(x, v.x), std::min(y, v.y), std::min(z, v.z), std::min(w, v.w));
+		}
+
+		// Returns 'element-wise' abs of this vector
+		inline constexpr v_4d abs() const
+		{
+			return v_4d(std::abs(x), std::abs(y), std::abs(z), std::abs(w));
+		}
+
+		// Calculates scalar dot product between this and another vector
+		inline constexpr auto dot(const v_4d& rhs) const
+		{
+			return this->x * rhs.x + this->y * rhs.y + this->z * rhs.z + this->w * rhs.w;
+		}
+
+		// Calculates cross product between this and another vector
+		inline constexpr v_4d cross(const v_4d& rhs) const
+		{
+			return v_4d(this->y * rhs.z - this->z * rhs.y, this->z * rhs.x - this->x * rhs.z, this->x * rhs.y - this->y * rhs.x, 0);
+		}
+
+		// Clamp the components of this vector in between the 'element-wise' minimum and maximum of 2 other vectors
+		inline constexpr v_4d clamp(const v_4d& v1, const v_4d& v2) const
+		{
+			return this->max(v1).min(v2);
+		}
+
+		// Linearly interpolate between this vector, and another vector, given normalised parameter 't'
+		inline constexpr v_4d lerp(const v_4d& v1, const double t) const
+		{
+			return (*this) * (T(1.0 - t)) + (v1 * T(t));
+		}
+
+		// Compare if this vector is numerically equal to another
+		inline constexpr bool operator == (const v_4d& rhs) const
+		{
+			return (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z && this->w == rhs.w);
+		}
+
+		// Compare if this vector is not numerically equal to another
+		inline constexpr bool operator != (const v_4d& rhs) const
+		{
+			return (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z || this->w != rhs.w);
+		}
+
+		// Return this vector as a std::string, of the form "(x,y,z,w)"
+		inline std::string str() const
+		{
+			return std::string("(") + std::to_string(this->x) + "," + std::to_string(this->y) + "," + std::to_string(this->z) + "," + std::to_string(this->w) + ")";
+		}
+
+		// Allow 'casting' from other v_4d types
+		template<class F>
+		inline constexpr operator v_4d<F>() const
+		{
+			return { static_cast<F>(this->x), static_cast<F>(this->y), static_cast<F>(this->z), static_cast<F>(this->w) };
+		}
+	};
+
+	// Multiplication operator overloads between vectors and scalars, and vectors and vectors
+	template<olc::numeric TL, class TR>
+	inline constexpr auto operator * (const TL& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator * (const v_4d<TL>& lhs, const TR& rhs)
+	{
+		return v_4d(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs);
+	}
+
+	template<class TL, class TR>
+	inline constexpr auto operator * (const v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator *= (v_4d<TL>& lhs, const TR& rhs)
+	{
+		lhs = lhs * rhs;
+		return lhs;
+	}
+
+	// Division operator overloads between vectors and scalars, and vectors and vectors
+	template<olc::numeric TL, class TR>
+	inline constexpr auto operator / (const TL& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs / rhs.x, lhs / rhs.y, lhs / rhs.z, lhs / rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator / (const v_4d<TL>& lhs, const TR& rhs)
+	{
+		return v_4d(lhs.x / rhs, lhs.y / rhs, lhs.z / rhs, lhs.w / rhs);
+	}
+
+	template<class TL, class TR>
+	inline constexpr auto operator / (const v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator /= (v_4d<TL>& lhs, const TR& rhs)
+	{
+		lhs = lhs / rhs;
+		return lhs;
+	}
+
+	// Unary Addition operator (pointless but i like the platinum trophies)
+	template<class T>
+	inline constexpr auto operator + (const v_4d<T>& lhs)
+	{
+		return v_4d(+lhs.x, +lhs.y, +lhs.z, +lhs.w);
+	}
+
+	// Addition operator overloads between vectors and scalars, and vectors and vectors
+	template<olc::numeric TL, class TR>
+	inline constexpr auto operator + (const TL& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs + rhs.x, lhs + rhs.y, lhs + rhs.z, lhs + rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator + (const v_4d<TL>& lhs, const TR& rhs)
+	{
+		return v_4d(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs, lhs.w + rhs);
+	}
+
+	template<class TL, class TR>
+	inline constexpr auto operator + (const v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator += (v_4d<TL>& lhs, const TR& rhs)
+	{
+		lhs = lhs + rhs;
+		return lhs;
+	}
+
+	template<class TL, class TR>
+	inline constexpr auto operator += (v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		lhs = lhs + rhs;
+		return lhs;
+	}
+
+	// Unary negation operator overoad for inverting a vector
+	template<class T>
+	inline constexpr auto operator - (const v_4d<T>& lhs)
+	{
+		return v_4d(-lhs.x, -lhs.y, -lhs.z, -lhs.w);
+	}
+
+	// Subtraction operator overloads between vectors and scalars, and vectors and vectors
+	template<olc::numeric TL, class TR>
+	inline constexpr auto operator - (const TL& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs - rhs.x, lhs - rhs.y, lhs - rhs.z, lhs - rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator - (const v_4d<TL>& lhs, const TR& rhs)
+	{
+		return v_4d(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs, lhs.w - rhs);
+	}
+
+	template<class TL, class TR>
+	inline constexpr auto operator - (const v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		return v_4d(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
+	}
+
+	template<class TL, olc::numeric TR>
+	inline constexpr auto operator -= (v_4d<TL>& lhs, const TR& rhs)
+	{
+		lhs = lhs - rhs;
+		return lhs;
+	}
+
+	// Greater/Less-Than Operator overloads - mathematically useless, but handy for "sorted" container storage
+	template<class TL, class TR>
+	inline constexpr bool operator < (const v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		return (lhs.w < rhs.w) 
+			|| (lhs.w == rhs.w && lhs.z < rhs.z) 
+			|| (lhs.w == rhs.w && lhs.z == rhs.z && lhs.y < rhs.y) 
+			|| (lhs.w == rhs.w && lhs.z == rhs.z && lhs.y == rhs.y && lhs.x < rhs.x);
+	}
+
+	template<class TL, class TR>
+	inline constexpr bool operator > (const v_4d<TL>& lhs, const v_4d<TR>& rhs)
+	{
+		return (lhs.w > rhs.w) 
+			|| (lhs.w == rhs.w && lhs.z > rhs.z) 
+			|| (lhs.w == rhs.w && lhs.z == rhs.z && lhs.y > rhs.y) 
+			|| (lhs.w == rhs.w && lhs.z == rhs.z && lhs.y == rhs.y && lhs.x > rhs.x);
+	}
+
+	// Allow olc::v_4d to play nicely with std::cout
+	template<class T>
+	inline std::ostream& operator << (std::ostream& os, const v_4d<T>& rhs)
+	{
+		os << rhs.str();
+		return os;
+	}
+
+	// Convenient types ready-to-go
+	typedef v_4d<int32_t> vi4d;
+	typedef v_4d<uint32_t> vu4d;
+	typedef v_4d<float> vf4d;
+	typedef v_4d<double> vd4d;
+}
+#define PGE_VECTOR4D_DECLARED 1
+#endif
+
 #if !defined(PGE_MATRIX3D_DECLARED)
 namespace olc
 {
@@ -1173,6 +1508,357 @@ namespace olc
 	typedef m_3d<double> md3d;
 }
 #define PGE_MATRIX3D_DECLARED 1
+#endif
+
+#if !defined(PGE_MATRIX4D_DECLARED)
+namespace olc
+{
+
+	/*
+		A complete 4x4 Matrix structure, with a variety
+		of useful utility functions and operator overloads
+		specifically targeting 3D graphical transformations
+
+		as per https://en.wikipedia.org/wiki/Transformation_matrix
+
+		Access: column, row
+	*/
+
+	/*
+	 
+	
+	Because Matrices can be defined all sort sof ways, I have included this little
+	description to clarify how this particular implementation works. For the end
+	user's ease of use, the transformations are designed to mimic those found on
+	Wikipedias page on transformation matrices, which are in column-major order. 
+	
+	Memory layout of the 4x4 matrix is as follows idx = R * 4 + C:
+
+		  0x00  0x01  0x02  0x3
+	0x00  | 0,0 | 1,0 | 2,0 | 3,0 |
+	0x04  | 0,1 | 1,1 | 2,1 | 3,1 |
+	0x08  | 0,2 | 1,2 | 2,2 | 3,2 |
+	0x0C  | 0,3 | 1,3 | 2,3 | 3,3 |
+
+	This is row-major order (in storage) but we really only access this
+	via the idx operator (col, row) so it is effectively column-major order 
+	for the user. 
+
+	This is because in graphics we typically want to multiply a vector on 
+	the right of the matrix, and we want the translation components to be in 
+	the last column.
+
+	Matrix * Vector multiplication is as follows:
+
+	| m11 m12 m13 m14 |   | v1 |   | r1 | (m11*v1 + m12*v2 + m13*v3 + m14*v4)
+	| m21 m22 m23 m24 | * | v2 | = | r2 | (m21*v1 + m22*v2 + m23*v3 + m24*v4)
+	| m31 m32 m33 m34 |   | v3 |   | r3 | (m31*v1 + m32*v2 + m33*v3 + m34*v4)
+	| m41 m42 m43 m44 |   | v4 |   | r4 | (m41*v1 + m42*v2 + m43*v3 + m44*v4)
+
+	Matrix * Matrix multiplication is as follows:
+
+	| a11 a12 a13 a14 |   | b11 b12 b13 b14 |   | r11 r12 r13 r14 | (a11*b11 + a12*b21 + a13*b31 + a14*b41) ...
+	| a21 a22 a23 a24 | * | b21 b22 b23 b24 | = | r21 r22 r23 r24 | (a21*b11 + a22*b21 + a23*b31 + a24*b41) ...
+	| a31 a32 a33 a34 |   | b31 b32 b33 b34 |   | r31 r32 r33 r34 | (a31*b11 + a32*b21 + a33*b31 + a34*b41) ...
+	| a41 a42 a43 a44 |   | b41 b42 b43 b44 |   | r41 r42 r43 r44 | (a41*b11 + a42*b21 + a43*b31 + a44*b41) ...
+
+	Example Translation:
+
+	| 1 0 0 Tx |   | x |   | x' | (1*x + 0*y + 0*z + Tx*1) (x + tx)
+	| 0 1 0 Ty | * | y | = | y' | (0*x + 1*y + 0*z + Ty*1) (y + ty)
+	| 0 0 1 Tz |   | z |   | z' | (0*x + 0*y + 1*z + Tz*1) (z + tz)
+	| 0 0 0 1  |   | 1 |   | x' | (0*x + 0*y + 0*z +  1*1) (1)
+
+	Example Rotation around Y axis:
+	| cθ  0 sθ 0 |   | x |   | x' | (cosθ*x + 0*y + sinθ*z + 0*1)  (x*cosθ + z*sinθ)
+	| 0   1 0  0 | * | y | = | y' | (0*x + 1*y + 0*z + 0*1)        (y)
+	| -sθ 0 cθ 0 |   | z |   | z' | (-sinθ*x + 0*y + cosθ*z + 0*1) (z*cosθ - x*sinθ)
+	| 0   0 0  1 |   | 1 |   | x' | (0*x + 0*y + 0*z + 1*1)        (1)
+
+	P' = Projection * View * World * P
+
+	*/
+
+
+
+	template<class T>
+	struct m_4d
+	{
+		static_assert(std::is_arithmetic<T>::value, "olc::m_4d<type> must be numeric");
+
+		// The 4x4 elements!
+		std::array<T, 16> m{ {0 } };
+
+		// Constructor created identity matrix
+		inline constexpr m_4d()
+		{
+			identity();
+		}
+
+		// Copy constructor
+		inline constexpr m_4d(const m_4d& mat) = default;
+
+		// Assignment operator
+		inline constexpr m_4d& operator=(const m_4d& mat) = default;
+
+		// Retrieve a specific element's 1D index
+		inline constexpr size_t idx(const size_t c, const size_t r) const
+		{
+			return r * 4 + c; // Column-major order (for user) but row-major order in storage
+		}
+
+		// Retrieve non-const access to specific element
+		inline constexpr T& operator()(const size_t col, const size_t row)
+		{
+			return m[idx(col, row)];
+		}
+
+		// Retrieve const access to specific element
+		inline constexpr const T& operator()(const size_t col, const size_t row) const
+		{
+			return m[idx(col, row)];
+		}
+
+		// Set all elements to 0
+		inline constexpr void clear()
+		{
+			std::fill(m.begin(), m.end(), T(0));
+		}
+
+		// Create identity matrix
+		inline constexpr void identity()
+		{
+			clear();
+			auto& me = (*this);
+			me(0, 0) = T(1);
+			me(1, 1) = T(1);
+			me(2, 2) = T(1);
+			me(3, 3) = T(1);
+		}
+
+		inline constexpr auto transpose() const
+		{
+			olc::m_4d<T> out;
+			auto& me = (*this);
+			for (int i = 0; i < 4; i++)
+				for (int j = 0; j < 4; j++)
+					out(i, j) = me(j, i);
+			return out;
+		}
+
+		// Create translation matrix via components
+		template<typename Q>
+		inline constexpr void translate(const Q x, const Q y, const Q z)
+		{
+			identity();
+			auto& me = (*this);
+			me(3, 0) = T(x);
+			me(3, 1) = T(y);
+			me(3, 2) = T(z);
+		}
+
+		// Create translation matrix via vector (x, y, z components)
+		template<typename Q>
+		inline constexpr void translate(const olc::v_4d<Q>& v)
+		{
+			translate(v.x, v.y, v.z);
+		}
+
+		// Create scaling matrix via components
+		template<typename Q>
+		inline constexpr void scale(const Q x, const Q y, const Q z)
+		{
+			identity();
+			auto& me = (*this);
+			me(0, 0) = T(x);
+			me(1, 1) = T(y);
+			me(2, 2) = T(z);
+		}
+
+		// Create scaling matrix via vector (x, y, z components)
+		template<typename Q>
+		inline constexpr void scale(const olc::v_4d<Q>& v)
+		{
+			scale(v.x, v.y, v.z);
+		}
+
+		// Create rotation matrix around X axis with radians
+		template<typename Q>
+		inline constexpr void rotateX(const Q rads)
+		{
+			identity();
+			auto& me = (*this);
+			me(1, 1) = std::cos(T(rads));
+			me(1, 2) = std::sin(T(rads));
+			me(2, 1) = -me(1, 2);
+			me(2, 2) = me(1, 1);
+		}
+
+		// Create rotation matrix around Y axis with radians
+		template<typename Q>
+		inline constexpr void rotateY(const Q rads)
+		{
+			identity();
+			auto& me = (*this);
+			me(0, 0) = std::cos(T(rads));
+			me(0, 2) = -std::sin(T(rads));
+			me(2, 0) = -me(0, 2);
+			me(2, 2) = me(0, 0);
+		}
+
+		// Create rotation matrix around Z axis with radians
+		template<typename Q>
+		inline constexpr void rotateZ(const Q rads)
+		{
+			identity();
+			auto& me = (*this);
+			me(0, 0) = std::cos(T(rads));
+			me(0, 1) = std::sin(T(rads));
+			me(1, 0) = -me(0, 1);
+			me(1, 1) = me(0, 0);
+		}
+
+		// Create perspective projection matrix
+		template<typename Q>
+		inline constexpr void perspective(const Q fov, const Q ratio, const Q nearplane, const Q farplane)
+		{
+			identity();
+			auto& me = (*this);
+			T invFOV = T(1) / tan(fov * T(0.5));
+
+			me(0,0) = invFOV / ratio;  // X scale
+			me(1,1) = invFOV;         // Y scale
+			me(2,2) = (farplane + nearplane) / (nearplane - farplane);      // Z mapping
+			me(3,2) = (2.0f * farplane * nearplane) / (nearplane - farplane); // Z offset
+			me(2,3) = -1.0f;           // Perspective divide by -Z
+			me(3,3) = 0.0f;
+		}
+
+		// Create orthographic projection matrix
+		template<typename Q>
+		inline constexpr void orthographic(const Q left, const Q right, const Q bottom, const Q top, const Q near1, const Q far1)
+		{
+			identity();
+			auto& me = (*this);
+			me(0, 0) = T(2) / (right - left);
+			me(1, 1) = T(2) / (top - bottom);
+			me(2, 2) = T(-2) / (far1 - near1);
+			me(3, 0) = -(right + left) / (right - left);
+			me(3, 1) = -(top + bottom) / (top - bottom);
+			me(3, 2) = -(far1 + near1) / (far1 - near1);
+		}
+
+		// Return inverted matrix
+		inline constexpr auto invert() const
+		{
+			// Using Gauss-Jordan elimination - AI special this :P
+			olc::m_4d<T> out;
+			auto& me = (*this);
+
+			T A2323 = me(2, 2) * me(3, 3) - me(2, 3) * me(3, 2);
+			T A1323 = me(2, 1) * me(3, 3) - me(2, 3) * me(3, 1);
+			T A1223 = me(2, 1) * me(3, 2) - me(2, 2) * me(3, 1);
+			T A0323 = me(2, 0) * me(3, 3) - me(2, 3) * me(3, 0);
+			T A0223 = me(2, 0) * me(3, 2) - me(2, 2) * me(3, 0);
+			T A0123 = me(2, 0) * me(3, 1) - me(2, 1) * me(3, 0);
+			T A2313 = me(1, 2) * me(3, 3) - me(1, 3) * me(3, 2);
+			T A1313 = me(1, 1) * me(3, 3) - me(1, 3) * me(3, 1);
+			T A1213 = me(1, 1) * me(3, 2) - me(1, 2) * me(3, 1);
+			T A2312 = me(1, 2) * me(2, 3) - me(1, 3) * me(2, 2);
+			T A1312 = me(1, 1) * me(2, 3) - me(1, 3) * me(2, 1);
+			T A1212 = me(1, 1) * me(2, 2) - me(1, 2) * me(2, 1);
+			T A0313 = me(1, 0) * me(3, 3) - me(1, 3) * me(3, 0);
+			T A0213 = me(1, 0) * me(3, 2) - me(1, 2) * me(3, 0);
+			T A0312 = me(1, 0) * me(2, 3) - me(1, 3) * me(2, 0);
+			T A0212 = me(1, 0) * me(2, 2) - me(1, 2) * me(2, 0);
+			T A0113 = me(1, 0) * me(3, 1) - me(1, 1) * me(3, 0);
+			T A0112 = me(1, 0) * me(2, 1) - me(1, 1) * me(2, 0);
+
+			T det = me(0, 0) * (me(1, 1) * A2323 - me(1, 2) * A1323 + me(1, 3) * A1223)
+				- me(0, 1) * (me(1, 0) * A2323 - me(1, 2) * A0323 + me(1, 3) * A0223)
+				+ me(0, 2) * (me(1, 0) * A1323 - me(1, 1) * A0323 + me(1, 3) * A0123)
+				- me(0, 3) * (me(1, 0) * A1223 - me(1, 1) * A0223 + me(1, 2) * A0123);
+
+			T invdet = T(1) / det;
+
+			out(0, 0) = invdet * (me(1, 1) * A2323 - me(1, 2) * A1323 + me(1, 3) * A1223);
+			out(0, 1) = invdet * -(me(0, 1) * A2323 - me(0, 2) * A1323 + me(0, 3) * A1223);
+			out(0, 2) = invdet * (me(0, 1) * A2313 - me(0, 2) * A1313 + me(0, 3) * A1213);
+			out(0, 3) = invdet * -(me(0, 1) * A2312 - me(0, 2) * A1312 + me(0, 3) * A1212);
+			out(1, 0) = invdet * -(me(1, 0) * A2323 - me(1, 2) * A0323 + me(1, 3) * A0223);
+			out(1, 1) = invdet * (me(0, 0) * A2323 - me(0, 2) * A0323 + me(0, 3) * A0223);
+			out(1, 2) = invdet * -(me(0, 0) * A2313 - me(0, 2) * A0313 + me(0, 3) * A0213);
+			out(1, 3) = invdet * (me(0, 0) * A2312 - me(0, 2) * A0312 + me(0, 3) * A0212);
+			out(2, 0) = invdet * (me(1, 0) * A1323 - me(1, 1) * A0323 + me(1, 3) * A0123);
+			out(2, 1) = invdet * -(me(0, 0) * A1323 - me(0, 1) * A0323 + me(0, 3) * A0123);
+			out(2, 2) = invdet * (me(0, 0) * A1313 - me(0, 1) * A0313 + me(0, 3) * A0113);
+			out(2, 3) = invdet * -(me(0, 0) * A1312 - me(0, 1) * A0312 + me(0, 3) * A0112);
+			out(3, 0) = invdet * -(me(1, 0) * A1223 - me(1, 1) * A0223 + me(1, 2) * A0123);
+			out(3, 1) = invdet * (me(0, 0) * A1223 - me(0, 1) * A0223 + me(0, 2) * A0123);
+			out(3, 2) = invdet * -(me(0, 0) * A1213 - me(0, 1) * A0213 + me(0, 2) * A0113);
+			out(3, 3) = invdet * (me(0, 0) * A1212 - me(0, 1) * A0212 + me(0, 2) * A0112);
+
+			return out;
+		}
+
+		// Transform a vector by this matrix
+		template<typename Q>
+		inline constexpr auto operator * (const olc::v_4d<Q>& v) const
+		{
+			auto& me = *this;
+			olc::v_4d<Q> vOut;
+			vOut.x = Q(me(0, 0) * v.x + me(1, 0) * v.y + me(2, 0) * v.z + me(3, 0) * v.w);
+			vOut.y = Q(me(0, 1) * v.x + me(1, 1) * v.y + me(2, 1) * v.z + me(3, 1) * v.w);
+			vOut.z = Q(me(0, 2) * v.x + me(1, 2) * v.y + me(2, 2) * v.z + me(3, 2) * v.w);
+			vOut.w = Q(me(0, 3) * v.x + me(1, 3) * v.y + me(2, 3) * v.z + me(3, 3) * v.w);
+			return vOut;
+		}
+
+		// Multiply this matrix with another
+		template<typename Q>
+		inline constexpr auto operator * (const olc::m_4d<Q>& rhs) const
+		{
+			auto& me = *this;
+			olc::m_4d<T> out;
+			for (size_t c = 0; c < 4; c++)
+				for (size_t r = 0; r < 4; r++)
+					out(c, r) = me(0, r) * rhs(c, 0) + me(1, r) * rhs(c, 1) + me(2, r) * rhs(c, 2) + me(3, r) * rhs(c, 3);
+			return out;
+		}
+
+		// Transform a vector of v_4d by this matrix
+		template<typename Q>
+		inline constexpr auto transform(const std::vector<olc::v_4d<Q>>& v)
+		{
+			std::vector<olc::v_4d<Q>> o(v.size());
+			std::transform(v.begin(), v.end(), o.begin(), [this](const olc::v_4d<Q>& i) {return (*this) * i; });
+			return o;
+		}
+
+		// Return this matrix as a std::string
+		inline std::string str() const
+		{
+			const auto& me = *this;
+			return std::string("[") + std::to_string(me(0, 0)) + "," + std::to_string(me(1, 0)) + "," + std::to_string(me(2, 0)) + "," + std::to_string(me(3, 0)) + "]\n"
+				+ "[" + std::to_string(me(0, 1)) + "," + std::to_string(me(1, 1)) + "," + std::to_string(me(2, 1)) + "," + std::to_string(me(3, 1)) + "]\n"
+				+ "[" + std::to_string(me(0, 2)) + "," + std::to_string(me(1, 2)) + "," + std::to_string(me(2, 2)) + "," + std::to_string(me(3, 2)) + "]\n"
+				+ "[" + std::to_string(me(0, 3)) + "," + std::to_string(me(1, 3)) + "," + std::to_string(me(2, 3)) + "," + std::to_string(me(3, 3)) + "]\n";
+		}
+	};
+
+	// Allow olc::m_4d to play nicely with std::cout
+	template<class T>
+	inline std::ostream& operator << (std::ostream& os, const m_4d<T>& rhs)
+	{
+		os << rhs.str();
+		return os;
+	}
+
+	// Convenient types ready-to-go
+	typedef m_4d<float> mf4d;
+	typedef m_4d<double> md4d;
+}
+#define PGE_MATRIX4D_DECLARED 1
 #endif
 
 #if !defined(PGE_TRANSFORM2D_DECLARED)
@@ -1728,6 +2414,9 @@ namespace olc
 		// Use hardware wire drawing
 		bool bWireframe = false;
 
+		// Define how to interpret vertex buffer
+		bool bIs3D = false;
+
 		// Overall biasing colour (great for blends)
 		olc::Pixel tint = olc::Colour::WHITE;
 
@@ -1903,6 +2592,8 @@ namespace olc
 		class Renderer;
 		class Shader;
 	}
+
+	class Draw3D;
 	
 	// These "opaque" structs are merely to help with
 	// type differentiation of various GPUTask types
@@ -1913,10 +2604,12 @@ namespace olc
 	struct FilledBatch { GPUTask task; };
 	struct LineBatch { GPUTask task; };
 
-	class Draw2D
+	class Draw
 	{
+		friend class olc::Draw3D;
+
 	public:
-		Draw2D();
+		Draw();
 
 		// Associate this drawing toolbox with a renderer
 		void SetGPU(olc::gpu::Renderer* const renderer);
@@ -2473,6 +3166,52 @@ namespace olc
 			const olc::vf2d& pos,
 			const olc::vf2d& size,
 			const olc::Pixel tint = olc::Colour::WHITE);
+
+	public: // Applied Rendering Modes
+		void SetCullMode(const olc::GPUTask::CullMode mode);
+		void EnableDepth(const bool bEnable);
+		void SetViewport(const olc::vi2d& pos, const olc::vi2d& size);
+
+	public: // 3D Transformation Functions
+		void MatrixReset();
+		void SetModelMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetModelMatrix() const;
+		void SetViewMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetViewMatrix() const;
+		void SetProjectionMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetProjectionMatrix() const;
+		void SetMVPMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetMVPMatrix() const;
+
+
+
+	public: // 3D Primitive Drawing Functions
+
+		GPUTask& Line(
+			const olc::vf4d& vStart,
+			const olc::vf4d& vEnd,
+			const olc::Pixel& col = olc::Colour::WHITE,
+			const olc::Pixel tint = olc::Colour::WHITE);
+
+		GPUTask& Mesh(
+			const olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
+
+		GPUTask& Mesh(
+			const olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const std::vector<olc::vf2d>& vUVs,
+			olc::Image& texture,
+			const olc::Pixel tint = olc::Colour::WHITE);
+
+
+
+	public: // GPU Task Creator Functions (not normally called by user)
+
+
 	
 
 	public:
@@ -2545,153 +3284,26 @@ namespace olc
 			olc::Image* const image,
 			const olc::Pixel tint = olc::Colour::WHITE);
 
+		// 3D Task Generators
+		GPUTask TaskWireMesh(
+			olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
 
-		public: // Precision drawing functions via software rasteriser
-			// Draws a single pixel wide line of fixed colour
-			void swLine(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::Pixel col = olc::Colour::WHITE);
+		GPUTask TaskFillMesh(
+			olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
 
-			// Draws a single pixel wide line with a gradient		
-			void swLine(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::Pixel c1,
-				const olc::Pixel c2);
-
-			// Draws a rectangle outline
-			void swRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a multiple colour rectangle, with linear colour interpolation
-			void swRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel colTL,
-				const olc::Pixel colTR,
-				const olc::Pixel colBL,
-				const olc::Pixel colBR);
-
-			// Draws a filled, single colour rectangle
-			void swFilledRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a filled, multiple colour rectangle, with linear colour interpolation
-			void swFilledRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel colTL,
-				const olc::Pixel colTR,
-				const olc::Pixel colBL,
-				const olc::Pixel colBR);
-
-			// Draws a triangle outline
-			void swTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a multiple colour triangle, with linear colour interpolation
-			void swTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3);
-
-			// Draws a filled, single colour triangle
-			void swFilledTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a filled, multiple colour triangle, with linear colour interpolation
-			void swFilledTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3);
-
-			// Rasterises a textured triangle in integer space
-			void swTexturedTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3,
-				const olc::vf2d& t1,
-				const olc::vf2d& t2,
-				const olc::vf2d& t3,
-				olc::Image& texture);
-
-
-
-		protected: // Software rasteriser helper functions
-
-			// Clips a line to a rectangular region, returns true if line is visible
-			bool swClipLine(
-				olc::vf2d& v0,
-				olc::vf2d& v1,
-				const olc::vf2d& vMin,
-				const olc::vf2d& vMax);
-
-			// Clips a line to a rectangular region, returns true if line is visible.
-			// The returned weights correspond to distance along the line from v0 to v1
-			bool swClipWeightedLine(
-				olc::vf2d& v0,
-				olc::vf2d& v1,
-				const olc::vf2d& vMin,
-				const olc::vf2d& vMax,
-				float& w0,
-				float& w1);
-
-			/* bool swClipTriangle(
-				olc::vf2d& v1,
-				olc::vf2d& v2,
-				olc::vf2d& v3,
-				const olc::vf2d& vMin,
-				const olc::vf2d& vMax);*/
-				
-			// Rasterises a shaded line in integer space
-			void swRasterShadedLine(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::Pixel c1,
-				const olc::Pixel c2);
-
-			// Rasterises a shaded triangle in integer space
-			void swRasterShadedTriangle(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::vi2d& v3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3);
-
-			// Rasterises a textured triangle in integer space
-			void swRasterTexturedTriangle(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::vi2d& v3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3,
-				const olc::vf2d& t1,
-				const olc::vf2d& t2,
-				const olc::vf2d& t3,
-				olc::Image& texture);
-
+		GPUTask TaskTexturedMesh(
+			olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const std::vector<olc::vf2d>& vTexCoords,
+			olc::Image* const image,
+			const olc::Pixel tint = olc::Colour::WHITE);
 
 
 		public:
@@ -2741,26 +3353,18 @@ namespace olc
 			olc::gpu::Renderer* pRenderer = nullptr;
 			olc::tf2d transformAffine;
 
-			//std::vector<olc::GPUTask> vecGPUTasks;
-
-		protected: // SW Rasteriser Helpers
-			struct Scanline
-			{
-				int32_t nMin = std::numeric_limits<int32_t>::max();
-				int32_t nMax = std::numeric_limits<int32_t>::min();
-				std::array<float, 3> fBaryMin;
-				std::array<float, 3> fBaryMax;
-			};
-
-			std::vector<Scanline> vScanlines;
+			// 3D Drawing Things
+			mf4d matModel;
+			mf4d matView;
+			mf4d matProjection;
+			mf4d matVP;
+			mf4d matMVP;
+			olc::vf2d vViewportPos = { 0, 0 };
+			olc::vi2d vViewportSize = { 0, 0 };
 
 
-			// Fills scanline buffer with visible triangle extents and barycentric coordinates.
-			// Returns vertical, visible extents of triangle scanlines
-			std::pair<int, int> swBaryFillTriangle(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::vi2d& v3);
+			olc::GPUTask::CullMode cullMode = olc::GPUTask::CullMode::None;
+			bool bDepth = true;
 
 
 		private:
@@ -3200,6 +3804,7 @@ namespace olc
 	class PGEWindow : public Window
 	{
 	public:
+		PGEWindow();
 		bool Create(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize);
 	
 	public:
@@ -3232,7 +3837,7 @@ namespace olc
 	public:
 		// Returns the image that represents the primary drawing surface
 		olc::Image& GetScreen();
-		olc::Draw2D& GetDraw();
+		olc::Draw& GetDraw();
 
 		// Input devices are handled by a regular olc::Window, but for convenience...
 		olc::hw::Mouse& GetMouse();
@@ -3248,8 +3853,7 @@ namespace olc
 		virtual bool olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime);
 
 	protected:
-		olc::Draw2D draw;
-		
+		olc::Draw draw;		
 		
 	private:
 		olc::Image imgPrimary;
@@ -4587,6 +5191,8 @@ namespace X11
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 #include <GL/glx.h>
+#undef None
+constexpr int None = 0L;
 }
 
 namespace olc::host
@@ -5310,6 +5916,8 @@ namespace olc
 		typedef void CALLSTYLE glGetInternalformativ_t(GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint* params);
 		typedef void CALLSTYLE glGetShaderiv_t(GLuint shader, GLenum pname, GLint* params);
 		typedef void CALLSTYLE glGetIntegerv_t(GLenum pname, GLint *data);
+		typedef void CALLSTYLE glGetRenderbufferParameteriv_t(GLenum target, GLenum pname, GLint* params);
+		typedef void CALLSTYLE glRenderbufferStorage_t(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 
 #if OLC_HOST == OLC_HOST_WINDOWS
 		typedef void CALLSTYLE wglSwapIntervalEXT_t(GLsizei n);
@@ -5371,6 +5979,8 @@ namespace olc
 			glGetInternalformativ_t* _glGetInternalformativ = nullptr;
 			glGetShaderiv_t* _glGetShaderiv = nullptr;
 			glGetIntegerv_t *_glGetIntegerv = nullptr;
+			glGetRenderbufferParameteriv_t* _glGetRenderbufferParameteriv = nullptr;
+			glRenderbufferStorage_t* _glRenderbufferStorage = nullptr;
 #if OLC_HOST == OLC_HOST_WINDOWS
 			wglSwapIntervalEXT_t* _wglSwapIntervalEXT = nullptr;
 #endif
@@ -5421,6 +6031,8 @@ namespace olc
 			void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
 			void glGetInternalformativ(GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint* params);
 			void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
+			void glGetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params);
+			void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 
 			// OpenGL1.2 Proxies (just keeps things tidy imo)
 			void glGenTextures(GLsizei n, GLuint* textures);
@@ -5442,7 +6054,7 @@ namespace olc
 			void glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels);
 			void glHint(GLenum target, GLenum mode);
 			void glPolygonMode(GLenum face, GLenum mode);
-			
+			void glFrontFace(GLenum mode);
 			void glGetIntegerv(GLenum pname, GLint *data);
 
 
@@ -5467,8 +6079,9 @@ namespace olc
 			static constexpr GLenum GL_SAMPLES_X = 0x80A9;
 			static constexpr GLenum GL_COMPILE_STATUS_X = 0x8B81;
 			static constexpr GLenum GL_INFO_LOG_LENGTH_X = 0x8B84;
-
-
+			static constexpr GLenum GL_DEPTH_COMPONENT24_X = 0x81A6;
+			static constexpr GLenum GL_DEPTH_ATTACHMENT_X = 0x8D00;
+			static constexpr GLenum GL_RENDERBUFFER_SAMPLES_X = 0x8CAB;
 		private:
 			bool CheckError(const std::source_location loc = std::source_location::current());
 
@@ -5572,6 +6185,10 @@ namespace olc
 			std::unordered_map<uint32_t, uint32_t> mapTextureToRenderbuffer;
 
 			const Shader* pCurrentShader = nullptr;
+
+			uint32_t nDepthRBO = 0;              // Shared depth renderbuffer
+			olc::vi2d vCurrentDepthSize = {0, 0}; // Track current depth buffer size
+			int32_t nCurrentDepthSamples = 0;     // Track current MSAA sample count
 
 #if OLC_HOST == OLC_HOST_ANDROID
 			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
@@ -7141,43 +7758,117 @@ static constexpr const char* kVoidMethodTypeEncoding = "v@:";
 
 namespace ObjectiveCSEL {
      
-    // Application memory management selectors
-    static SEL allocSel, initSel, setDelegateSel, releaseSel, isKindOfClassSel = nullptr;
+// Application memory management selectors
+   static SEL allocSel         = nullptr;
+   static SEL initSel          = nullptr;
+   static SEL setDelegateSel   = nullptr;
+   static SEL releaseSel       = nullptr;
+   static SEL isKindOfClassSel = nullptr;
 
-    // NSApplication lifecycle and management selectors
-    static SEL sharedApplicationSel, activateIgnoringOtherAppsSel, setActivationPolicySel,runSel, terminateSEL = nullptr;
+   // NSApplication lifecycle and management selectors
+   static SEL sharedApplicationSel         = nullptr;
+   static SEL activateIgnoringOtherAppsSel = nullptr;
+   static SEL setActivationPolicySel       = nullptr;
+   static SEL runSel                       = nullptr;
+   static SEL terminateSEL                 = nullptr;
 
-    // NSApplicationDelegate lifecycle methods
-    static SEL applicationWillFinishLaunchingSel, applicationDidFinishLaunchingSel, applicationWillTerminateSel, applicationDidBecomeActiveSel, applicationWillResignActiveSel = nullptr;
+   // NSApplicationDelegate lifecycle methods
+   static SEL applicationWillFinishLaunchingSel = nullptr;
+   static SEL applicationDidFinishLaunchingSel  = nullptr;
+   static SEL applicationWillTerminateSel       = nullptr;
+   static SEL applicationDidBecomeActiveSel     = nullptr;
+   static SEL applicationWillResignActiveSel    = nullptr;
 
-    // NSWindow creation, display, and management selectors
-    static SEL initWithContentRectSel, stringWithUTF8StringSel, setTitleSel, orderFrontRegardlessSel, setAcceptsMouseMovedEventsSel, makeKeyAndOrderFrontSel = nullptr;
-    static SEL makeKeyWindowSel, frameSel, setFrameDisplaySel, setFrameSel, makeFirstResponderSel = nullptr;
+   // NSWindow creation, display, and management selectors
+   static SEL initWithContentRectSel        = nullptr;
+   static SEL stringWithUTF8StringSel       = nullptr;
+   static SEL setTitleSel                   = nullptr;
+   static SEL orderFrontRegardlessSel       = nullptr;
+   static SEL setAcceptsMouseMovedEventsSel = nullptr;
+   static SEL makeKeyAndOrderFrontSel       = nullptr;
+   static SEL makeKeyWindowSel              = nullptr;
+   static SEL frameSel                      = nullptr;
+   static SEL setFrameDisplaySel            = nullptr;
+   static SEL setFrameSel                   = nullptr;
+   static SEL makeFirstResponderSel         = nullptr;
 
-    // NSWindowDelegate lifecycle and event methods selectors
-    static SEL windowDidResizeSel, windowWillCloseSel, windowDidBecomeKeySel, windowDidResignKeySel, windowDidMiniaturizeSel, windowDidDeminiaturizeSel = nullptr;
+   // NSWindowDelegate lifecycle and event methods selectors
+   static SEL windowDidResizeSel        = nullptr;
+   static SEL windowWillCloseSel        = nullptr;
+   static SEL windowDidBecomeKeySel     = nullptr;
+   static SEL windowDidResignKeySel     = nullptr;
+   static SEL windowDidMiniaturizeSel   = nullptr;
+   static SEL windowDidDeminiaturizeSel = nullptr;
 
-    // NSResponder keyboard and mouse event methods selectors
-    static SEL keyDownSel, keyUpSel, mouseDownSel, mouseUpSel, mouseDraggedSel, mouseMovedSel, rightMouseDownSel, rightMouseUpSel, rightMouseDraggedSel, otherMouseDownSel = nullptr;
-    static SEL otherMouseUpSel, otherMouseDraggedSel, scrollWheelSel, deltaXSel, deltaYSel = nullptr;
+   // NSResponder keyboard and mouse event methods selectors
+   static SEL keyDownSel           = nullptr;
+   static SEL keyUpSel             = nullptr;
+   static SEL mouseDownSel         = nullptr;
+   static SEL mouseUpSel           = nullptr;
+   static SEL mouseDraggedSel      = nullptr;
+   static SEL mouseMovedSel        = nullptr;
+   static SEL rightMouseDownSel    = nullptr;
+   static SEL rightMouseUpSel      = nullptr;
+   static SEL rightMouseDraggedSel = nullptr;
+   static SEL otherMouseDownSel    = nullptr;
+   static SEL otherMouseUpSel      = nullptr;
+   static SEL otherMouseDraggedSel = nullptr;
+   static SEL scrollWheelSel       = nullptr;
+   static SEL deltaXSel            = nullptr;
+   static SEL deltaYSel            = nullptr;
 
-    // Managing first responder status and keyboard focus selectors
-    static SEL acceptsFirstResponderSel, becomeFirstResponderSel, canBecomeKeyViewSel, needsPanelToBecomeKeySel, drawRectSel, reshapeSel, updateSel = nullptr;
+   // Managing first responder status and keyboard focus selectors
+   static SEL acceptsFirstResponderSel = nullptr;
+   static SEL becomeFirstResponderSel  = nullptr;
+   static SEL canBecomeKeyViewSel      = nullptr;
+   static SEL needsPanelToBecomeKeySel = nullptr;
+   static SEL drawRectSel              = nullptr;
+   static SEL reshapeSel               = nullptr;
+   static SEL updateSel                = nullptr;
 
-    // NSOpenGL pixel format, view, and context management selectors
-    static SEL initWithAttributesSel, initWithFramePixelFormatSel, setContentViewSel, contentViewSel, boundsSel, convertPointFromViewSel, openGLContextSel, makeCurrentContextSel = nullptr;
-    static SEL setAutoresizingMaskSel, flushBufferSel, displaySel, CGLContextObjSel, setValuesSel = nullptr;
+   // NSOpenGL pixel format, view, and context management selectors
+   static SEL initWithAttributesSel       = nullptr;
+   static SEL initWithFramePixelFormatSel = nullptr;
+   static SEL setContentViewSel           = nullptr;
+   static SEL contentViewSel              = nullptr;
+   static SEL boundsSel                   = nullptr;
+   static SEL convertPointFromViewSel     = nullptr;
+   static SEL openGLContextSel            = nullptr;
+   static SEL makeCurrentContextSel       = nullptr;
+   static SEL setAutoresizingMaskSel      = nullptr;
+   static SEL flushBufferSel              = nullptr;
+   static SEL displaySel                  = nullptr;
+   static SEL CGLContextObjSel            = nullptr;
+   static SEL setValuesSel                = nullptr;
 
-    // Extracting data from NSEvent objects selectors
-    static SEL keyCodeSel, charactersSel, locationInWindowSel, buttonNumberSel, clickCountSel, modifierFlagsSel, utf8StringSel = nullptr;
+   // Extracting data from NSEvent objects selectors
+   static SEL keyCodeSel          = nullptr;
+   static SEL charactersSel       = nullptr;
+   static SEL locationInWindowSel = nullptr;
+   static SEL buttonNumberSel     = nullptr;
+   static SEL clickCountSel       = nullptr;
+   static SEL modifierFlagsSel    = nullptr;
+   static SEL utf8StringSel       = nullptr;
 
-    // NSImage, NSBitmapImageRep, and image data access selectors
-    static SEL initWithContentsOfFileSel, representationsSel, countSel, objectAtIndexSel, pixelsWideSel, pixelsHighSel, bitsPerPixelSel, bytesPerRowSel, hasAlphaSel, bitmapDataSel = nullptr;
+   // NSImage, NSBitmapImageRep, and image data access selectors
+   static SEL initWithContentsOfFileSel = nullptr;
+   static SEL representationsSel        = nullptr;
+   static SEL countSel                  = nullptr;
+   static SEL objectAtIndexSel          = nullptr;
+   static SEL pixelsWideSel             = nullptr;
+   static SEL pixelsHighSel             = nullptr;
+   static SEL bitsPerPixelSel           = nullptr;
+   static SEL bytesPerRowSel            = nullptr;
+   static SEL hasAlphaSel               = nullptr;
+   static SEL bitmapDataSel             = nullptr;
 
-    // NSLocale selectors
-    static SEL currentLocaleSel, localeIdentifierSel = nullptr;
-    
-    // Initialize all selectors - called once at startup
+   // NSLocale selectors
+   static SEL currentLocaleSel               = nullptr;
+   static SEL localeIdentifierSel            = nullptr;
+   static SEL currentInputContextSel         = nullptr;
+   static SEL localizedNameSel               = nullptr;
+
+   // Initialize all selectors - called once at startup
     void initializeSelectors() {
         if (allocSel) return; // Already initialized
         
@@ -9308,7 +9999,7 @@ namespace olc::host
     {
         // Based on the display capabilities, configure the appearance of the window
         // to do this namespacing, both x11 and glx have to be included in the x11 namespace
-        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
         olc_VisualInfo = glXChooseVisual(olc_Display, 0, olc_GLAttribs);
         olc_ColourMap = XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
         olc_SetWindowAttribs.colormap = olc_ColourMap;
@@ -11587,6 +12278,8 @@ namespace olc::apis::opengl
 		bLoaded &= (_glDeleteRenderbuffers = OGL_LOAD(glDeleteRenderbuffers)) != nullptr;
 		bLoaded &= (_glGetInternalformativ = OGL_LOAD(glGetInternalformativ)) != nullptr;
 		bLoaded &= (_glGetShaderiv = OGL_LOAD(glGetShaderiv)) != nullptr;
+		bLoaded &= (_glGetRenderbufferParameteriv = OGL_LOAD(glGetRenderbufferParameteriv)) != nullptr;
+		bLoaded &= (_glRenderbufferStorage = OGL_LOAD(glRenderbufferStorage)) != nullptr;
 
 		// Do we really need to do this? - jx9
 #if OLC_HOST != OLC_HOST_WINDOWS
@@ -11764,6 +12457,12 @@ namespace olc::apis::opengl
 		::glPolygonMode(face, mode);
 		CheckError();
 #endif
+	}
+
+	void gl::glFrontFace(GLenum mode)
+	{
+		::glFrontFace(mode);
+		CheckError();
 	}
 
 	void gl::glSwapInterval(GLsizei n)
@@ -12014,6 +12713,18 @@ namespace olc::apis::opengl
 	void gl::glGetIntegerv(GLenum pname, GLint *data)
 	{
 		_glGetIntegerv(pname, data);
+		CheckError();
+	}
+
+	void gl::glGetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params)
+	{
+		_glGetRenderbufferParameteriv(target, pname, params);
+		CheckError();
+	}
+
+	void gl::glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
+	{
+		_glRenderbufferStorage(target, internalformat, width, height);
 		CheckError();
 	}
 }
@@ -12272,7 +12983,7 @@ void main()
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		const auto window_handle = reinterpret_cast<X11::Window>(os_win_id[0]);
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
-        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+        GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
 
 		X11::XVisualInfo* olc_VisualInfo = X11::glXChooseVisual(display, 0, olc_GLAttribs);
 		glRenderContext = X11::glXCreateContext(display, olc_VisualInfo, nullptr, GL_TRUE);
@@ -12454,7 +13165,17 @@ void main()
 
 		// Create a Frame Buffer Object for off-screen rendering things
 		gl.glGenFramebuffers(1, (GLuint*)&nDefaultFBO);
-		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO); // GL_FRAMEBUFFER
+		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO);
+
+		// Create a shared depth renderbuffer (will be resized dynamically)
+		gl.glGenRenderbuffers(1, &nDepthRBO);
+		gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, nDepthRBO);
+		// Allocate with a default size (will be resized when needed)
+		gl.glRenderbufferStorage(gl.GL_RENDERBUFFER_X, gl.GL_DEPTH_COMPONENT24_X, 1024, 1024);
+		gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER_X, gl.GL_DEPTH_ATTACHMENT_X, gl.GL_RENDERBUFFER_X, nDepthRBO);
+		vCurrentDepthSize = {1024, 1024};
+		nCurrentDepthSamples = 0;
+
 		// Attach 4 colour buffers
 		std::array<GLenum, 4> attachments = 
 		{ {
@@ -12478,11 +13199,18 @@ void main()
 		gl.glGenFramebuffers(1, &nResolveFBO_Draw);
 		gl.glGenFramebuffers(1, &nResolveFBO_Read);
 
+		// PGE Specific requirements
+
+		// Texturing Enabled
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
 		gl.glEnable(GL_TEXTURE_2D); // Turn on texturing
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #endif
+		// Alpha Blending Enabled
 		gl.glEnable(GL_BLEND);
+
+		// Front Face is Counter-Clockwise
+		gl.glFrontFace(GL_CCW);
 
 		lastError = RendererError::NoError;
 		return true;
@@ -12490,8 +13218,15 @@ void main()
 
 	bool Renderer_OGL33::DestroyDevice()
 	{
-		//auto& gl = olc::apis::opengl::gl::Get();
-
+		auto& gl = olc::apis::opengl::gl::Get();
+		
+		// Delete depth renderbuffer
+		if (nDepthRBO != 0)
+		{
+			gl.glDeleteRenderbuffers(1, &nDepthRBO);
+			nDepthRBO = 0;
+		}
+	
 #if OLC_HOST == OLC_HOST_WINDOWS
 		wglDeleteContext(glRenderContext);
 #endif
@@ -12809,6 +13544,60 @@ void main()
 		// Bind FBO
 		gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nDefaultFBO);
 
+		// Resize depth buffer to match target texture dimensions
+		olc::vi2d targetSize = mapTextureSizes[texid];
+		int32_t targetSamples = 0;
+
+		// Check if this is an MSAA texture
+		bool bIsMSAA = mapTextureToRenderbuffer.contains(texid);
+		if (bIsMSAA)
+		{
+			// Get the MSAA sample count from the color renderbuffer
+			uint32_t rboId = mapTextureToRenderbuffer[texid];
+			gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, rboId);
+			gl.glGetRenderbufferParameteriv(gl.GL_RENDERBUFFER_X, gl.GL_RENDERBUFFER_SAMPLES_X, &targetSamples);
+		}
+
+		// Only resize if dimensions or sample count changed
+		if (targetSize != vCurrentDepthSize || targetSamples != nCurrentDepthSamples)
+		{
+			gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, nDepthRBO);
+			
+			if (bIsMSAA && targetSamples > 0)
+			{
+				// Allocate MSAA depth buffer
+				gl.glRenderbufferStorageMultisample(
+					gl.GL_RENDERBUFFER_X,
+					targetSamples,
+					gl.GL_DEPTH_COMPONENT24_X,
+					targetSize.x,
+					targetSize.y
+				);
+			}
+			else
+			{
+				// Allocate regular depth buffer
+				gl.glRenderbufferStorage(
+					gl.GL_RENDERBUFFER_X,
+					gl.GL_DEPTH_COMPONENT24_X,
+					targetSize.x,
+					targetSize.y
+				);
+			}
+			
+			// Update tracked size and samples
+			vCurrentDepthSize = targetSize;
+			nCurrentDepthSamples = targetSamples;
+			
+			// Re-attach depth buffer to FBO
+			gl.glFramebufferRenderbuffer(
+				gl.GL_FRAMEBUFFER_X, 
+				gl.GL_DEPTH_ATTACHMENT_X, 
+				gl.GL_RENDERBUFFER_X, 
+				nDepthRBO
+			);
+		}
+
 		// Allocate target buffers - pick the single attachment corresponding to 'slot'
 		std::array<GLenum, 8> attachments =
 		{ { 
@@ -13020,42 +13809,36 @@ void main()
 				
 				// Copy data from CPU to GPU
 				gl.glBufferData(gl.GL_ARRAY_BUFFER_X, sizeof(GPUTask::Vertex) * task.vertexBuffer.size(), task.vertexBuffer.data(), gl.GL_STREAM_DRAW_X);
-				
-				
+								
 				// Configure shader with expected values
-
-
-
-				// Shader: Apply MVP Matrix
-				//gl.glUniformMatrix4fv(shaderDefault.GetUniform("mvp"), 1, true, task.mvpMatrix.data());
-
-				// Shader: Apply Global Tint
 				SetUniform("pgeGlobalTint", task.tint);
-
 				SetUniform("pgeTargetSizeInPixels", vTargetSize);
 				SetUniform("pgeInverseTargetSizeInPixels", (1.0f / vTargetSize));
 				SetUniform("pgeTotalTimeElapsed", fTotalTime);
 
+				
+
 				// Apply Culling modes
-				//if (task.cullmode == GPUTask::CullMode::None)
-				//{
-				//	gl.glCullFace(GL_FRONT);
-				//	gl.glDisable(GL_CULL_FACE);
-				//}
-				//else if (task.cullmode == GPUTask::CullMode::ClockWise)
-				//{
-				//	gl.glCullFace(GL_FRONT);
-				//	gl.glEnable(GL_CULL_FACE);
-				//}
-				//else if (task.cullmode == GPUTask::CullMode::CounterClockWise)
-				//{
-				//	gl.glCullFace(GL_BACK);
-				//	gl.glEnable(GL_CULL_FACE);
-				//}
+				if (task.cullmode == GPUTask::CullMode::None)
+				{
+					gl.glDisable(GL_CULL_FACE);
+				}
+				else if (task.cullmode == GPUTask::CullMode::ClockWise)
+				{
+					gl.glCullFace(GL_FRONT);
+					gl.glEnable(GL_CULL_FACE);
+				}
+				else if (task.cullmode == GPUTask::CullMode::CounterClockWise)
+				{
+					gl.glCullFace(GL_BACK);
+					gl.glEnable(GL_CULL_FACE);
+				}
 
 				//// Apply Depth Testing (if required)
-				//if (task.bDepth)
-				//	gl.glEnable(GL_DEPTH_TEST);
+				if (task.bDepth)
+					gl.glEnable(GL_DEPTH_TEST);
+
+				glDepthFunc(GL_LESS);
 
 				gl.glEnable(GL_BLEND);
 				//gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -13064,16 +13847,24 @@ void main()
 				if (task.bWireframe)
 					gl.glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				if (task.structure == olc::Structure::Point)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
-				else if (task.structure == olc::Structure::Line)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
-				else if (task.structure == olc::Structure::LineLoop)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
-				else if (task.structure == olc::Structure::LineList)
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+				if (task.bIs3D)
+				{
+					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 2);
+					gl.glUniformMatrix4fv(pCurrentShader->GetUniform("pgeMVP"), 1, true, task.mvpMatrix.data());
+				}
 				else
-					gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 0);
+				{
+					if (task.structure == olc::Structure::Point)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else if (task.structure == olc::Structure::Line)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else if (task.structure == olc::Structure::LineLoop)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else if (task.structure == olc::Structure::LineList)
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 1);
+					else
+						gl.glUniform1i(pCurrentShader->GetUniform("pgeDrawType"), 0);
+				}
 
 				if (task.structure == olc::Structure::Fan)
 					gl.glDrawArrays(GL_TRIANGLE_FAN, 0, (GLsizei)task.vertexBuffer.size());
@@ -13107,7 +13898,7 @@ void main()
 	bool Renderer_OGL33::ClearViewport(const olc::Pixel col, bool bDepth, bool bStencil)
 	{
 		auto& gl = olc::apis::opengl::gl::Get();
-		gl.glClearColor(float(col.r) / 255.0f, float(col.g) / 255.0f, float(col.b) / 255.0f, float(col.a) / 255.0f);
+		gl.glClearColor(float(col.r) / 255.0f, float(col.g) / 255.0f, float(col.b) / 255.0f, float(col.a) / 255.0f);		
 		gl.glClear(GL_COLOR_BUFFER_BIT | (bDepth ? GL_DEPTH_BUFFER_BIT : 0) | (bStencil ? GL_STENCIL_BUFFER_BIT : 0));		
 		return true;
 	}
@@ -13223,26 +14014,26 @@ void main()
 #define PGE_GPU_IMPLEMENTED 1
 #endif
 
-#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_DRAW2D_IMPLEMENTED)
+#if defined(OLC_PGE3_APPLICATION) && !defined(PGE_DRAW_IMPLEMENTED)
 using namespace olc;
 
 // Some local pools to reduce allocations
-thread_local Draw2D::buffer<olc::vf2d> Draw2D::buffPoints;
-thread_local Draw2D::buffer<olc::Pixel> Draw2D::buffColours;
-thread_local Draw2D::buffer<olc::vf2d> Draw2D::buffUnitCirclePoints;
-thread_local Draw2D::buffer<olc::GPUTask> Draw2D::vecGPUTasks;
+thread_local Draw::buffer<olc::vf2d> Draw::buffPoints;
+thread_local Draw::buffer<olc::Pixel> Draw::buffColours;
+thread_local Draw::buffer<olc::vf2d> Draw::buffUnitCirclePoints;
+thread_local Draw::buffer<olc::GPUTask> Draw::vecGPUTasks;
 
-Draw2D::Draw2D()
+Draw::Draw()
 {
 	vecGPUTasks.reserve(256);
 }
 
-void Draw2D::SetGPU(olc::gpu::Renderer* const renderer)
+void Draw::SetGPU(olc::gpu::Renderer* const renderer)
 {
 	pRenderer = renderer;
 }
 
-void Draw2D::SetTarget(olc::Image& image)
+void Draw::SetTarget(olc::Image& image)
 {
 	// Perform any outstanding tasks for current target
 	ProcessGPUTasks();
@@ -13267,17 +14058,17 @@ void Draw2D::SetTarget(olc::Image& image)
 	pRenderer->SetViewport({ 0,0 }, pTarget->Size());
 }
 
-olc::Image& olc::Draw2D::GetTarget()
+olc::Image& olc::Draw::GetTarget()
 {
 	return *pTarget;
 }
 
-olc::vi2d olc::Draw2D::GetTargetSize()
+olc::vi2d olc::Draw::GetTargetSize()
 {
 	return pTarget->Size();
 }
 
-void olc::Draw2D::ProcessGPUTasks()
+void olc::Draw::ProcessGPUTasks()
 {
 	for (const auto& task : vecGPUTasks.data)
 		pRenderer->DoGPUTask(task);
@@ -13287,7 +14078,7 @@ void olc::Draw2D::ProcessGPUTasks()
 	vecGPUTasks.data.clear();
 }
 
-void Draw2D::PrepareTargetForSW()
+void Draw::PrepareTargetForSW()
 {
 	if (pTarget->BoundToGPU())
 	{
@@ -13301,13 +14092,10 @@ void Draw2D::PrepareTargetForSW()
 		pTarget->BindCPU();
 
 		drawMetrics.nGPUtoCPUTransfers++;
-
-		// Create a scanline buffer the height of this target
-		vScanlines.resize(size_t(pTarget->Size().y), {});
 	}
 }
 
-void Draw2D::PrepareTargetForHW()
+void Draw::PrepareTargetForHW()
 {
 	if (pTarget->BoundToCPU())
 	{
@@ -13321,7 +14109,7 @@ void Draw2D::PrepareTargetForHW()
 	}
 }
 
-void Draw2D::PrepareImageForSW(olc::Image& image)
+void Draw::PrepareImageForSW(olc::Image& image)
 {
 	if (image.BoundToGPU())
 	{
@@ -13338,7 +14126,7 @@ void Draw2D::PrepareImageForSW(olc::Image& image)
 	}
 }
 
-void Draw2D::PrepareImageForHW(olc::Image& image)
+void Draw::PrepareImageForHW(olc::Image& image)
 {
 	if (image.BoundToCPU())
 	{
@@ -13359,7 +14147,7 @@ void Draw2D::PrepareImageForHW(olc::Image& image)
 	}
 }
 
-bool olc::Draw2D::SetShader(const olc::gpu::Shader& shader)
+bool olc::Draw::SetShader(const olc::gpu::Shader& shader)
 {
 	// Finish all drawing with current shader
 	ProcessGPUTasks();
@@ -13370,85 +14158,85 @@ bool olc::Draw2D::SetShader(const olc::gpu::Shader& shader)
 	return pRenderer->ApplyShader(shader);
 }
 
-bool olc::Draw2D::ResetShader()
+bool olc::Draw::ResetShader()
 {
 	ProcessGPUTasks();
 	drawMetrics.nShaderChanges++;
 	return pRenderer->ApplyDefaultShader();
 }
 
-bool olc::Draw2D::SetShaderUniform(const std::string& name, const float value)
+bool olc::Draw::SetShaderUniform(const std::string& name, const float value)
 {
 	return pRenderer->SetUniform(name, value);
 }
 
-bool olc::Draw2D::SetShaderUniform(const std::string& name, const olc::vf2d& value)
+bool olc::Draw::SetShaderUniform(const std::string& name, const olc::vf2d& value)
 {
 	return pRenderer->SetUniform(name, value);	
 }
 
-bool olc::Draw2D::SetShaderUniform(const std::string& name, const olc::Pixel value)
+bool olc::Draw::SetShaderUniform(const std::string& name, const olc::Pixel value)
 {
 	return pRenderer->SetUniform(name, value);
 }
 
-bool olc::Draw2D::SetShaderTexture(const uint32_t nSlot, olc::Image& image)
+bool olc::Draw::SetShaderTexture(const uint32_t nSlot, olc::Image& image)
 {
 	PrepareImageForHW(image);
 	return pRenderer->AssignTextureSource(nSlot, image.GetGPUID());	
 }
 
-void olc::Draw2D::ResetDrawMetrics()
+void olc::Draw::ResetDrawMetrics()
 {
 	drawMetrics = sDrawMetrics();
 }
 
-olc::Draw2D::sDrawMetrics olc::Draw2D::GetDrawMetrics() const
+olc::Draw::sDrawMetrics olc::Draw::GetDrawMetrics() const
 {
 	return drawMetrics;
 }
 
-void olc::Draw2D::WorldReset()
+void olc::Draw::WorldReset()
 {
 	transformAffine = olc::tf2d();
 }
 
-void olc::Draw2D::WorldScale(const olc::vf2d& vScale)
+void olc::Draw::WorldScale(const olc::vf2d& vScale)
 {
 	transformAffine.scale(vScale);
 }
 
-void olc::Draw2D::WorldOffset(const olc::vf2d& vOffset)
+void olc::Draw::WorldOffset(const olc::vf2d& vOffset)
 {
 	transformAffine.translate(vOffset);
 }
 
-void olc::Draw2D::WorldRotate(const float& fTheta, const olc::vf2d& vPoint)
+void olc::Draw::WorldRotate(const float& fTheta, const olc::vf2d& vPoint)
 {
 	transformAffine.rotate(fTheta, vPoint);
 }
 
-void olc::Draw2D::SetWorldTransform(const olc::tf2d& trans)
+void olc::Draw::SetWorldTransform(const olc::tf2d& trans)
 {
 	transformAffine = trans;
 }
 
-olc::tf2d& olc::Draw2D::GetWorldTransform()
+olc::tf2d& olc::Draw::GetWorldTransform()
 {
 	return transformAffine;
 }
 
-olc::vf2d olc::Draw2D::WorldToScreen(const olc::vf2d& v) const
+olc::vf2d olc::Draw::WorldToScreen(const olc::vf2d& v) const
 {
 	return transformAffine.forward(v);
 }
 
-olc::vf2d olc::Draw2D::ScreenToWorld(const olc::vf2d& v) const
+olc::vf2d olc::Draw::ScreenToWorld(const olc::vf2d& v) const
 {
 	return transformAffine.inverse(v);
 }
 
-void Draw2D::Pixel(const olc::vf2d& pos, const olc::Pixel col, const olc::Pixel tint)
+void Draw::Pixel(const olc::vf2d& pos, const olc::Pixel col, const olc::Pixel tint)
 {
 	// Check if in bounds
 	olc::vf2d tpos = transformAffine.forwardRound(pos);
@@ -13461,25 +14249,25 @@ void Draw2D::Pixel(const olc::vf2d& pos, const olc::Pixel col, const olc::Pixel 
 	// otherwise do nothing
 }
 
-olc::Pixel olc::Draw2D::GetPixel(olc::Image& image, const olc::vf2d& pos)
+olc::Pixel olc::Draw::GetPixel(olc::Image& image, const olc::vf2d& pos)
 {
 	PrepareImageForSW(image);
 	return image.Pixel(pos);
 }
 
-olc::Pixel olc::Draw2D::GetPixel(const olc::vf2d& pos)
+olc::Pixel olc::Draw::GetPixel(const olc::vf2d& pos)
 {
 	PrepareImageForSW(GetTarget());
 	return GetTarget().Pixel(pos);
 }
 
-void olc::Draw2D::Clear(const olc::Pixel& col)
+void olc::Draw::Clear(const olc::Pixel& col)
 {
 	PrepareTargetForHW();
 	pRenderer->ClearViewport(col, true, true);
 }
 
-GPUTask olc::Draw2D::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+GPUTask olc::Draw::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
 	GPUTask task;
 	task.structure = olc::Structure::Line;
@@ -13493,7 +14281,7 @@ GPUTask olc::Draw2D::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const s
 	return task;
 }
 
-GPUTask olc::Draw2D::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
 	GPUTask task;
 	task.structure = structure;
@@ -13505,7 +14293,7 @@ GPUTask olc::Draw2D::TaskDrawPolygon(olc::Structure structure, const std::vector
 	return task;
 }
 
-GPUTask olc::Draw2D::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
+GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
 {	
 	GPUTask task;
 	task.structure = structure;
@@ -13517,7 +14305,7 @@ GPUTask olc::Draw2D::TaskDrawPolygon(olc::Structure structure, const std::vector
 	return task;
 }
 
-GPUTask olc::Draw2D::TaskFillPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+GPUTask olc::Draw::TaskFillPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
 	GPUTask task;
 	task.structure = structure;
@@ -13528,7 +14316,7 @@ GPUTask olc::Draw2D::TaskFillPolygon(olc::Structure structure, const std::vector
 	return task;
 }
 
-GPUTask olc::Draw2D::TaskFillPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
+GPUTask olc::Draw::TaskFillPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
 {
 	GPUTask task;
 	task.structure = structure;
@@ -13539,7 +14327,7 @@ GPUTask olc::Draw2D::TaskFillPolygon(olc::Structure structure, const std::vector
 	return task;	
 }
 
-GPUTask olc::Draw2D::TaskTexturedPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const std::vector<olc::vf2d>& vTexCoords, olc::Image* const image, const olc::Pixel tint)
+GPUTask olc::Draw::TaskTexturedPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const std::vector<olc::vf2d>& vTexCoords, olc::Image* const image, const olc::Pixel tint)
 {
 	GPUTask task;
 	task.structure = structure;
@@ -13551,7 +14339,7 @@ GPUTask olc::Draw2D::TaskTexturedPolygon(olc::Structure structure, const std::ve
 	return task;
 }
 
-GPUTask olc::Draw2D::TaskTexturedPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::vf2d>& vZWs, const std::vector<olc::Pixel>& vColours, const std::vector<olc::vf2d>& vTexCoords, olc::Image* const image, const olc::Pixel tint)
+GPUTask olc::Draw::TaskTexturedPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::vf2d>& vZWs, const std::vector<olc::Pixel>& vColours, const std::vector<olc::vf2d>& vTexCoords, olc::Image* const image, const olc::Pixel tint)
 {
 	GPUTask task;
 	task.structure = structure;
@@ -13563,9 +14351,58 @@ GPUTask olc::Draw2D::TaskTexturedPolygon(olc::Structure structure, const std::ve
 	return task;
 }
 
+GPUTask olc::Draw::TaskWireMesh(olc::Structure structure, const std::vector<olc::vf4d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+{
+	GPUTask task;
+	task.structure = structure;
+	task.tint = tint;
+	task.vertexBuffer.resize(vPoints.size());
+	task.bWireframe = true;
+	task.bDepth = bDepth;
+	task.cullmode = cullMode;
+	task.bIs3D = true;
+	task.mvpMatrix = matMVP.m;
+
+	for (size_t i = 0; i < vPoints.size(); i++)
+		task.vertexBuffer[i] = { {vPoints[i].x, vPoints[i].y, vPoints[i].z, vPoints[i].w}, vColours[i], {0, 0}, {0, 0}, {0, 0}, {0, 0} };
+	return task;
+}
+
+GPUTask olc::Draw::TaskFillMesh(olc::Structure structure, const std::vector<olc::vf4d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+{
+	GPUTask task;
+	task.structure = structure;
+	task.tint = tint;
+	task.vertexBuffer.resize(vPoints.size());
+	task.bDepth = bDepth;
+	task.cullmode = cullMode;
+	task.bIs3D = true;
+	task.mvpMatrix = matMVP.m;
+
+	for (size_t i = 0; i < vPoints.size(); i++)
+		task.vertexBuffer[i] = { {vPoints[i].x, vPoints[i].y, vPoints[i].z, vPoints[i].w}, vColours[i], {0, 0}, {0, 0}, {0, 0}, {0, 0} };
+	return task;
+}
+
+GPUTask olc::Draw::TaskTexturedMesh(olc::Structure structure, const std::vector<olc::vf4d>& vPoints, const std::vector<olc::Pixel>& vColours, const std::vector<olc::vf2d>& vTexCoords, olc::Image* const image, const olc::Pixel tint)
+{
+	GPUTask task;
+	task.structure = structure;
+	task.tint = tint;
+	task.vertexBuffer.resize(vPoints.size());
+	task.pImage = image;
+	task.bIs3D = true;
+	task.bDepth = bDepth;
+	task.cullmode = cullMode;
+	task.mvpMatrix = matMVP.m;
+	for (size_t i = 0; i < vPoints.size(); i++)
+		task.vertexBuffer[i] = { {vPoints[i].x, vPoints[i].y, vPoints[i].z, vPoints[i].w}, vColours[i], {vTexCoords[i].x, vTexCoords[i].y}, {0, 0}, {0, 0}, {0, 0} };
+	return task;
+}
 
 
-const GPUTask& Draw2D::Line(const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel col, const olc::Pixel tint)
+
+const GPUTask& Draw::Line(const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel col, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 	
@@ -13577,12 +14414,12 @@ const GPUTask& Draw2D::Line(const olc::vf2d& p1, const olc::vf2d& p2, const olc:
 		)));
 }
 
-const LineBatch& olc::Draw2D::Line(olc::LineBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel col)
+const LineBatch& olc::Draw::Line(olc::LineBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel col)
 {
 	return Line(batch, p1, col, p2, col);
 }
 
-const GPUTask& Draw2D::Line(const olc::vf2d& p1, const olc::Pixel c1, const olc::vf2d& p2, const olc::Pixel c2, const olc::Pixel tint)
+const GPUTask& Draw::Line(const olc::vf2d& p1, const olc::Pixel c1, const olc::vf2d& p2, const olc::Pixel c2, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -13595,7 +14432,7 @@ const GPUTask& Draw2D::Line(const olc::vf2d& p1, const olc::Pixel c1, const olc:
 		)));		
 }
 
-const LineBatch& olc::Draw2D::Line(olc::LineBatch& batch, const olc::vf2d& p1, const olc::Pixel c1, const olc::vf2d& p2, const olc::Pixel c2)
+const LineBatch& olc::Draw::Line(olc::LineBatch& batch, const olc::vf2d& p1, const olc::Pixel c1, const olc::vf2d& p2, const olc::Pixel c2)
 {
 	batch.task.vertexBuffer.resize(batch.task.vertexBuffer.size() + 2);
 	size_t idx = batch.task.vertexBuffer.size() - 2;
@@ -13606,7 +14443,7 @@ const LineBatch& olc::Draw2D::Line(olc::LineBatch& batch, const olc::vf2d& p1, c
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col, const olc::Pixel tint)
 {
 	// Right a big, hearty, F&^% you to OpenGL's Diamond Exit Strategy. It makes line drawing
 	// with OpenGL a smidge unreliable
@@ -13627,12 +14464,12 @@ const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, co
 		)));
 }
 
-const LineBatch& olc::Draw2D::Rect(olc::LineBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
+const LineBatch& olc::Draw::Rect(olc::LineBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
 {
 	return Rect(batch, pos, size, col, col, col, col);
 }
 
-const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR, const olc::Pixel tint)
+const GPUTask& olc::Draw::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -13650,7 +14487,7 @@ const GPUTask& olc::Draw2D::Rect(const olc::vf2d& pos, const olc::vf2d& size, co
 				)));
 }
 
-const LineBatch& olc::Draw2D::Rect(olc::LineBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
+const LineBatch& olc::Draw::Rect(olc::LineBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
 {
 	const olc::vf2d pTL = olc::vf2d(pos.x, pos.y);
 	const olc::vf2d pTR = olc::vf2d(pos.x + size.x, pos.y);
@@ -13667,7 +14504,7 @@ const LineBatch& olc::Draw2D::Rect(olc::LineBatch& batch, const olc::vf2d& pos, 
 }
 
 
-const GPUTask& olc::Draw2D::FilledRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::FilledRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -13684,14 +14521,14 @@ const GPUTask& olc::Draw2D::FilledRect(const olc::vf2d& pos, const olc::vf2d& si
 		)));
 }
 
-const FilledBatch& olc::Draw2D::FilledRect(olc::FilledBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
+const FilledBatch& olc::Draw::FilledRect(olc::FilledBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
 {
 	FilledTriangle(batch, pos, olc::vf2d(pos.x + size.x, pos.y), olc::vf2d(pos.x + size.x, pos.y + size.y), col, col, col);
 	FilledTriangle(batch, pos, olc::vf2d(pos.x + size.x, pos.y + size.y), olc::vf2d(pos.x, pos.y + size.y), col, col, col);
 	return batch;	
 }
 
-const GPUTask& olc::Draw2D::FilledRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR, const olc::Pixel tint)
+const GPUTask& olc::Draw::FilledRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 	return vecGPUTasks.data.emplace_back(std::move(
@@ -13707,14 +14544,14 @@ const GPUTask& olc::Draw2D::FilledRect(const olc::vf2d& pos, const olc::vf2d& si
 		)));
 }
 
-const FilledBatch& olc::Draw2D::FilledRect(olc::FilledBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
+const FilledBatch& olc::Draw::FilledRect(olc::FilledBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
 {
 	FilledTriangle(batch, pos, olc::vf2d(pos.x + size.x, pos.y), olc::vf2d(pos.x + size.x, pos.y + size.y), colTL, colTR, colBR);
 	FilledTriangle(batch, pos, olc::vf2d(pos.x + size.x, pos.y + size.y), olc::vf2d(pos.x, pos.y + size.y), colTL, colBR, colBL);
 	return batch;
 }
 
-void olc::Draw2D::RedefineUnitCircleBuffer(const int32_t nFacets)
+void olc::Draw::RedefineUnitCircleBuffer(const int32_t nFacets)
 {
 	buffUnitCirclePoints.reserve(nFacets + 1);
 	for (int32_t i = 0; i <= nFacets; i++)
@@ -13724,37 +14561,37 @@ void olc::Draw2D::RedefineUnitCircleBuffer(const int32_t nFacets)
 	}
 }
 
-const GPUTask& olc::Draw2D::Circle(const olc::vf2d& pos, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::Circle(const olc::vf2d& pos, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
 {
 	return Ellipse(pos, radius, radius, col, tint, nFacets);
 }
 
-const LineBatch& olc::Draw2D::Circle(olc::LineBatch& batch, const olc::vf2d& pos, const float& radius, const olc::Pixel col, int32_t nFacets)
+const LineBatch& olc::Draw::Circle(olc::LineBatch& batch, const olc::vf2d& pos, const float& radius, const olc::Pixel col, int32_t nFacets)
 {
 	return Ellipse(batch, pos, radius, radius, col, nFacets);
 }
 
-const GPUTask& olc::Draw2D::FilledCircle(const olc::vf2d& pos, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::FilledCircle(const olc::vf2d& pos, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
 {
 	return FilledEllipse(pos, radius, radius, col, tint, nFacets);
 }
 
-const FilledBatch& olc::Draw2D::FilledCircle(olc::FilledBatch& batch, const olc::vf2d& pos, const float& radius, const olc::Pixel col, int32_t nFacets)
+const FilledBatch& olc::Draw::FilledCircle(olc::FilledBatch& batch, const olc::vf2d& pos, const float& radius, const olc::Pixel col, int32_t nFacets)
 {
 	return FilledEllipse(batch, pos, radius, radius, col, nFacets);
 }
 
-const GPUTask& olc::Draw2D::FilledCircle(const olc::vf2d& pos, const float& radius, const olc::Pixel colInner, const olc::Pixel colOuter, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::FilledCircle(const olc::vf2d& pos, const float& radius, const olc::Pixel colInner, const olc::Pixel colOuter, const olc::Pixel tint, int32_t nFacets)
 {
 	return FilledEllipse(pos, radius, radius, colInner, colOuter, tint, nFacets);
 }
 
-const FilledBatch& olc::Draw2D::FilledCircle(olc::FilledBatch& batch, const olc::vf2d& pos, const float& radius, const olc::Pixel colInner, const olc::Pixel colOuter, int32_t nFacets)
+const FilledBatch& olc::Draw::FilledCircle(olc::FilledBatch& batch, const olc::vf2d& pos, const float& radius, const olc::Pixel colInner, const olc::Pixel colOuter, int32_t nFacets)
 {
 	return FilledEllipse(batch, pos, radius, radius, colInner, colOuter, nFacets);
 }
 
-const GPUTask& olc::Draw2D::Ellipse(const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::Ellipse(const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
 {
 	// Fundamental for outline circle/ellipse with colour solid/gradient
 	PrepareTargetForHW();
@@ -13780,7 +14617,7 @@ const GPUTask& olc::Draw2D::Ellipse(const olc::vf2d& pos, const float& rx, const
 		)));
 }
 
-const LineBatch& olc::Draw2D::Ellipse(olc::LineBatch& batch, const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, int32_t nFacets)
+const LineBatch& olc::Draw::Ellipse(olc::LineBatch& batch, const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, int32_t nFacets)
 {
 	// Fundamental for batched outline circle/ellipse with colour solid/gradient
 
@@ -13799,17 +14636,17 @@ const LineBatch& olc::Draw2D::Ellipse(olc::LineBatch& batch, const olc::vf2d& po
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::FilledEllipse(const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::FilledEllipse(const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
 {
 	return FilledEllipse(pos, rx, ry, col, col, tint, nFacets);
 }
 
-const FilledBatch& olc::Draw2D::FilledEllipse(olc::FilledBatch& batch, const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, int32_t nFacets)
+const FilledBatch& olc::Draw::FilledEllipse(olc::FilledBatch& batch, const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel col, int32_t nFacets)
 {
 	return FilledEllipse(batch, pos, rx, ry, col, col, nFacets);
 }
 
-const GPUTask& olc::Draw2D::FilledEllipse(const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel colInner, const olc::Pixel colOuter, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::FilledEllipse(const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel colInner, const olc::Pixel colOuter, const olc::Pixel tint, int32_t nFacets)
 {
 	// Fundamental for filled circle/ellipse with colour solid/gradient
 
@@ -13838,7 +14675,7 @@ const GPUTask& olc::Draw2D::FilledEllipse(const olc::vf2d& pos, const float& rx,
 		)));
 }
 
-const FilledBatch& olc::Draw2D::FilledEllipse(olc::FilledBatch& batch, const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel colInner, const olc::Pixel colOuter, int32_t nFacets)
+const FilledBatch& olc::Draw::FilledEllipse(olc::FilledBatch& batch, const olc::vf2d& pos, const float& rx, const float& ry, const olc::Pixel colInner, const olc::Pixel colOuter, int32_t nFacets)
 {
 	// Fundamental for batch filled circle/ellipse with colour solid/gradient
 
@@ -13859,7 +14696,7 @@ const FilledBatch& olc::Draw2D::FilledEllipse(olc::FilledBatch& batch, const olc
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::RoundedRect(const olc::vf2d& pos, const olc::vf2d& size, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::RoundedRect(const olc::vf2d& pos, const olc::vf2d& size, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
 {
 	PrepareTargetForHW();
 
@@ -13909,7 +14746,7 @@ const GPUTask& olc::Draw2D::RoundedRect(const olc::vf2d& pos, const olc::vf2d& s
 		)));
 }
 
-const LineBatch& olc::Draw2D::RoundedRect(olc::LineBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const float& radius, const olc::Pixel col, int32_t nFacets)
+const LineBatch& olc::Draw::RoundedRect(olc::LineBatch& batch, const olc::vf2d& pos, const olc::vf2d& size, const float& radius, const olc::Pixel col, int32_t nFacets)
 {
 	buffPoints.reserve((nFacets + 1) * 4 + 1);
 	buffPoints.data.clear();
@@ -13955,7 +14792,7 @@ const LineBatch& olc::Draw2D::RoundedRect(olc::LineBatch& batch, const olc::vf2d
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::FilledRoundedRect(const olc::vf2d& pos, const olc::vf2d& size, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
+const GPUTask& olc::Draw::FilledRoundedRect(const olc::vf2d& pos, const olc::vf2d& size, const float& radius, const olc::Pixel col, const olc::Pixel tint, int32_t nFacets)
 {
 	PrepareTargetForHW();
 
@@ -14007,17 +14844,17 @@ const GPUTask& olc::Draw2D::FilledRoundedRect(const olc::vf2d& pos, const olc::v
 
 
 
-const GPUTask& olc::Draw2D::Triangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::Triangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col, const olc::Pixel tint)
 {
 	return Triangle(p1, p2, p3, col, col, col, tint);
 }
 
-const LineBatch& olc::Draw2D::Triangle(olc::LineBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col)
+const LineBatch& olc::Draw::Triangle(olc::LineBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col)
 {
 	return Triangle(batch, p1, p2, p3, col, col, col);
 }
 
-const GPUTask& olc::Draw2D::Triangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::Pixel tint)
+const GPUTask& olc::Draw::Triangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -14030,7 +14867,7 @@ const GPUTask& olc::Draw2D::Triangle(const olc::vf2d& p1, const olc::vf2d& p2, c
 		)));
 }
 
-const LineBatch& olc::Draw2D::Triangle(olc::LineBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
+const LineBatch& olc::Draw::Triangle(olc::LineBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
 {
 	Line(batch, p1, c1, p2, c2);
 	Line(batch, p2, c2, p3, c3);
@@ -14038,17 +14875,17 @@ const LineBatch& olc::Draw2D::Triangle(olc::LineBatch& batch, const olc::vf2d& p
 	return batch;	
 }
 
-const GPUTask& olc::Draw2D::FilledTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::FilledTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col, const olc::Pixel tint)
 {
 	return FilledTriangle(p1, p2, p3, col, col, col, tint);
 }
 
-const FilledBatch& olc::Draw2D::FilledTriangle(olc::FilledBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col)
+const FilledBatch& olc::Draw::FilledTriangle(olc::FilledBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col)
 {
 	return FilledTriangle(batch, p1, p2, p3, col, col, col);
 }
 
-const GPUTask& olc::Draw2D::FilledTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::Pixel tint)
+const GPUTask& olc::Draw::FilledTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -14061,7 +14898,7 @@ const GPUTask& olc::Draw2D::FilledTriangle(const olc::vf2d& p1, const olc::vf2d&
 		)));
 }
 
-const FilledBatch& olc::Draw2D::FilledTriangle(olc::FilledBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
+const FilledBatch& olc::Draw::FilledTriangle(olc::FilledBatch& batch, const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
 {
 	batch.task.vertexBuffer.resize(batch.task.vertexBuffer.size() + 3);
 	size_t idx = batch.task.vertexBuffer.size() - 3;
@@ -14074,7 +14911,7 @@ const FilledBatch& olc::Draw2D::FilledTriangle(olc::FilledBatch& batch, const ol
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::TexturedTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::vf2d& t1, const olc::vf2d& t2, const olc::vf2d& t3, olc::Image& texture, const olc::Pixel tint)
+const GPUTask& olc::Draw::TexturedTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::vf2d& t1, const olc::vf2d& t2, const olc::vf2d& t3, olc::Image& texture, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 	PrepareImageForHW(texture);
@@ -14090,12 +14927,12 @@ const GPUTask& olc::Draw2D::TexturedTriangle(const olc::vf2d& p1, const olc::vf2
 		)));
 }
 
-const GPUTask& olc::Draw2D::Polygon(const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::Polygon(const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col, const olc::Pixel tint)
 {
 	return Polygon(olc::Structure::LineLoop, vecPoints, std::vector<olc::Pixel>(vecPoints.size(), col), tint);
 }
 
-const LineBatch& olc::Draw2D::Polygon(olc::LineBatch& batch, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col)
+const LineBatch& olc::Draw::Polygon(olc::LineBatch& batch, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col)
 {
 	for (size_t i = 0; i < vecPoints.size(); i++)
 	{
@@ -14105,12 +14942,12 @@ const LineBatch& olc::Draw2D::Polygon(olc::LineBatch& batch, const std::vector<o
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::Polygon(const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const olc::Pixel tint)
+const GPUTask& olc::Draw::Polygon(const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const olc::Pixel tint)
 {
 	return Polygon(olc::Structure::LineLoop, vecPoints, vecColours, tint);
 }
 
-const LineBatch& olc::Draw2D::Polygon(olc::LineBatch& batch, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours)
+const LineBatch& olc::Draw::Polygon(olc::LineBatch& batch, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours)
 {
 	for(size_t i = 0; i<vecPoints.size(); i++)
 	{
@@ -14120,12 +14957,12 @@ const LineBatch& olc::Draw2D::Polygon(olc::LineBatch& batch, const std::vector<o
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::Polygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::Polygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col, const olc::Pixel tint)
 {
 	return Polygon(structure, vecPoints, std::vector<olc::Pixel>(vecPoints.size(), col), tint);
 }
 
-const GPUTask& olc::Draw2D::Polygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const olc::Pixel tint)
+const GPUTask& olc::Draw::Polygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -14138,12 +14975,12 @@ const GPUTask& olc::Draw2D::Polygon(const olc::Structure structure, const std::v
 		)));
 }
 
-const GPUTask& olc::Draw2D::FilledPolygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col, const olc::Pixel tint)
+const GPUTask& olc::Draw::FilledPolygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel col, const olc::Pixel tint)
 {
 	return FilledPolygon(structure, vecPoints, std::vector<olc::Pixel>(vecPoints.size(), col), tint);
 }
 
-const GPUTask& olc::Draw2D::FilledPolygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const olc::Pixel tint)
+const GPUTask& olc::Draw::FilledPolygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 
@@ -14156,7 +14993,7 @@ const GPUTask& olc::Draw2D::FilledPolygon(const olc::Structure structure, const 
 		)));
 }
 
-const GPUTask& olc::Draw2D::TexturedPolygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const std::vector<olc::vf2d>& vecTexCoords, olc::Image& texture, const olc::Pixel tint)
+const GPUTask& olc::Draw::TexturedPolygon(const olc::Structure structure, const std::vector<olc::vf2d>& vecPoints, const std::vector<olc::Pixel>& vecColours, const std::vector<olc::vf2d>& vecTexCoords, olc::Image& texture, const olc::Pixel tint)
 {
 	PrepareTargetForHW();
 	PrepareImageForHW(texture);
@@ -14172,7 +15009,7 @@ const GPUTask& olc::Draw2D::TexturedPolygon(const olc::Structure structure, cons
 		)));
 }
 
-const GPUTask& olc::Draw2D::String(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
+const GPUTask& olc::Draw::String(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
 {
 	PrepareTargetForHW();
 
@@ -14195,7 +15032,7 @@ const GPUTask& olc::Draw2D::String(const olc::vf2d& pos, const std::string& text
 		}
 		else
 		{
-			Draw2D::Image(task, font.glyphs[c].imgGlyph, pos + spos + olc::vf2d{ glyph.spacing * scale.x, 0.0f }, scale, col);
+			Draw::Image(task, font.glyphs[c].imgGlyph, pos + spos + olc::vf2d{ glyph.spacing * scale.x, 0.0f }, scale, col);
 			spos.x += glyph.vMonoSize.x * scale.x;
 		}
 	}
@@ -14203,7 +15040,7 @@ const GPUTask& olc::Draw2D::String(const olc::vf2d& pos, const std::string& text
 	return Batch(task);
 }
 
-const GPUTask& olc::Draw2D::StringProp(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
+const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
 {
 	PrepareTargetForHW();
 
@@ -14225,7 +15062,7 @@ const GPUTask& olc::Draw2D::StringProp(const olc::vf2d& pos, const std::string& 
 		}
 		else
 		{
-			Draw2D::Image(task, font.glyphs[c].imgGlyph, pos + spos, scale, col);
+			Draw::Image(task, font.glyphs[c].imgGlyph, pos + spos, scale, col);
 			spos.x += glyph.vPropSize.x * scale.x;
 		}
 	}
@@ -14233,7 +15070,7 @@ const GPUTask& olc::Draw2D::StringProp(const olc::vf2d& pos, const std::string& 
 	return Batch(task);
 }
 
-olc::vf2d olc::Draw2D::GetTextSize(const std::string& text, const bool bProportional, const olc::vf2d& scale, olc::Font& font)
+olc::vf2d olc::Draw::GetTextSize(const std::string& text, const bool bProportional, const olc::vf2d& scale, olc::Font& font)
 {	
 	olc::vf2d size = { 0, font.fLineHeight * scale.y };
 	olc::vf2d pos = { 0, font.fLineHeight * scale.y };
@@ -14266,7 +15103,49 @@ olc::vf2d olc::Draw2D::GetTextSize(const std::string& text, const bool bProporti
 	return size;	
 }
 
-ImageBatch olc::Draw2D::CreateImageBatch(olc::Image &image)
+GPUTask& olc::Draw::Line(const olc::vf4d& vStart, const olc::vf4d& vEnd, const olc::Pixel& col, const olc::Pixel tint)
+{
+	PrepareTargetForHW();
+
+	return vecGPUTasks.data.emplace_back(std::move(
+		TaskWireMesh(
+			olc::Structure::Line,
+			{ vStart, vEnd },
+			{ col, col },
+			tint
+		)));
+}
+
+GPUTask& olc::Draw::Mesh(const olc::Structure structure, const std::vector<olc::vf4d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+{
+	PrepareTargetForHW();
+
+	return vecGPUTasks.data.emplace_back(std::move(
+		TaskWireMesh(
+			structure,
+			vPoints,
+			vColours,
+			tint
+		)));
+}
+
+GPUTask& olc::Draw::Mesh(const olc::Structure structure, const std::vector<olc::vf4d>& vPoints, const std::vector<olc::Pixel>& vColours, const std::vector<olc::vf2d>& vUVs, olc::Image& texture, const olc::Pixel tint)
+{
+	PrepareImageForHW(texture);
+	PrepareTargetForHW();
+
+	return vecGPUTasks.data.emplace_back(std::move(
+		TaskTexturedMesh(
+			structure,
+			vPoints,
+			vColours,
+			vUVs,
+			&texture,
+			tint
+		)));
+}
+
+ImageBatch olc::Draw::CreateImageBatch(olc::Image &image)
 {
 	PrepareImageForHW(image);
 	PrepareTargetForHW();
@@ -14277,39 +15156,39 @@ ImageBatch olc::Draw2D::CreateImageBatch(olc::Image &image)
 	return b;
 }
 
-const GPUTask& olc::Draw2D::Batch(olc::ImageBatch& batch, const olc::Pixel tint)
+const GPUTask& olc::Draw::Batch(olc::ImageBatch& batch, const olc::Pixel tint)
 {
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
 
-FilledBatch olc::Draw2D::CreateFilledBatch()
+FilledBatch olc::Draw::CreateFilledBatch()
 {
 	FilledBatch b;
 	b.task.structure = olc::Structure::List;
 	return b;
 }
 
-const GPUTask& olc::Draw2D::Batch(olc::FilledBatch& batch, const olc::Pixel tint)
+const GPUTask& olc::Draw::Batch(olc::FilledBatch& batch, const olc::Pixel tint)
 {
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
 
-LineBatch olc::Draw2D::CreateLineBatch()
+LineBatch olc::Draw::CreateLineBatch()
 {
 	LineBatch b;
 	b.task.structure = olc::Structure::LineList;	
 	return b;
 }
 
-const GPUTask& olc::Draw2D::Batch(olc::LineBatch& batch, const olc::Pixel tint)
+const GPUTask& olc::Draw::Batch(olc::LineBatch& batch, const olc::Pixel tint)
 {
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
 
-const ImageBatch& olc::Draw2D::Image(ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& scale, const olc::Pixel tint)
+const ImageBatch& olc::Draw::Image(ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& scale, const olc::Pixel tint)
 {
 	// Add quad to existing task
 	olc::vf2d size = image.regionsize * scale;
@@ -14329,7 +15208,7 @@ const ImageBatch& olc::Draw2D::Image(ImageBatch& batch, olc::ImageRegion image, 
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::Image(olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& scale, const olc::Pixel tint)
+const GPUTask& olc::Draw::Image(olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& scale, const olc::Pixel tint)
 {
 	// Ensure source image is up to date in VRAM
 	PrepareImageForHW(image.image);
@@ -14360,7 +15239,7 @@ const GPUTask& olc::Draw2D::Image(olc::ImageRegion image, const olc::vf2d& pos, 
 
 }
 
-const GPUTask& olc::Draw2D::ImageRotated(olc::ImageRegion image, const olc::vf2d& pos, const float theta, const olc::vf2d& center, const olc::vf2d& scale, const olc::Pixel tint)
+const GPUTask& olc::Draw::ImageRotated(olc::ImageRegion image, const olc::vf2d& pos, const float theta, const olc::vf2d& center, const olc::vf2d& scale, const olc::Pixel tint)
 {
 	// Ensure source image is up to date in VRAM
 	PrepareImageForHW(image.image);
@@ -14388,7 +15267,7 @@ const GPUTask& olc::Draw2D::ImageRotated(olc::ImageRegion image, const olc::vf2d
 		)));
 }
 
-const ImageBatch& olc::Draw2D::ImageRotated(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const float theta, const olc::vf2d& center, const olc::vf2d& scale, const olc::Pixel tint)
+const ImageBatch& olc::Draw::ImageRotated(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const float theta, const olc::vf2d& center, const olc::vf2d& scale, const olc::Pixel tint)
 {
 	// Add quad to existing task
 	olc::vf2d size = image.regionsize * scale;
@@ -14418,7 +15297,7 @@ const ImageBatch& olc::Draw2D::ImageRotated(olc::ImageBatch& batch, olc::ImageRe
 	return batch;
 }
 
-const GPUTask& olc::Draw2D::ImageQuad(olc::ImageRegion image, const olc::vf2d& vTL, const olc::vf2d& vTR, const olc::vf2d& vBR, const olc::vf2d& vBL, const olc::Pixel tint)
+const GPUTask& olc::Draw::ImageQuad(olc::ImageRegion image, const olc::vf2d& vTL, const olc::vf2d& vTR, const olc::vf2d& vBR, const olc::vf2d& vBL, const olc::Pixel tint)
 {
 	// Ensure source image is up to date in VRAM
 	PrepareImageForHW(image.image);
@@ -14473,7 +15352,7 @@ const GPUTask& olc::Draw2D::ImageQuad(olc::ImageRegion image, const olc::vf2d& v
 		)));
 }
 
-const ImageBatch& olc::Draw2D::ImageQuad(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& vTL, const olc::vf2d& vTR, const olc::vf2d& vBR, const olc::vf2d& vBL, const olc::Pixel tint)
+const ImageBatch& olc::Draw::ImageQuad(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& vTL, const olc::vf2d& vTR, const olc::vf2d& vBR, const olc::vf2d& vBL, const olc::Pixel tint)
 {
 	float rd = ((vBR.x - vTL.x) * (vTR.y - vBL.y) - (vTR.x - vBL.x) * (vBR.y - vTL.y));
 	if (rd != 0)
@@ -14516,21 +15395,21 @@ const ImageBatch& olc::Draw2D::ImageQuad(olc::ImageBatch& batch, olc::ImageRegio
 	}
 
 	// Default is just return a textured quad
-	return Draw2D::Image(batch, image, vTL, vBR - vTL, tint);
+	return Draw::Image(batch, image, vTL, vBR - vTL, tint);
 }
 
-const GPUTask& olc::Draw2D::ImageQuad(olc::ImageRegion image, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel tint)
+const GPUTask& olc::Draw::ImageQuad(olc::ImageRegion image, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel tint)
 {
 	return ImageQuad(image, vecPoints[0], vecPoints[1], vecPoints[2], vecPoints[3], tint);
 }
 
-const ImageBatch& olc::Draw2D::ImageQuad(olc::ImageBatch& batch, olc::ImageRegion image, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel tint)
+const ImageBatch& olc::Draw::ImageQuad(olc::ImageBatch& batch, olc::ImageRegion image, const std::vector<olc::vf2d>& vecPoints, const olc::Pixel tint)
 {
 	return ImageQuad(batch, image, vecPoints[0], vecPoints[1], vecPoints[2], vecPoints[3], tint);
 }
 
 
-const GPUTask& olc::Draw2D::ImageRect(olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel tint)
+const GPUTask& olc::Draw::ImageRect(olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel tint)
 {
 	// Ensure source image is up to date in VRAM
 	PrepareImageForHW(image.image);
@@ -14548,549 +15427,91 @@ const GPUTask& olc::Draw2D::ImageRect(olc::ImageRegion image, const olc::vf2d& p
 		)));
 }
 
-const ImageBatch& olc::Draw2D::ImageRect(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel tint)
+const ImageBatch& olc::Draw::ImageRect(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel tint)
 {
 	olc_IgnoreUnused(image, pos, size, tint);
 	// TODO: Implement this function
 	return batch;
 }
 
-
-// This is all essentially the olc::PixelGameEngine 2 rasteriser code
-using namespace olc;
-
-
-void Draw2D::swLine(const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel col)
+void olc::Draw::SetCullMode(const olc::GPUTask::CullMode mode)
 {
-	swLine(p1, p2, col, col);
+	cullMode = mode;
 }
 
-void Draw2D::swLine(const olc::vf2d& p1, const olc::vf2d& p2, const olc::Pixel c1, const olc::Pixel c2)
+void olc::Draw::EnableDepth(const bool bEnable)
 {
-	const auto vTransformedPoints = transformAffine.forward<float>({ p1, p2 });
-	swRasterShadedLine(
-		vTransformedPoints[0],
-		vTransformedPoints[1],
-		c1, c2);	
+	bDepth = bEnable;
 }
 
-void olc::Draw2D::swRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
+void olc::Draw::SetViewport(const olc::vi2d& pos, const olc::vi2d& size)
 {
-	swRect(pos, size, col, col, col, col);
+	pRenderer->SetViewport(pos, size);
 }
 
-void olc::Draw2D::swRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
+void olc::Draw::MatrixReset()
 {
-	swLine(pos, { pos.x + size.x, pos.y }, colTL, colTR);
-	swLine({ pos.x + size.x, pos.y }, { pos.x + size.x, pos.y + size.y }, colTR, colBR);
-	swLine({ pos.x + size.x, pos.y + size.y }, { pos.x, pos.y + size.y }, colBR, colBL);
-	swLine({ pos.x, pos.y + size.y }, pos, colBL, colTL);
+	matMVP.identity();
+	matModel.identity();
+	matView.identity();
+	matProjection.identity();
 }
 
-void olc::Draw2D::swFilledRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
+void olc::Draw::SetModelMatrix(const olc::mf4d& mat)
 {
-	swFilledRect(pos, size, col, col, col, col);
+	matModel = mat;
+	matMVP = matVP * matModel;
 }
 
-void olc::Draw2D::swFilledRect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colTR, const olc::Pixel colBL, const olc::Pixel colBR)
+const olc::mf4d& olc::Draw::GetModelMatrix() const
 {
-	const auto vTransformedPoints = transformAffine.forward<float>({pos, {pos.x + size.x, pos.y}, pos + size, {pos.x, pos.y + size.y}});
-	
-	// Most draws will be single colour, axis aligned rectangle. 
-	// Optimise for that case first
-
-	// Check if all one colour
-	if (colTL == colBL && colTL == colTR && colTL == colBR)
-	{
-		// Check if axis aligned
-		if(vTransformedPoints[0].y == vTransformedPoints[1].y &&
-		   vTransformedPoints[1].x == vTransformedPoints[2].x &&
-		   vTransformedPoints[2].y == vTransformedPoints[3].y &&
-		   vTransformedPoints[3].x == vTransformedPoints[0].x)
-		{
-			PrepareTargetForSW();
-
-			// Clip to target
-			olc::vi2d p1 = vTransformedPoints[0].max({ 0,0 });
-			olc::vi2d p2 = vTransformedPoints[2].min(pTarget->Size());
-			
-			// Draw filled rectangle
-			for (int32_t y = p1.y; y < p2.y; y++)
-				for (int32_t x = p1.x; x < p2.x; x++)
-					pTarget->Pixel({ x, y }) = colTL;
-
-			// Exit early
-			return;
-		}		
-	}
-
-	// Fallback to general case rasteriser, where we split into two triangles
-	swRasterShadedTriangle(
-		vTransformedPoints[0],
-		vTransformedPoints[1],
-		vTransformedPoints[2],
-		colTL, colTR, colBR);
-	swRasterShadedTriangle(
-		vTransformedPoints[0],
-		vTransformedPoints[2],
-		vTransformedPoints[3],
-		colTL, colBR, colBL);			
+	return matModel;
 }
 
-void olc::Draw2D::swTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col)
+void olc::Draw::SetViewMatrix(const olc::mf4d& mat)
 {
-	swTriangle(p1, p2, p3, col, col, col);
+	matView = mat;
+	matVP = matProjection * matView;
+	matMVP = matVP * matModel;
 }
 
-void olc::Draw2D::swTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
+const olc::mf4d& olc::Draw::GetViewMatrix() const
 {
-	swLine(p1, p2, c1, c2);
-	swLine(p2, p3, c2, c3);
-	swLine(p3, p1, c3, c1);
+	return matView;
 }
 
-void olc::Draw2D::swFilledTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel col)
+void olc::Draw::SetProjectionMatrix(const olc::mf4d& mat)
 {
-	swFilledTriangle(p1, p2, p3, col, col, col);
+	matProjection = mat;
+	matVP = matProjection * matView;
+	matMVP = matVP * matModel;
 }
 
-void olc::Draw2D::swFilledTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
+const olc::mf4d& olc::Draw::GetProjectionMatrix() const
 {
-	const auto vTransformedPoints = transformAffine.forward<float>({ p1, p2, p3 });
-	swRasterShadedTriangle(
-		vTransformedPoints[0],
-		vTransformedPoints[1],
-		vTransformedPoints[2],
-		c1, c2, c3);
+	return matProjection;
 }
 
-void olc::Draw2D::swTexturedTriangle(const olc::vf2d& p1, const olc::vf2d& p2, const olc::vf2d& p3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::vf2d& t1, const olc::vf2d& t2, const olc::vf2d& t3, olc::Image& texture)
+void olc::Draw::SetMVPMatrix(const olc::mf4d& mat)
 {
-	const auto vTransformedPoints = transformAffine.forward<float>({ p1, p2, p3 });
-	swRasterTexturedTriangle(
-		vTransformedPoints[0],
-		vTransformedPoints[1],
-		vTransformedPoints[2],
-		c1, c2, c3, 
-		t1, t2, t3, 
-		texture);
+	matMVP = mat;
 }
 
-bool olc::Draw2D::swClipLine(olc::vf2d& p1, olc::vf2d& p2, const olc::vf2d& vMin, const olc::vf2d& vMax)
+const olc::mf4d& olc::Draw::GetMVPMatrix() const
 {
-	// https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
-	static constexpr int SEG_I = 0b0000, SEG_L = 0b0001, SEG_R = 0b0010, SEG_B = 0b0100, SEG_T = 0b1000;
-	auto Segment = [&vMin = vMin, &vMax = vMax](const olc::vf2d& v)
-		{
-			int i = SEG_I;
-			if (v.x < vMin.x) i |= SEG_L; else if (v.x > vMax.x) i |= SEG_R;
-			if (v.y < vMin.y) i |= SEG_B; else if (v.y > vMax.y) i |= SEG_T;
-			return i;
-		};
-
-	int s1 = Segment(p1), s2 = Segment(p2);
-
-	while (true)
-	{
-		if (!(s1 | s2))	  return true;
-		else if (s1 & s2) return false;
-		else
-		{
-			int s3 = s2 > s1 ? s2 : s1;
-			olc::vf2d n;
-			if (s3 & SEG_T) { n.x = p1.x + (p2.x - p1.x) * (vMax.y - p1.y) / (p2.y - p1.y); n.y = vMax.y; }
-			else if (s3 & SEG_B) { n.x = p1.x + (p2.x - p1.x) * (vMin.y - p1.y) / (p2.y - p1.y); n.y = vMin.y; }
-			else if (s3 & SEG_R) { n.x = vMax.x; n.y = p1.y + (p2.y - p1.y) * (vMax.x - p1.x) / (p2.x - p1.x); }
-			else if (s3 & SEG_L) { n.x = vMin.x; n.y = p1.y + (p2.y - p1.y) * (vMin.x - p1.x) / (p2.x - p1.x); }
-			if (s3 == s1) { p1 = n; s1 = Segment(p1); }
-			else { p2 = n; s2 = Segment(p2); }
-		}
-	}
-	return true;
+	return matMVP;
 }
 
-bool olc::Draw2D::swClipWeightedLine(olc::vf2d& v0, olc::vf2d& v1, const olc::vf2d& vMin, const olc::vf2d& vMax, float& w0, float& w1)
-{
-	// Liang-Barsky line clipping algorithm adapted for weighted lines
-	// https://en.wikipedia.org/wiki/Liang%E2%80%93Barsky_algorithm
-	
-	olc::vf2d diff = v1 - v0;
-
-	float p[4] = { -diff.x, diff.x, -diff.y, diff.y };
-
-	float q[4] = 
-	{
-		v0.x - vMin.x,
-		vMax.x - v0.x, 
-		v0.y - vMin.y, 
-		vMax.y - v0.y 
-	};
-	
-	// Weights are ideal to start, we'll contact them as we clip
-	w0 = 0.0f;	
-	w1 = 1.0f;
-
-	for (int i = 0; i < 4; i++)
-	{
-		if (p[i] == 0.0f)
-		{
-			if (q[i] < 0.0f)
-				return false; // Line is parallel and outside the clipping boundary
-		}
-		else
-		{
-			float t = float(q[i]) / float(p[i]);
-			if (p[i] < 0.0f)
-			{
-				if (t > w1)
-					return false; // Line is outside the clipping boundary
-				else if (t > w0)
-					w0 = t;
-			}
-			else
-			{
-				if (t < w0)
-					return false; // Line is outside the clipping boundary
-				else if (t < w1)
-					w1 = t; 
-			}
-		}
-	}
-
-	if (w1 < w0)
-		return false; // Line is outside the clipping boundary
-
-	// Return new line segment ends
-	olc::vf2d v = v0;
-	v0 = v + (diff * w0);
-	v1 = v + (diff * w1);
-
-	// Line has visible pixels inside clipping boundary
-	return true;
-}
-
-std::pair<int, int> olc::Draw2D::swBaryFillTriangle(const olc::vi2d& v1, const olc::vi2d& v2, const olc::vi2d& v3)
-{
-	// Get height of triangle in whole pixels
-	int32_t nMinY = std::min({ v1.y, v2.y, v3.y });
-	int32_t nMaxY = std::max({ v1.y, v2.y, v3.y });
-	int32_t nHeight = nMaxY - nMinY;
-
-	if (nHeight <= 0)
-		return { 0, 0 }; // Degenerate triangle
-
-	// Scanline buffer is already allocated to be the max vertical size
-	// of the draw target. Obviously it only represents visible scanlines
-	// that are to be filled for the current triangle.
-
-	// Get visible height of triangle
-	int32_t y_min = std::max(0, nMinY);
-	int32_t y_max = std::min(nMaxY, pTarget->Size().y);
-
-	// Zero out scanline buffer (by resetting min and max values)
-	for (int32_t y = y_min; y < y_max; y++)
-	{
-		vScanlines[y].nMin = std::numeric_limits<int32_t>::max();
-		vScanlines[y].nMax = std::numeric_limits<int32_t>::min();
-	}
-
-	// This function scans an edge of the triangle, updating
-	// the scanline buffer with min/max extents and barycentric coords.
-	// It returns the number of scanlines updated.
-	auto scanEdge = [&](olc::vi2d p0, olc::vi2d p1, int id1, int id2) -> size_t
-		{
-			if (p0.y == p1.y)
-				return 0;
-
-			// Ensure p0.y < p1.y
-			bool swapped = false;
-			if (p0.y > p1.y)
-			{
-				std::swap(p0, p1);
-				swapped = true;
-			}
-
-			// Cache edge step deltas
-			int dy = p1.y - p0.y;
-			float dx_step = (p1.x - p0.x) / float(dy);
-			float dy_step = 1.0f / float(dy);
-			float x = float(p0.x);
-
-			// Rasterise edge - if pixel lies on visible scanline then
-			// update the scanline bounds and barycentric coords
-			size_t nScanline = 0;
-			for (int y = p0.y; y <= p1.y; y++)
-			{
-				// If this pixel row is visible
-				if (y >= 0 && y < vScanlines.size())
-				{
-					int ix = int(std::round(x));
-
-					// interpolation along edge 
-					// Note: We may need to do this differently when clipping
-					float t = (y - p0.y) * dy_step;
-
-					std::array<float, 3> bary = { 0.0f, 0.0f, 0.0f };
-
-					// Set barycentric coords depending on edge direction
-					if (swapped)
-					{
-						bary[id1] = t;
-						bary[id2] = 1.0f - t;
-					}
-					else
-					{
-						bary[id1] = 1.0f - t;
-						bary[id2] = t;
-					}
-
-					// Update scanline extents and barycentric coords
-					if (ix < vScanlines[y].nMin)
-					{
-						vScanlines[y].nMin = ix;
-						vScanlines[y].fBaryMin = bary;
-					}
-
-					if (ix > vScanlines[y].nMax)
-					{
-						vScanlines[y].nMax = ix;
-						vScanlines[y].fBaryMax = bary;
-					}
-
-					nScanline++;
-				}
-
-				x += dx_step;
-			}
-
-			return nScanline;
-		};
-
-	// Rasterise triangle edges into scanline buffer
-	scanEdge(v1, v2, 0, 1);
-	scanEdge(v1, v3, 0, 2);
-	scanEdge(v2, v3, 1, 2);
-
-	return { y_min, y_max };
-}
-
-void olc::Draw2D::swRasterShadedTriangle(const olc::vi2d& v1, const olc::vi2d& v2, const olc::vi2d& v3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3)
-{
-	// We are writing to the target image, so make sure its memory resident (and up to date)
-	PrepareTargetForSW();
-
-	auto [y_min, y_max] = swBaryFillTriangle(v1, v2, v3);
-
-	// Now draw the scanlines
-	for (int32_t y = y_min; y < y_max; y++)
-	{
-		const auto& scanline = vScanlines[y];
-
-		int32_t xStart = scanline.nMin;
-		int32_t xEnd = scanline.nMax;
-
-		int32_t x_min = std::max(0, xStart);
-		int32_t x_max = std::min(xEnd, pTarget->Size().x);
-
-		float fSpan = float(xEnd - xStart);
-		float fSpanStep = fSpan > 0.0f ? 1.0f / fSpan : 0.0f;
-
-		float b0_step = fSpanStep * (scanline.fBaryMax[0] - scanline.fBaryMin[0]);
-		float b1_step = fSpanStep * (scanline.fBaryMax[1] - scanline.fBaryMin[1]);
-		float b2_step = fSpanStep * (scanline.fBaryMax[2] - scanline.fBaryMin[2]);
-
-		float b0 = scanline.fBaryMin[0];
-		float b1 = scanline.fBaryMin[1];
-		float b2 = scanline.fBaryMin[2];
-
-		if (xStart < 0)
-		{
-			b0 = scanline.fBaryMin[0] + (-xStart * b0_step);
-			b1 = scanline.fBaryMin[1] + (-xStart * b1_step);
-			b2 = scanline.fBaryMin[2] + (-xStart * b2_step);
-		}
-
-		for (int32_t x = x_min; x < x_max; x++)
-		{
-			olc::Pixel col = olc::Pixel(
-				uint8_t(c1.r * b0 + c2.r * b1 + c3.r * b2),
-				uint8_t(c1.g * b0 + c2.g * b1 + c3.g * b2),
-				uint8_t(c1.b * b0 + c2.b * b1 + c3.b * b2),
-				uint8_t(c1.a * b0 + c2.a * b1 + c3.a * b2));
-
-			// In theory, target (x,y) is always valid here due to clipping above
-			pTarget->Pixel({ x, y }) = col;
-
-			b0 += b0_step;
-			b1 += b1_step;
-			b2 += b2_step;
-		}
-	}
-
-
-	return;
-}
-
-void olc::Draw2D::swRasterTexturedTriangle(const olc::vi2d& v1, const olc::vi2d& v2, const olc::vi2d& v3, const olc::Pixel c1, const olc::Pixel c2, const olc::Pixel c3, const olc::vf2d& t1, const olc::vf2d& t2, const olc::vf2d& t3, olc::Image& texture)
-{
-	// We are writing to the target image, so make sure its memory resident (and up to date)
-	PrepareTargetForSW();
-	PrepareImageForSW(texture);
-
-	auto [y_min, y_max] = swBaryFillTriangle(v1, v2, v3);
-
-	// Now draw the scanlines
-	for (int32_t y = y_min; y < y_max; y++)
-	{
-		const auto& scanline = vScanlines[y];
-
-		int32_t xStart = scanline.nMin;
-		int32_t xEnd = scanline.nMax;
-
-		int32_t x_min = std::max(0, xStart);
-		int32_t x_max = std::min(xEnd, pTarget->Size().x);
-
-		float fSpan = float(xEnd - xStart);
-		float fSpanStep = fSpan > 0.0f ? 1.0f / fSpan : 0.0f;
-		
-		float b0_step = fSpanStep * (scanline.fBaryMax[0] - scanline.fBaryMin[0]);
-		float b1_step = fSpanStep * (scanline.fBaryMax[1] - scanline.fBaryMin[1]);
-		float b2_step = fSpanStep * (scanline.fBaryMax[2] - scanline.fBaryMin[2]);
-
-		float b0 = scanline.fBaryMin[0];
-		float b1 = scanline.fBaryMin[1];
-		float b2 = scanline.fBaryMin[2];
-
-		if(xStart < 0)
-		{
-			b0 = scanline.fBaryMin[0] + (-xStart * b0_step);
-			b1 = scanline.fBaryMin[1] + (-xStart * b1_step);
-			b2 = scanline.fBaryMin[2] + (-xStart * b2_step);
-		}
-
-		for (int32_t x = x_min; x < x_max; x++)
-		{
-			olc::Pixel col = olc::Pixel(
-				uint8_t(c1.r * b0 + c2.r * b1 + c3.r * b2),
-				uint8_t(c1.g * b0 + c2.g * b1 + c3.g * b2),
-				uint8_t(c1.b * b0 + c2.b * b1 + c3.b * b2),
-				uint8_t(c1.a * b0 + c2.a * b1 + c3.a * b2));
-
-			olc::vf2d uv = olc::vf2d(
-				b0 * t1.x + b1 * t2.x + b2 * t3.x,
-				b0 * t1.y + b1 * t2.y + b2 * t3.y);
-
-			
-			// In theory, target (x,y) is always valid here due to clipping above
-			pTarget->Pixel({ x, y }) = col.blend(texture.Sample(uv));
-	
-			b0 += b0_step;
-			b1 += b1_step;
-			b2 += b2_step;
-		}
-	}
-
-	return;
-}
-
-
-
-void olc::Draw2D::swRasterShadedLine(const olc::vi2d& v1, const olc::vi2d& v2, const olc::Pixel c1, const olc::Pixel c2)
-{
-	PrepareTargetForSW();
-
-	// Lambda to draw a pixel gated by a pattern bit
-	uint32_t pattern = 0xFFFFFFFF;
-	auto rol = [&](void)
-		{
-			pattern = (pattern << 1) | (pattern >> 31);
-			return pattern & 1;
-		};
-
-	// Lambda to draw a pixel at integer location
-	auto Plot = [&](int32_t x, int32_t y, const olc::Pixel& p)
-		{
-			if (x >= 0 && x < pTarget->Size().x && y >= 0 && y < pTarget->Size().y)
-				pTarget->Pixel({ x, y }) = p;
-		};
-
-	// Clip line to draw target
-	olc::vf2d clipped_p1 = v1;
-	olc::vf2d clipped_p2 = v2;
-
-	// If line is completely outside bounds, exit
-	//if (!swClipLine(clipped_p1, clipped_p2, { 0,0 }, pTarget->Size()))
-		//return;
-
-	float w0=0, w1=1;
-	if (!swClipWeightedLine(clipped_p1, clipped_p2, { 0,0 }, pTarget->Size(), w0, w1))
-		return;
-
-	// Move to integer space
-	olc::vi2d ip1 =  clipped_p1;
-	olc::vi2d ip2 =  clipped_p2;
-	olc::vi2d pixel;
-
-	// Calculate deltas
-	int dx = ip2.x - ip1.x;
-	int dy = ip2.y - ip1.y;
-	int absDx = std::abs(dx);
-	int absDy = std::abs(dy);
-
-	// Determine dominant axis
-	bool xMajor = absDx >= absDy;
-	int steps = xMajor ? absDx : absDy;
-
-	// Handle degenerate case (single pixel)
-	if (steps == 0)
-	{
-		Plot(ip1.x, ip1.y, c1);
-		return;
-	}
-
-	// Calculate step increments
-	float xStep = float(dx) / float(steps);
-	float yStep = float(dy) / float(steps);
-	float colorStep = 1.0f / float(steps) * (w1 - w0);
-
-	olc::Pixel cStart = olc::PixelLerp(c1, c2, w0);
-	olc::Pixel cEnd = olc::PixelLerp(c1, c2, w1);	
-
-	// Starting position and color interpolation parameter
-	float x =  float(ip1.x);
-	float y =  float(ip1.y);
-	float t = 0.0f;
-
-	// Draw line pixel by pixel
-	for (int i = 0; i <= steps; i++)
-	{
-		// Interpolate color
-		//olc::Pixel col = olc::PixelLerp(c1, c2, t);
-		olc::Pixel col = olc::PixelLerp(cStart, cEnd, t);
-
-		// Plot pixel
-		if(rol())
-			Plot((int)std::round(x), (int)std::round(y), col);
-
-		// Step to next pixel
-		x += xStep;
-		y += yStep;
-		t += colorStep;
-	}
-
-
-
-	return;
-}
-
-
-
-#define PGE_DRAW2D_IMPLEMENTED 1
+#define PGE_DRAW_IMPLEMENTED 1
 #endif
 
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_CORE_IMPLEMENTED)
 namespace olc
 {
+	PGEWindow::PGEWindow() : Window(), draw()
+	{
+	}
+
 	bool PGEWindow::Create(const olc::vi2d& vScreenSize, const olc::vi2d& vPixelSize)
 	{
 		//pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
@@ -15289,7 +15710,7 @@ namespace olc
 		return imgPrimary;
 	}
 
-	olc::Draw2D& PGEWindow::GetDraw()
+	olc::Draw& PGEWindow::GetDraw()
 	{
 		return draw;
 	}

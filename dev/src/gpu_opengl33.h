@@ -100,6 +100,10 @@ namespace olc
 
 			const Shader* pCurrentShader = nullptr;
 
+			uint32_t nDepthRBO = 0;              // Shared depth renderbuffer
+			olc::vi2d vCurrentDepthSize = {0, 0}; // Track current depth buffer size
+			int32_t nCurrentDepthSamples = 0;     // Track current MSAA sample count
+
 #if OLC_HOST == OLC_HOST_ANDROID
 			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
 #endif

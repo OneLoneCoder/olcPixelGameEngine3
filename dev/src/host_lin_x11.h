@@ -21,6 +21,8 @@ namespace X11
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 #include <GL/glx.h>
+#undef None
+constexpr int None = 0L;
 }
 
 namespace olc::host

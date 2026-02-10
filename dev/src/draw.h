@@ -13,6 +13,8 @@
 #include "config.h"
 #include "vector2d.h"
 #include "transform2d.h"
+#include "vector4d.h"
+#include "matrix4d.h"
 #include "pixel.h"
 #include "image.h"
 #include "gputask.h"
@@ -148,6 +150,12 @@
 	[#] Batch(FilledBatch, [tint])
 	[#] Batch(ImageBatch, [tint])
 
+
+	3D Rendering Functions
+	~~~~~~~~~~~~~~~~~~~~~~
+
+
+
 */
 
 
@@ -160,6 +168,8 @@ namespace olc
 		class Renderer;
 		class Shader;
 	}
+
+	class Draw3D;
 	
 	// These "opaque" structs are merely to help with
 	// type differentiation of various GPUTask types
@@ -170,10 +180,12 @@ namespace olc
 	struct FilledBatch { GPUTask task; };
 	struct LineBatch { GPUTask task; };
 
-	class Draw2D
+	class Draw
 	{
+		friend class olc::Draw3D;
+
 	public:
-		Draw2D();
+		Draw();
 
 		// Associate this drawing toolbox with a renderer
 		void SetGPU(olc::gpu::Renderer* const renderer);
@@ -730,6 +742,52 @@ namespace olc
 			const olc::vf2d& pos,
 			const olc::vf2d& size,
 			const olc::Pixel tint = olc::Colour::WHITE);
+
+	public: // Applied Rendering Modes
+		void SetCullMode(const olc::GPUTask::CullMode mode);
+		void EnableDepth(const bool bEnable);
+		void SetViewport(const olc::vi2d& pos, const olc::vi2d& size);
+
+	public: // 3D Transformation Functions
+		void MatrixReset();
+		void SetModelMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetModelMatrix() const;
+		void SetViewMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetViewMatrix() const;
+		void SetProjectionMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetProjectionMatrix() const;
+		void SetMVPMatrix(const olc::mf4d& mat);
+		const olc::mf4d& GetMVPMatrix() const;
+
+
+
+	public: // 3D Primitive Drawing Functions
+
+		GPUTask& Line(
+			const olc::vf4d& vStart,
+			const olc::vf4d& vEnd,
+			const olc::Pixel& col = olc::Colour::WHITE,
+			const olc::Pixel tint = olc::Colour::WHITE);
+
+		GPUTask& Mesh(
+			const olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
+
+		GPUTask& Mesh(
+			const olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const std::vector<olc::vf2d>& vUVs,
+			olc::Image& texture,
+			const olc::Pixel tint = olc::Colour::WHITE);
+
+
+
+	public: // GPU Task Creator Functions (not normally called by user)
+
+
 	
 
 	public:
@@ -802,153 +860,26 @@ namespace olc
 			olc::Image* const image,
 			const olc::Pixel tint = olc::Colour::WHITE);
 
+		// 3D Task Generators
+		GPUTask TaskWireMesh(
+			olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
 
-		public: // Precision drawing functions via software rasteriser
-			// Draws a single pixel wide line of fixed colour
-			void swLine(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::Pixel col = olc::Colour::WHITE);
+		GPUTask TaskFillMesh(
+			olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
 
-			// Draws a single pixel wide line with a gradient		
-			void swLine(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::Pixel c1,
-				const olc::Pixel c2);
-
-			// Draws a rectangle outline
-			void swRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a multiple colour rectangle, with linear colour interpolation
-			void swRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel colTL,
-				const olc::Pixel colTR,
-				const olc::Pixel colBL,
-				const olc::Pixel colBR);
-
-			// Draws a filled, single colour rectangle
-			void swFilledRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a filled, multiple colour rectangle, with linear colour interpolation
-			void swFilledRect(
-				const olc::vf2d& pos,
-				const olc::vf2d& size,
-				const olc::Pixel colTL,
-				const olc::Pixel colTR,
-				const olc::Pixel colBL,
-				const olc::Pixel colBR);
-
-			// Draws a triangle outline
-			void swTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a multiple colour triangle, with linear colour interpolation
-			void swTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3);
-
-			// Draws a filled, single colour triangle
-			void swFilledTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel col = olc::Colour::WHITE);
-
-			// Draws a filled, multiple colour triangle, with linear colour interpolation
-			void swFilledTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3);
-
-			// Rasterises a textured triangle in integer space
-			void swTexturedTriangle(
-				const olc::vf2d& p1,
-				const olc::vf2d& p2,
-				const olc::vf2d& p3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3,
-				const olc::vf2d& t1,
-				const olc::vf2d& t2,
-				const olc::vf2d& t3,
-				olc::Image& texture);
-
-
-
-		protected: // Software rasteriser helper functions
-
-			// Clips a line to a rectangular region, returns true if line is visible
-			bool swClipLine(
-				olc::vf2d& v0,
-				olc::vf2d& v1,
-				const olc::vf2d& vMin,
-				const olc::vf2d& vMax);
-
-			// Clips a line to a rectangular region, returns true if line is visible.
-			// The returned weights correspond to distance along the line from v0 to v1
-			bool swClipWeightedLine(
-				olc::vf2d& v0,
-				olc::vf2d& v1,
-				const olc::vf2d& vMin,
-				const olc::vf2d& vMax,
-				float& w0,
-				float& w1);
-
-			/* bool swClipTriangle(
-				olc::vf2d& v1,
-				olc::vf2d& v2,
-				olc::vf2d& v3,
-				const olc::vf2d& vMin,
-				const olc::vf2d& vMax);*/
-				
-			// Rasterises a shaded line in integer space
-			void swRasterShadedLine(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::Pixel c1,
-				const olc::Pixel c2);
-
-			// Rasterises a shaded triangle in integer space
-			void swRasterShadedTriangle(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::vi2d& v3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3);
-
-			// Rasterises a textured triangle in integer space
-			void swRasterTexturedTriangle(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::vi2d& v3,
-				const olc::Pixel c1,
-				const olc::Pixel c2,
-				const olc::Pixel c3,
-				const olc::vf2d& t1,
-				const olc::vf2d& t2,
-				const olc::vf2d& t3,
-				olc::Image& texture);
-
+		GPUTask TaskTexturedMesh(
+			olc::Structure structure,
+			const std::vector<olc::vf4d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const std::vector<olc::vf2d>& vTexCoords,
+			olc::Image* const image,
+			const olc::Pixel tint = olc::Colour::WHITE);
 
 
 		public:
@@ -998,26 +929,18 @@ namespace olc
 			olc::gpu::Renderer* pRenderer = nullptr;
 			olc::tf2d transformAffine;
 
-			//std::vector<olc::GPUTask> vecGPUTasks;
-
-		protected: // SW Rasteriser Helpers
-			struct Scanline
-			{
-				int32_t nMin = std::numeric_limits<int32_t>::max();
-				int32_t nMax = std::numeric_limits<int32_t>::min();
-				std::array<float, 3> fBaryMin;
-				std::array<float, 3> fBaryMax;
-			};
-
-			std::vector<Scanline> vScanlines;
+			// 3D Drawing Things
+			mf4d matModel;
+			mf4d matView;
+			mf4d matProjection;
+			mf4d matVP;
+			mf4d matMVP;
+			olc::vf2d vViewportPos = { 0, 0 };
+			olc::vi2d vViewportSize = { 0, 0 };
 
 
-			// Fills scanline buffer with visible triangle extents and barycentric coordinates.
-			// Returns vertical, visible extents of triangle scanlines
-			std::pair<int, int> swBaryFillTriangle(
-				const olc::vi2d& v1,
-				const olc::vi2d& v2,
-				const olc::vi2d& v3);
+			olc::GPUTask::CullMode cullMode = olc::GPUTask::CullMode::None;
+			bool bDepth = true;
 
 
 		private:
