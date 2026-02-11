@@ -33,6 +33,7 @@
 #define OLC_HOST_EMSCRIPTEN 5
 #define OLC_HOST_ANDROID 6
 #define OLC_HOST_IOS 7
+#define OLC_HOST_LINUX_DRM 8
 
 #if !defined(OLC_HOST)
 	#if defined(_WIN32)
@@ -94,7 +95,7 @@
 		#define OLC_IMAGELOADER_CLASS ImageLoader_MacOS
 	#endif
 
-	#if OLC_HOST == OLC_HOST_LINUX_X11 || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+	#if OLC_HOST == OLC_HOST_LINUX_X11 || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_LINUX_DRM
 		#define OLC_IMAGELOADER OLC_IMAGELOADER_LIB_PNG
 		#define OLC_IMAGELOADER_CLASS ImageLoader_LibPNG
 	#endif
@@ -152,6 +153,10 @@ inline constexpr void olc_IgnoreUnused(Args&&...) noexcept {}
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND
 #define OLC_FRIENDLY_HOST Host_Linux_Wayland
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+#define OLC_FRIENDLY_HOST Host_Linux_DRM
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN

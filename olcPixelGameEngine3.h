@@ -134,6 +134,10 @@
 #include <exception>
 #include <condition_variable>
 #include <atomic>
+
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sstream>
 #include <source_location>
 #include <filesystem>
@@ -170,6 +174,7 @@
 #define OLC_HOST_EMSCRIPTEN 5
 #define OLC_HOST_ANDROID 6
 #define OLC_HOST_IOS 7
+#define OLC_HOST_LINUX_DRM 8
 
 #if !defined(OLC_HOST)
 	#if defined(_WIN32)
@@ -231,7 +236,7 @@
 		#define OLC_IMAGELOADER_CLASS ImageLoader_MacOS
 	#endif
 
-	#if OLC_HOST == OLC_HOST_LINUX_X11 || OLC_HOST == OLC_HOST_LINUX_WAYLAND
+	#if OLC_HOST == OLC_HOST_LINUX_X11 || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_LINUX_DRM
 		#define OLC_IMAGELOADER OLC_IMAGELOADER_LIB_PNG
 		#define OLC_IMAGELOADER_CLASS ImageLoader_LibPNG
 	#endif
@@ -289,6 +294,10 @@ inline constexpr void olc_IgnoreUnused(Args&&...) noexcept {}
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND
 #define OLC_FRIENDLY_HOST Host_Linux_Wayland
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+#define OLC_FRIENDLY_HOST Host_Linux_DRM
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
@@ -3688,12 +3697,14 @@ namespace olc
 			return uuid++;
 		}
 		#endif
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+		#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 		inline size_t CreateUID()
 		{
 			return uuid++;
 		}		
 		#endif
+		// If this blocks looks funny it's because it is truly hilarious that the core dev team
+		// thought this was a good idea. We need a voice of reason, clearly.
 	}
 
 	class PixelGameEngine;
@@ -5432,6 +5443,75 @@ namespace olc::host
 
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+
+#include <gbm.h>
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+
+namespace olc::host
+{
+
+    class Host_Linux_DRM : public olc::host::Host
+    {
+    public:
+        Host_Linux_DRM();
+
+        bool AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen) override;
+        bool CloseWindowFrame(olc::Window* pWindow) override;
+        bool UpdateWindowFrameTitle(olc::Window* pWindow) override;
+
+        std::vector<void*> GetHostWindowDescriptor(olc::Window* pWindow) override;
+
+        olc::KeyboardLayout GetKeyboardLayout() const override;
+        void UpdateKeyboardLayout();
+
+        // Wait for entire host desktop refresh (for smooooth vsync)
+        bool SyncWithDesktopComposite() override;
+
+    public:
+        bool OnApplicationStart(olc::PixelGameEngine* pPrimary) override;
+        bool StartSystem() override;
+        bool StopSystem() override;
+        bool OnSystemThreadStart() override;
+        bool OnSystemTick() override;
+        bool OnSystemThreadEnd() override;
+        bool OnApplicationEnd() override;
+    
+    public:
+        struct DRMContext
+        {
+            int drm_fd{0};
+            drmModeRes* resources{nullptr};
+            drmModeConnector* connector{nullptr};
+            drmModeModeInfo mode;
+            uint32_t crtc_id{0};
+            struct gbm_device* gbm{nullptr};
+            struct gbm_surface* gbm_surface{nullptr};
+        };
+
+    private:
+        DRMContext drmContext;
+        std::unordered_map<size_t, DRMContext*> mapUID2DRMContext;
+        std::unordered_map<DRMContext*, olc::Window*> mapDRMContext2PTR;
+        std::atomic<bool> systemActive {true};
+
+        std::unordered_map<uint32_t, olc::Key> mapKeys;
+
+        // Keyboard Layout Variables
+        olc::KeyboardLayout keyboardLayout = OLC_DEFAULT_KEYBOARD_LAYOUT;
+        bool kbExtensionsFound = false;
+        int xkbEventBase = 0;
+        int xkbErrorBase = 0;
+
+    };
+}
+
+#endif
+
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 
 #include <emscripten.h>
@@ -5818,6 +5898,20 @@ namespace olc::host
 #endif
 
 #if OLC_HOST == OLC_HOST_ANDROID
+	#include <GL/gl.h>
+    #include <EGL/egl.h>
+    #include <GLES3/gl3.h>
+    #define GL_GLEXT_PROTOTYPES
+    #include <GLES3/gl3ext.h>
+    #define CALLSTYLE
+    #undef GL_CLAMP
+    #define GL_CLAMP GL_CLAMP_TO_EDGE
+    #define GL_LINE 0
+    #define GL_FILL 0
+    #define OGL_LOAD(t) reinterpret_cast<t##_t*>(eglGetProcAddress(#t))
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_DRM
     #include <EGL/egl.h>
     #include <GLES3/gl3.h>
     #define GL_GLEXT_PROTOTYPES
@@ -5865,7 +5959,7 @@ namespace olc
 		typedef X11::GLXContext glRenderContext_t;
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 	typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei size, const GLchar *const * string, const GLint * length);
 	typedef void glDeviceContext_t;
 	typedef struct
@@ -6161,7 +6255,7 @@ namespace olc
 		
 		protected: // These may need some thinking about re multiple window
 			//olc::apis::opengl::glDeviceContext_t glDeviceContext = 0;
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 	olc::apis::opengl::glRenderContext_t glRenderContext;
 #else
 	olc::apis::opengl::glRenderContext_t glRenderContext = 0;
@@ -6192,7 +6286,7 @@ namespace olc
 			olc::vi2d vCurrentDepthSize = {0, 0}; // Track current depth buffer size
 			int32_t nCurrentDepthSamples = 0;     // Track current MSAA sample count
 
-#if OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
 #endif
 
@@ -10902,6 +10996,214 @@ namespace olc::host
 }
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+namespace olc::host
+{
+    Host_Linux_DRM::Host_Linux_DRM()
+    {
+    }
+
+    bool Host_Linux_DRM::OnApplicationStart(olc::PixelGameEngine* pPrimary)
+    {
+        
+        pPrimaryPGE = pPrimary;
+        return true;
+    }
+
+    bool Host_Linux_DRM::StartSystem()
+    {
+
+        pPrimaryPGE->OnPreContextStart();
+
+		// Create system thread - handles gpu context
+		std::thread threadSystem([this]()
+        {
+            // Notify start of system thread
+            if (!this->OnSystemThreadStart())
+            {
+                // PGE->OnContextStart() failed, or user aborted OnUserCreate()
+                return;
+            }
+
+            // Main system loop
+            while (systemActive)
+            {
+                // Perform primary window update
+                if (!this->OnSystemTick())
+                {
+                    StopSystem();
+                }
+            }
+
+            // Notify end of system thread
+            if (!this->OnSystemThreadEnd())
+            {
+                // PGE->OnContextEnd() failed
+                return;
+            }
+        });
+
+        while(systemActive)
+        {
+            // event pumping
+        }
+
+        systemActive = false;
+        if(threadSystem.joinable())
+            threadSystem.join();
+    
+        return pPrimaryPGE->OnPostContextEnd();
+    }
+
+    bool Host_Linux_DRM::StopSystem()
+    {
+        systemActive = false;
+        return true;
+    }
+
+    bool Host_Linux_DRM::OnSystemThreadStart()
+    {
+        return pPrimaryPGE->OnContextStart();
+    }
+
+    bool Host_Linux_DRM::OnSystemTick()
+    {
+        return pPrimaryPGE->OnContextTick();;
+    }
+
+    bool Host_Linux_DRM::OnSystemThreadEnd()
+    {
+        return pPrimaryPGE->OnContextEnd();
+    }
+
+    bool Host_Linux_DRM::OnApplicationEnd()
+    {
+        return true;
+    }
+
+    bool Host_Linux_DRM::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
+    {
+        drmContext.drm_fd = open("/dev/dri/card0", O_RDWR);
+        if(drmContext.drm_fd < 0)
+        {
+            std::cout << "Failed to open DRM device.\n";
+            return false;
+        }
+        
+        drmContext.resources = drmModeGetResources(drmContext.drm_fd);
+        if(!drmContext.resources)
+        {
+            std::cout << "Failed: drmModeGetResources.\n";
+            return false;
+        }
+        
+        for(int i = 0; i < drmContext.resources->count_connectors; i++)
+        {
+            drmContext.connector = drmModeGetConnector(drmContext.drm_fd, drmContext.resources->connectors[i]);
+            if(drmContext.connector->connection == DRM_MODE_CONNECTED)
+                break;
+            
+            drmModeFreeConnector(drmContext.connector);
+            drmContext.connector = nullptr;
+        }
+
+        if(!drmContext.connector)
+        {
+            std::cout << "Failed to establish a drm connection.\n";
+            return false;
+        }
+
+        std::cout << "DRM: found connector.\n";
+        
+        // select the first mode (usually the preferred/native resolution)
+        drmContext.mode = drmContext.connector->modes[0];
+
+        // find first CRTC
+        drmContext.crtc_id = drmContext.resources->crtcs[0];
+        
+        drmContext.gbm = gbm_create_device(drmContext.drm_fd);
+        if(!drmContext.gbm)
+        {
+            std::cout << "GBM: failed to create device.\n";
+            return false;
+        }
+
+        std::cout << "GBM: created device.\n";
+
+        drmContext.gbm_surface = gbm_surface_create(
+            drmContext.gbm,
+            drmContext.mode.hdisplay,
+            drmContext.mode.vdisplay,
+            GBM_BO_FORMAT_XRGB8888,
+            GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING
+        );
+        
+        if(!drmContext.gbm_surface)
+        {
+            std::cout << "GBM: failed to create surface.\n";
+            return false;
+        }
+        
+        std::cout << "GBM: surface created successfully.\n";
+        
+        mapUID2DRMContext.insert_or_assign(pWindow->GetUID(), &drmContext);
+		mapDRMContext2PTR.insert_or_assign(&drmContext, pWindow);
+
+        return true;
+    }
+
+    bool Host_Linux_DRM::CloseWindowFrame(olc::Window* pWindow)
+    {
+        const auto window_handle = mapUID2DRMContext.find(pWindow->GetUID());
+        if (window_handle != mapUID2DRMContext.end()) {
+            gbm_surface_destroy(window_handle->second->gbm_surface);
+            gbm_device_destroy(window_handle->second->gbm);
+            drmModeFreeConnector(window_handle->second->connector);
+            drmModeFreeResources(window_handle->second->resources);
+            mapUID2DRMContext.erase(window_handle);
+        }
+        return true;
+    }
+    
+    bool Host_Linux_DRM::UpdateWindowFrameTitle(olc::Window* pWindow)
+    {
+        // Not implemented on this platform
+        return true;
+    }
+
+    std::vector<void*> Host_Linux_DRM::GetHostWindowDescriptor(olc::Window* pWindow)
+    {
+        const auto window_handle = mapUID2DRMContext.find(pWindow->GetUID());
+        if (window_handle != mapUID2DRMContext.end()) {
+            return {
+                reinterpret_cast<void*>(window_handle->second),
+            };
+        }
+  		return {};
+    }
+
+    olc::KeyboardLayout Host_Linux_DRM::GetKeyboardLayout() const {
+        return keyboardLayout;
+    }
+
+    void Host_Linux_DRM::UpdateKeyboardLayout()
+    {
+        // TODO: implement the update for keyboard layout
+        // keyboardLayout = olc::KeyboardLayout::QWERTY_US;
+        // keyboardLayout = olc::KeyboardLayout::QWERTY_UK;
+        // keyboardLayout = olc::KeyboardLayout::QWERTZ;
+        // keyboardLayout = olc::KeyboardLayout::AZERTY;
+    }
+
+    // Wait for entire host desktop refresh (for smooooth vsync)
+    bool Host_Linux_DRM::SyncWithDesktopComposite()
+    {
+        // Not implemented on this platform
+        return true;
+    }
+}
+#endif
+
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 namespace olc::host
 {
@@ -12361,7 +12663,7 @@ namespace olc::apis::opengl
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
-#if OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		::glTexEnvf(target, pname, param);
 		CheckError();
 #endif
@@ -12441,7 +12743,7 @@ namespace olc::apis::opengl
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		::glGetTexImage(target, level, format, type, pixels);
 		CheckError();
 #endif
@@ -12455,7 +12757,7 @@ namespace olc::apis::opengl
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		::glPolygonMode(face, mode);
 		CheckError();
 #endif
@@ -12735,8 +13037,12 @@ namespace olc::gpu
 
 	// === PIXEL SHADER PGE DEFAULTS ===
 	std::string Shader::static_PS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 R"(#version 330 core
+)"
+#elif OLC_HOST == OLC_HOST_LINUX_DRM
+R"(#version 100
+precision mediump float;
 )"
 #else
 R"(#version 300 es
@@ -12774,8 +13080,12 @@ void main()
 	
 	// === VERTEX SHADER PGE DEFAULTS ===
 	std::string Shader::static_VS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 R"(#version 330 core
+)"
+#elif OLC_HOST == OLC_HOST_LINUX_DRM
+R"(#version 100
+precision mediump float;
 )"
 #else
 R"(#version 300 es
@@ -13007,15 +13317,28 @@ void main()
 
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
-    #if OLC_HOST == OLC_HOST_ANDROID
-        EGLNativeWindowType window_handle = reinterpret_cast<ANativeWindow*>(os_win_id[0]);
-    #else
-        EGLNativeWindowType window_handle = NULL;
-    #endif
+#if OLC_HOST == OLC_HOST_ANDROID || \
+	OLC_HOST == OLC_HOST_EMSCRIPTEN	|| \
+	OLC_HOST == OLC_HOST_LINUX_DRM || \
+	OLC_HOST == OLC_HOST_LINUX_WAYLAND
+
+#if OLC_HOST == OLC_HOST_ANDROID
+	EGLNativeWindowType window_handle = reinterpret_cast<ANativeWindow*>(os_win_id[0]);
 	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
-#else
+#endif
+
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+	EGLNativeWindowType window_handle = NULL;
+	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+	auto drmContext = reinterpret_cast<olc::host::Host_Linux_DRM::DRMContext*>(os_win_id[0]);
+	EGLNativeWindowType window_handle = reinterpret_cast<EGLNativeWindowType>(drmContext->gbm_surface);
+	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(drmContext->gbm);
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_WAYLAND
 	const auto wayland_window = reinterpret_cast<olc::host::WaylandWindow*>(os_win_id[0]);
 	EGLNativeWindowType window_handle = wayland_window->window;
 	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(os_win_id[1]);
@@ -13028,7 +13351,7 @@ void main()
 
 	eglInitialize(glRenderContext.display, nullptr, nullptr);
 
-#if OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 	glRenderContext.config = FindBestConfig(glRenderContext.display, OLC_MSAA_SAMPLES);
 #else
 	EGLint num_config;
@@ -13045,8 +13368,11 @@ void main()
 	eglChooseConfig(glRenderContext.display, attribute_list, &glRenderContext.config, 1, &num_config);
 #endif
 
+#if OLC_HOST != OLC_HOST_LINUX_DRM
 	EGLint const context_config[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_NONE};
-
+#else
+	EGLint const context_config[] = {EGL_CONTEXT_MAJOR_VERSION, 2, EGL_NONE};
+#endif
 	/* create an EGL rendering context */
 	glRenderContext.context = eglCreateContext(glRenderContext.display, glRenderContext.config, EGL_NO_CONTEXT, context_config);
 	glRenderContext.surface = eglCreateWindowSurface(glRenderContext.display, glRenderContext.config, window_handle, nullptr);
@@ -13059,6 +13385,9 @@ void main()
 		lastError = RendererError::FailedToCreateRenderContext;
 		return false;
 	}
+
+    std::cout << "OpenGL Renderer: " << glGetString(GL_RENDERER) << "\n";
+    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 #endif
 
 		// Can't load OpenGL API until context is loaded
@@ -13204,7 +13533,7 @@ void main()
 		// PGE Specific requirements
 
 		// Texturing Enabled
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		gl.glEnable(GL_TEXTURE_2D); // Turn on texturing
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #endif
@@ -13241,7 +13570,7 @@ void main()
 		X11::glXMakeCurrent(display, 0, NULL);
 		X11::glXDestroyContext(display, glRenderContext);
 #endif
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 		eglMakeCurrent(glRenderContext.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		eglDestroyContext(glRenderContext.display, glRenderContext.context);
 		eglDestroySurface(glRenderContext.display, glRenderContext.surface);
@@ -13282,7 +13611,7 @@ void main()
 			return false;
 		}
 #endif
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 	if(!eglMakeCurrent(glRenderContext.display, glRenderContext.surface, glRenderContext.surface, glRenderContext.context))
 	{
 		lastError = RendererError::FailedToSwitchRenderContext;
@@ -13388,7 +13717,7 @@ void main()
 			mapTextureToRenderbuffer[id] = rboId;
 		}
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 #endif
 
@@ -13952,18 +14281,14 @@ void main()
 		X11::glXSwapBuffers(display, window_handle);
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
-	eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
-#endif
-
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_LINUX_DRM || OLC_HOST == OLC_HOST_ANDROID
 	eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
 #endif
 
 		return true;
 	}
 
-#if OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
     EGLConfig Renderer_OGL33::FindBestConfig(EGLDisplay display, int desiredMultisamples)
     {
 		EGLint numConfigs;

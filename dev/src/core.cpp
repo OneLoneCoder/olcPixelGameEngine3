@@ -15,6 +15,10 @@
 #include "host_lin_x11.h"
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+#include "host_lin_drm.h"
+#endif
+
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND
 #include "host_lin_wayland.h"
 #endif

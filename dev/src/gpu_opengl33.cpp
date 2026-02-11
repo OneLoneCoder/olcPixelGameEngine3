@@ -1,12 +1,16 @@
 #include "gpu_opengl33.h"
 
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+#include "host_lin_drm.h"
+#endif
+
 //! START IMPLEMENTATION
 namespace olc::gpu
 {
 
 	// === PIXEL SHADER PGE DEFAULTS ===
 	std::string Shader::static_PS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 R"(#version 330 core
 )"
 #else
@@ -45,7 +49,7 @@ void main()
 	
 	// === VERTEX SHADER PGE DEFAULTS ===
 	std::string Shader::static_VS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 R"(#version 330 core
 )"
 #else
@@ -278,15 +282,28 @@ void main()
 
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
-    #if OLC_HOST == OLC_HOST_ANDROID
-        EGLNativeWindowType window_handle = reinterpret_cast<ANativeWindow*>(os_win_id[0]);
-    #else
-        EGLNativeWindowType window_handle = NULL;
-    #endif
+#if OLC_HOST == OLC_HOST_ANDROID || \
+	OLC_HOST == OLC_HOST_EMSCRIPTEN	|| \
+	OLC_HOST == OLC_HOST_LINUX_DRM || \
+	OLC_HOST == OLC_HOST_LINUX_WAYLAND
+
+#if OLC_HOST == OLC_HOST_ANDROID
+	EGLNativeWindowType window_handle = reinterpret_cast<ANativeWindow*>(os_win_id[0]);
 	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
-#else
+#endif
+
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+	EGLNativeWindowType window_handle = NULL;
+	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+	auto drmContext = reinterpret_cast<olc::host::Host_Linux_DRM::DRMContext*>(os_win_id[0]);
+	EGLNativeWindowType window_handle = reinterpret_cast<EGLNativeWindowType>(drmContext->gbm_surface);
+	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(drmContext->gbm);
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_WAYLAND
 	const auto wayland_window = reinterpret_cast<olc::host::WaylandWindow*>(os_win_id[0]);
 	EGLNativeWindowType window_handle = wayland_window->window;
 	EGLNativeDisplayType display = reinterpret_cast<EGLNativeDisplayType>(os_win_id[1]);
@@ -299,7 +316,7 @@ void main()
 
 	eglInitialize(glRenderContext.display, nullptr, nullptr);
 
-#if OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 	glRenderContext.config = FindBestConfig(glRenderContext.display, OLC_MSAA_SAMPLES);
 #else
 	EGLint num_config;
@@ -475,7 +492,7 @@ void main()
 		// PGE Specific requirements
 
 		// Texturing Enabled
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		gl.glEnable(GL_TEXTURE_2D); // Turn on texturing
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #endif
@@ -512,7 +529,7 @@ void main()
 		X11::glXMakeCurrent(display, 0, NULL);
 		X11::glXDestroyContext(display, glRenderContext);
 #endif
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 		eglMakeCurrent(glRenderContext.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		eglDestroyContext(glRenderContext.display, glRenderContext.context);
 		eglDestroySurface(glRenderContext.display, glRenderContext.surface);
@@ -553,7 +570,7 @@ void main()
 			return false;
 		}
 #endif
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 	if(!eglMakeCurrent(glRenderContext.display, glRenderContext.surface, glRenderContext.surface, glRenderContext.context))
 	{
 		lastError = RendererError::FailedToSwitchRenderContext;
@@ -659,7 +676,7 @@ void main()
 			mapTextureToRenderbuffer[id] = rboId;
 		}
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 #endif
 
@@ -1223,18 +1240,14 @@ void main()
 		X11::glXSwapBuffers(display, window_handle);
 #endif
 
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
-	eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
-#endif
-
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_LINUX_DRM || OLC_HOST == OLC_HOST_ANDROID
 	eglSwapBuffers(glRenderContext.display, glRenderContext.surface);
 #endif
 
 		return true;
 	}
 
-#if OLC_HOST == OLC_HOST_ANDROID
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
     EGLConfig Renderer_OGL33::FindBestConfig(EGLDisplay display, int desiredMultisamples)
     {
 		EGLint numConfigs;

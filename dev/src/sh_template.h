@@ -186,6 +186,12 @@
 //! GRAB host_lin_wayland.h DECLARATION
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+//! GRAB host_lin_drm.h DRM_CONFIG
+
+//! GRAB host_lin_drm.h DECLARATION
+#endif
+
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
 //! GRAB host_web_emscripten.h EMSCRIPTEN_CONFIG
 
@@ -246,6 +252,10 @@
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND
 //! GRAB host_lin_wayland.cpp IMPLEMENTATION
+#endif
+
+#if OLC_HOST == OLC_HOST_LINUX_DRM
+//! GRAB host_lin_drm.cpp IMPLEMENTATION
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN

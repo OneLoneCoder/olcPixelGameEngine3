@@ -46,12 +46,14 @@ namespace olc
 			return uuid++;
 		}
 		#endif
-		#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+		#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_LINUX_DRM
 		inline size_t CreateUID()
 		{
 			return uuid++;
 		}		
 		#endif
+		// If this blocks looks funny it's because it is truly hilarious that the core dev team
+		// thought this was a good idea. We need a voice of reason, clearly.
 	}
 
 	class PixelGameEngine;

@@ -152,7 +152,7 @@ namespace olc::apis::opengl
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
-#if OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		::glTexEnvf(target, pname, param);
 		CheckError();
 #endif
@@ -232,7 +232,7 @@ namespace olc::apis::opengl
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		::glGetTexImage(target, level, format, type, pixels);
 		CheckError();
 #endif
@@ -246,7 +246,7 @@ namespace olc::apis::opengl
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_LINUX_DRM
 		::glPolygonMode(face, mode);
 		CheckError();
 #endif
