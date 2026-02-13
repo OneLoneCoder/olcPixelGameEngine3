@@ -101,7 +101,8 @@ namespace olc
                 BECOME_ACTIVE,
                 RESIGN_ACTIVE,
                 MINIMIZE_WINDOW,
-                DEMINIMIZE_WINDOW
+                DEMINIMIZE_WINDOW,
+                CLOSE_WINDOW
             };
             
             // Internal Mac OS functions
