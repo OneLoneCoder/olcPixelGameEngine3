@@ -321,6 +321,8 @@ namespace olc
 			void glSwapInterval(GLsizei n);
 
 			// Constants
+			static constexpr GLenum GL_NONE_X = 0x0000;
+			static constexpr GLenum GL_TEXTURE_2D_X = 0x0DE1;
 			static constexpr GLenum GL_FRAMEBUFFER_COMPLETE_X = 0x8CD5;
 			static constexpr GLenum GL_TEXTURE_2D_MULTISAMPLE_X = 0x9100;
 			static constexpr GLenum GL_COLOR_ATTACHMENT0_X = 0x8CE0;

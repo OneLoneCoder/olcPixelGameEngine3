@@ -810,6 +810,7 @@ void main()
 		if (texid == 0)
 		{
 			// Unbind the FBO (bind default framebuffer)
+			nActiveAttachmentMask = 0x01;
 			gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nScreenFBO);
 			return true;
 		}	
@@ -871,21 +872,10 @@ void main()
 			);
 		}
 
-		// Allocate target buffers - pick the single attachment corresponding to 'slot'
-		std::array<GLenum, 8> attachments =
-		{ { 
-			gl.GL_COLOR_ATTACHMENT0_X + 0, 
-			gl.GL_COLOR_ATTACHMENT0_X + 1,
-			gl.GL_COLOR_ATTACHMENT0_X + 2, 
-			gl.GL_COLOR_ATTACHMENT0_X + 3,
-			gl.GL_COLOR_ATTACHMENT0_X + 4, 
-			gl.GL_COLOR_ATTACHMENT0_X + 5,
-			gl.GL_COLOR_ATTACHMENT0_X + 6, 
-			gl.GL_COLOR_ATTACHMENT0_X + 7
-		} };
-		GLenum draw = attachments[slot];
-		gl.glDrawBuffers(1, &draw);
-		
+		// Update active attachment bitmask and rebuild draw buffers
+		nActiveAttachmentMask |= (1 << slot);
+		RebuildDrawBuffers();
+
 		// If target texture is MSAA, enable multisampling
 		if (mapTextureToRenderbuffer.contains(texid))
 		{
@@ -921,6 +911,61 @@ void main()
 
 	nCurrentTextureTarget = texid;		
 	return true;
+	}
+
+	bool Renderer_OGL33::DetachTextureTarget(const uint32_t slot)
+	{
+		// No-op if slot is not active
+		if (!(nActiveAttachmentMask & (1 << slot)))
+			return true;
+
+		auto &gl = olc::apis::opengl::gl::Get();
+
+		// Detach texture from this attachment slot
+		gl.glFramebufferTexture2D(
+			gl.GL_FRAMEBUFFER_X,
+			gl.GL_COLOR_ATTACHMENT0_X + slot,
+			gl.GL_TEXTURE_2D_X,
+			0,
+			0);
+
+		// Also detach any renderbuffer (MSAA case)
+		gl.glFramebufferRenderbuffer(
+			gl.GL_FRAMEBUFFER_X,
+			gl.GL_COLOR_ATTACHMENT0_X + slot,
+			gl.GL_RENDERBUFFER_X,
+			0);
+
+		// Clear the bit and rebuild draw buffers
+		nActiveAttachmentMask &= ~(1 << slot);
+		RebuildDrawBuffers();
+
+		return true;
+	}
+
+	int Renderer_OGL33::RebuildDrawBuffers()
+	{
+		auto& gl = olc::apis::opengl::gl::Get();
+
+		// GL_NONE is required for inactive slots so that the fragment shader
+		// `layout(location = N)` outputs are mapped correctly
+		std::array<GLenum, 8> drawBuffers;
+		int maxSlot = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			if (nActiveAttachmentMask & (1 << i))
+			{
+				drawBuffers[i] = gl.GL_COLOR_ATTACHMENT0_X + i;
+				maxSlot = i + 1;
+			}
+			else
+			{
+				drawBuffers[i] = gl.GL_NONE_X;
+			}
+		}
+		if (maxSlot > 0)
+			gl.glDrawBuffers(maxSlot, drawBuffers.data());
+		return maxSlot;
 	}
 
 	bool Renderer_OGL33::ResolveMSAA(const uint32_t texid)

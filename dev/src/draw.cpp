@@ -44,6 +44,49 @@ void Draw::SetTarget(olc::Image& image)
 	// Configure default render target
 	pRenderer->AssignTextureTarget(0, uint32_t(pTarget->GetGPUID()));
 	pRenderer->SetViewport({ 0,0 }, pTarget->Size());
+
+	// Detach any MRT attachments from a previous SetTargets call
+	for (uint32_t i = 1; i < 8; i++)
+		pRenderer->DetachTextureTarget(i);
+}
+
+void Draw::SetTargets(std::initializer_list<olc::Image *> targets)
+{
+	if (targets.size() == 0) return;
+
+	// Perform any outstanding tasks for current target
+	ProcessGPUTasks();
+
+	// MSAA resolve for previous target if needed
+	if (pTarget && pTarget->GetConfig().MSAA)
+		pRenderer->ResolveMSAA(uint32_t(pTarget->GetGPUID()));
+
+	// Attach each image to its corresponding slot
+	olc::vi2d size = (*targets.begin())->Size();
+	uint32_t slot = 0;
+	for (auto *img : targets)
+	{
+		PrepareImageForHW(*img);
+#if defined(OLC_GPU_ERRORCHECK) && OLC_GPU_ERRORCHECK == 1
+		if (img->Size() != size)
+			std::cout << "Warning MRT: Target at slot " << slot << " has mismatched size ("
+				<< img->Size().x << "x" << img->Size().y << " vs "
+				<< size.x << "x" << size.y << ")\n";
+		if (img->GetConfig().MSAA != (*targets.begin())->GetConfig().MSAA)
+			std::cout << "Warning MRT: Target at slot " << slot << " has mismatched MSAA config\n";
+#endif
+		pRenderer->AssignTextureTarget(slot, uint32_t(img->GetGPUID()));
+		slot++;
+	}
+
+	// Detach any previously-used higher slots
+	for (uint32_t i = slot; i < 8; i++)
+		pRenderer->DetachTextureTarget(i);
+
+	// Track slot 0 as the "primary" target
+	pTarget = *targets.begin();
+	WorldReset();
+	pRenderer->SetViewport({0, 0}, size);
 }
 
 olc::Image& olc::Draw::GetTarget()
