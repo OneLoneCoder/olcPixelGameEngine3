@@ -10,15 +10,14 @@ option(BUILD_WAYLAND "Build example programs with Wayland" OFF)
 
 # Source files that are common to all platforms
 set(COMMON_SOURCE_FILES
-    test_cmake_mh.cpp
+    test_mh.cpp
     ../src/core.cpp
     ../src/core.h
     ../src/api_opengl.cpp
     ../src/api_opengl.h
     ../src/config.h
-    ../src/draw2d.cpp
-    ../src/draw2d.h
-    ../src/draw2d_sw.cpp
+    ../src/draw.cpp
+    ../src/draw.h
     ../src/font.cpp
     ../src/font.h
     ../src/gpu_iface.cpp
@@ -37,6 +36,7 @@ set(COMMON_SOURCE_FILES
     ../src/image.h
     ../src/imload_iface.h
     ../src/matrix3d.h
+    ../src/matrix4d.h
     ../src/olcpge3.h
     ../src/pixel.h
     ../src/polyform.h
@@ -144,7 +144,7 @@ if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX .html)
 endif()
 
-set(EXE_NAME test_cmake_mh)
+set(EXE_NAME test_mh)
 
 add_executable(${EXE_NAME} ${HOST_SOURCE_FILES} ${IMAGELOADER_SOURCE_FILES} ${COMMON_SOURCE_FILES})
 
@@ -277,7 +277,7 @@ if(EMSCRIPTEN)
     target_link_options(${EXE_NAME} PRIVATE -sMIN_WEBGL_VERSION=2)
     target_link_options(${EXE_NAME} PRIVATE -sUSE_LIBPNG=1)
     target_link_options(${EXE_NAME} PRIVATE -sLLD_REPORT_UNDEFINED)
-    target_link_options(${EXE_NAME} PRIVATE --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@assets)
+    target_link_options(${EXE_NAME} PRIVATE --preload-file ${CMAKE_SOURCE_DIR}/examples/assets@assets)
 endif()
 
 if(NOT EMSCRIPTEN)
@@ -286,7 +286,7 @@ if(NOT EMSCRIPTEN)
         TARGET ${EXE_NAME}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/assets
+        ARGS -E copy_directory ${CMAKE__SOURCE_DIR}/examples/assets ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/assets
     )        
 endif()
 
