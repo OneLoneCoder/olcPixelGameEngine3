@@ -7659,10 +7659,18 @@ bool Host_Apple_MacOS::SyncWithDesktopComposite()
                     res = true; // Skip frame to allow resize to take effect
                     break;
                 }
-                case MINIMIZE_WINDOW:
                 case DEMINIMIZE_WINDOW:
                 case BECOME_ACTIVE:
+                {
+                    pPGEwindow->olc_OnMouseFocus(true);
+                    break;
+                }
+                case MINIMIZE_WINDOW:
                 case RESIGN_ACTIVE:
+                {
+                    pPGEwindow->olc_OnMouseFocus(false);
+                    break;
+                }
                 case NONE:
                 default:
                 {
@@ -7697,9 +7705,7 @@ bool Host_Apple_MacOS::SyncWithDesktopComposite()
            pPGEwindow->keyboard.UseKeyboardLayout(GetKeyboardLayout());
        });
        
-       pMacApplication->setWillTerminateCallback([&]() {
-           // TODO: Johnngy63 - Implement olc_OnDestory in window.h/cpp
-       });
+       pMacApplication->setWillTerminateCallback([&]() { });
        
        pMacApplication->setDidBecomeActiveCallback([]() { });
        
@@ -7714,17 +7720,17 @@ bool Host_Apple_MacOS::SyncWithDesktopComposite()
         });
 
         pMacOSWindow->setWindowWillCloseCallback([&]() {
+            // NOTE: Do not add this event to PendingMainThreadTasks as it will cause deadlock since the main thread is required to process the close event but the close event is waiting on the main thread tasks to process it
             pPGEwindow->olc_OnWindowClose();
             pPGEwindow->olc_ShouldRemove();
         });
 
         pMacOSWindow->setWindowDidBecomeKeyCallback([&]() {
-            //TODO: Johnngy63 - Implement olc_OnWindowFocus in window.h/cpp
             AddPendingMainThreadTask(BECOME_ACTIVE);
         });
 
         pMacOSWindow->setWindowDidResignKeyCallback([&]() {
-            //TODO: Johnngy63 - Implement olc_OnWindowFocus in window.h/cpp
+            AddPendingMainThreadTask(RESIGN_ACTIVE);
         });
        
         pMacOSWindow->setWindowDidMiniaturizeCallback([&]() {

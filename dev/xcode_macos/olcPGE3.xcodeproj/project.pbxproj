@@ -8,11 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		460496082E362F190047E223 /* test_mh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495FB2E300E0F0047E223 /* test_mh.cpp */; };
-		462680A32E69CDED00799C36 /* draw2d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680A22E69CDED00799C36 /* draw2d.cpp */; };
 		462680A42E69D03800799C36 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495EC2E300E000047E223 /* image.cpp */; };
 		462680A52E69D15C00799C36 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF82E39135B00B74FA3 /* OpenGL.framework */; };
 		462680D12E6C3C4500799C36 /* gpu_iface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680D02E6C3C4500799C36 /* gpu_iface.cpp */; };
-		466C384B2F3A0B0E00F75AF4 /* draw3d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466C38482F3A0B0E00F75AF4 /* draw3d.cpp */; };
+		466C385E2F41D5D400F75AF4 /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466C385C2F41D5D400F75AF4 /* draw.cpp */; };
+		466C38602F41D69000F75AF4 /* draw_batch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466C385F2F41D69000F75AF4 /* draw_batch.cpp */; };
 		467318BA2EEC213700714D4C /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467318B92EEC213700714D4C /* font.cpp */; };
 		46964CE82EE5C23300B7BCF1 /* api_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46964CE62EE5C23300B7BCF1 /* api_macos.cpp */; };
 		469A92132E79B0F1007BB460 /* hw_mouse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 469A92122E79B0F1007BB460 /* hw_mouse.cpp */; };
@@ -27,7 +27,6 @@
 		46E85E092E3924FB00B74FA3 /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495DD2E300E000047E223 /* core.cpp */; };
 		46E85E0A2E39252200B74FA3 /* window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495F22E300E000047E223 /* window.cpp */; };
 		46E85E0B2E39252B00B74FA3 /* gpu_opengl33.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495E12E300E000047E223 /* gpu_opengl33.cpp */; };
-		46FB045A2F02F7DF00BFA86D /* draw2d_sw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46FB04592F02F7DF00BFA86D /* draw2d_sw.cpp */; };
 		46FD95932F2AA035004EAEC5 /* hw_keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46FD95922F2AA035004EAEC5 /* hw_keyboard.cpp */; };
 /* End PBXBuildFile section */
 
@@ -48,7 +47,6 @@
 		460495DB2E300E000047E223 /* api_opengl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = api_opengl.cpp; sourceTree = "<group>"; };
 		460495DC2E300E000047E223 /* core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
 		460495DD2E300E000047E223 /* core.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = core.cpp; sourceTree = "<group>"; };
-		460495DE2E300E000047E223 /* draw2d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = draw2d.h; sourceTree = "<group>"; };
 		460495DF2E300E000047E223 /* gpu_iface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gpu_iface.h; sourceTree = "<group>"; };
 		460495E02E300E000047E223 /* gpu_opengl33.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gpu_opengl33.h; sourceTree = "<group>"; };
 		460495E12E300E000047E223 /* gpu_opengl33.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gpu_opengl33.cpp; sourceTree = "<group>"; };
@@ -67,14 +65,14 @@
 		460495F02E300E000047E223 /* sh_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sh_template.h; sourceTree = "<group>"; };
 		460495F12E300E000047E223 /* window.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = window.h; sourceTree = "<group>"; };
 		460495F22E300E000047E223 /* window.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window.cpp; sourceTree = "<group>"; };
-		460495FA2E300E0F0047E223 /* test_matrices.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_matrices.cpp; sourceTree = "<group>"; };
 		460495FB2E300E0F0047E223 /* test_mh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_mh.cpp; sourceTree = "<group>"; };
-		462680A22E69CDED00799C36 /* draw2d.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw2d.cpp; sourceTree = "<group>"; };
 		462680D02E6C3C4500799C36 /* gpu_iface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gpu_iface.cpp; sourceTree = "<group>"; };
-		466C38472F3A0B0E00F75AF4 /* draw3d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = draw3d.h; sourceTree = "<group>"; };
-		466C38482F3A0B0E00F75AF4 /* draw3d.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw3d.cpp; sourceTree = "<group>"; };
 		466C38492F3A0B0E00F75AF4 /* matrix4d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = matrix4d.h; sourceTree = "<group>"; };
 		466C384A2F3A0B0E00F75AF4 /* vector4d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vector4d.h; sourceTree = "<group>"; };
+		466C385B2F41D5D400F75AF4 /* draw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = draw.h; sourceTree = "<group>"; };
+		466C385C2F41D5D400F75AF4 /* draw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw.cpp; sourceTree = "<group>"; };
+		466C385D2F41D5D400F75AF4 /* extension.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = extension.h; sourceTree = "<group>"; };
+		466C385F2F41D69000F75AF4 /* draw_batch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw_batch.cpp; sourceTree = "<group>"; };
 		467318B82EEC213700714D4C /* font.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = font.h; sourceTree = "<group>"; };
 		467318B92EEC213700714D4C /* font.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = font.cpp; sourceTree = "<group>"; };
 		46964CE52EE5C23300B7BCF1 /* api_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = api_macos.h; sourceTree = "<group>"; };
@@ -93,13 +91,9 @@
 		46E85DF82E39135B00B74FA3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		46E85DFA2E39136800B74FA3 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		46E85DFC2E39137100B74FA3 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		46FB04592F02F7DF00BFA86D /* draw2d_sw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw2d_sw.cpp; sourceTree = "<group>"; };
 		46FD95922F2AA035004EAEC5 /* hw_keyboard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_keyboard.cpp; sourceTree = "<group>"; };
 		8998CE202E057F4E007DDD96 /* olcPGE3 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = olcPGE3; sourceTree = BUILT_PRODUCTS_DIR; };
-		8998CE2B2E057F85007DDD96 /* test_vector2d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_vector2d.cpp; sourceTree = "<group>"; };
 		8998CE2C2E057F85007DDD96 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		8998CE2D2E057F85007DDD96 /* test_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_main.cpp; sourceTree = "<group>"; };
-		8998CE2E2E057F85007DDD96 /* test_pixels.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_pixels.cpp; sourceTree = "<group>"; };
 		8998CE332E057F92007DDD96 /* pixel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pixel.h; sourceTree = "<group>"; };
 		8998CE342E057F92007DDD96 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		8998CE362E057F92007DDD96 /* vector2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vector2d.h; sourceTree = "<group>"; };
@@ -157,12 +151,8 @@
 		8998CE2A2E057F85007DDD96 /* tests */ = {
 			isa = PBXGroup;
 			children = (
-				460495FA2E300E0F0047E223 /* test_matrices.cpp */,
 				460495FB2E300E0F0047E223 /* test_mh.cpp */,
-				8998CE2B2E057F85007DDD96 /* test_vector2d.cpp */,
 				8998CE2C2E057F85007DDD96 /* CMakeLists.txt */,
-				8998CE2D2E057F85007DDD96 /* test_main.cpp */,
-				8998CE2E2E057F85007DDD96 /* test_pixels.cpp */,
 			);
 			name = tests;
 			path = ../tests;
@@ -171,12 +161,13 @@
 		8998CE322E057F92007DDD96 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				466C38472F3A0B0E00F75AF4 /* draw3d.h */,
-				466C38482F3A0B0E00F75AF4 /* draw3d.cpp */,
+				466C385F2F41D69000F75AF4 /* draw_batch.cpp */,
+				466C385B2F41D5D400F75AF4 /* draw.h */,
+				466C385C2F41D5D400F75AF4 /* draw.cpp */,
+				466C385D2F41D5D400F75AF4 /* extension.h */,
 				466C38492F3A0B0E00F75AF4 /* matrix4d.h */,
 				466C384A2F3A0B0E00F75AF4 /* vector4d.h */,
 				46FD95922F2AA035004EAEC5 /* hw_keyboard.cpp */,
-				46FB04592F02F7DF00BFA86D /* draw2d_sw.cpp */,
 				467318B82EEC213700714D4C /* font.h */,
 				467318B92EEC213700714D4C /* font.cpp */,
 				46964CE52EE5C23300B7BCF1 /* api_macos.h */,
@@ -188,13 +179,11 @@
 				469A920F2E79B03C007BB460 /* imload_iface.h */,
 				469A920E2E79B01E007BB460 /* hw_input.h */,
 				462680D02E6C3C4500799C36 /* gpu_iface.cpp */,
-				462680A22E69CDED00799C36 /* draw2d.cpp */,
 				460495DA2E300E000047E223 /* api_opengl.h */,
 				460495DB2E300E000047E223 /* api_opengl.cpp */,
 				8998CE342E057F92007DDD96 /* config.h */,
 				460495DC2E300E000047E223 /* core.h */,
 				460495DD2E300E000047E223 /* core.cpp */,
-				460495DE2E300E000047E223 /* draw2d.h */,
 				460495DF2E300E000047E223 /* gpu_iface.h */,
 				460495E02E300E000047E223 /* gpu_opengl33.h */,
 				460495E12E300E000047E223 /* gpu_opengl33.cpp */,
@@ -280,12 +269,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				466C384B2F3A0B0E00F75AF4 /* draw3d.cpp in Sources */,
 				462680D12E6C3C4500799C36 /* gpu_iface.cpp in Sources */,
+				466C38602F41D69000F75AF4 /* draw_batch.cpp in Sources */,
 				462680A42E69D03800799C36 /* image.cpp in Sources */,
 				46E85E0B2E39252B00B74FA3 /* gpu_opengl33.cpp in Sources */,
-				46FB045A2F02F7DF00BFA86D /* draw2d_sw.cpp in Sources */,
-				462680A32E69CDED00799C36 /* draw2d.cpp in Sources */,
 				46E85E0A2E39252200B74FA3 /* window.cpp in Sources */,
 				46E85E092E3924FB00B74FA3 /* core.cpp in Sources */,
 				467318BA2EEC213700714D4C /* font.cpp in Sources */,
@@ -296,6 +283,7 @@
 				46FD95932F2AA035004EAEC5 /* hw_keyboard.cpp in Sources */,
 				46C8F5B92E7DA67900C11019 /* imload_macos.cpp in Sources */,
 				460496082E362F190047E223 /* test_mh.cpp in Sources */,
+				466C385E2F41D5D400F75AF4 /* draw.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
