@@ -206,6 +206,7 @@ namespace olc::host
         emscripten_set_mousedown_callback(cbData->canvasId.c_str(), reinterpret_cast<void*>(cbData), 1, mouse_callback);
         emscripten_set_mouseup_callback(cbData->canvasId.c_str(), reinterpret_cast<void*>(cbData), 1, mouse_callback);
         emscripten_set_mousemove_callback(cbData->canvasId.c_str(), reinterpret_cast<void*>(cbData), 1, mouse_callback);
+        emscripten_set_pointerlockchange_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, reinterpret_cast<void*>(cbData), 1, pointerlockchange_callback);
 
         // Touch Callbacks
         emscripten_set_touchstart_callback(cbData->canvasId.c_str(), reinterpret_cast<void*>(cbData), 1, touch_callback);
@@ -496,12 +497,9 @@ namespace olc::host
     EM_BOOL Host_Web_Emscripten::pointerlockchange_callback(int eventType, const EmscriptenPointerlockChangeEvent *e, void* userData)
     {
         CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
-        
-        if (e->isActive) {
-            pCallbackData->pHost->bMouseIsLocked = true;
-        } else {
-            pCallbackData->pHost->bMouseIsLocked = false;
-        }
+        pCallbackData->pHost->bMouseIsLocked = e->isActive;
+        pCallbackData->pHost->olc_OnMouseLock(pCallbackData->pWindow, e->isActive);
+        std::cout << e->isActive << "\n";
         return EM_TRUE;
     }
 
@@ -625,6 +623,11 @@ namespace olc::host
     bool Host_Web_Emscripten::olc_OnMouseWheel(olc::Window* pWindow, const int32_t nScroll)
     {
         return pWindow->olc_OnMouseWheel(nScroll);
+    }
+
+    bool Host_Web_Emscripten::olc_OnMouseLock(olc::Window* pWindow, const bool bLocked)
+    {
+        return pWindow->olc_OnMouseLock(bLocked);
     }
 
     bool Host_Web_Emscripten::olc_OnMouseFocus(olc::Window* pWindow, const bool bHasFocus)

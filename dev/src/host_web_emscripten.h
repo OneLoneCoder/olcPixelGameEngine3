@@ -80,7 +80,8 @@ namespace olc::host
 		static bool olc_OnMouseButton(olc::Window* pWindow, const uint8_t nButton, const bool bPressed);
 		static bool olc_OnMouseMove(olc::Window* pWindow, const olc::vi2d& vMousePos);
 		static bool olc_OnMouseWheel(olc::Window* pWindow, const int32_t nScroll);
-		static bool olc_OnMouseFocus(olc::Window* pWindow, const bool bHasFocus);
+		static bool olc_OnMouseLock(olc::Window* pWindow, const bool bLocked);
+        static bool olc_OnMouseFocus(olc::Window* pWindow, const bool bHasFocus);
 		
         // Set Keyboard Device State
         static bool olc_OnKeyPress(olc::Window* pWindow, const olc::Key key, const bool bPressed);
