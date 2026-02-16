@@ -287,6 +287,26 @@ namespace olc::host
         return true;
     }
 
+    // Lock or unlock mouse cursor / relative mouse mode
+    bool Host_Web_Emscripten::LockMouseCursor(olc::Window* pWindow, const bool bLocked)
+    {
+        // No action required, already locked, or unlocked
+        if(bMouseIsLocked == bLocked)
+            return bLocked;
+        
+        if(bLocked)
+        {
+            auto canvasID = mapUID2CanvasId.at(pWindow->GetUID());
+            emscripten_request_pointerlock(canvasID.c_str(), true);
+            bMouseIsLocked = bLocked;
+            return true;
+        }
+
+        emscripten_exit_pointerlock();
+        bMouseIsLocked = bLocked;
+        return false;
+    }
+
     olc::KeyboardLayout Host_Web_Emscripten::GetKeyboardLayout() const
 	{
 		return static_cast<olc::KeyboardLayout>(EM_ASM_INT({ return Module.keyboardLayout || 0; }));
@@ -434,7 +454,11 @@ namespace olc::host
         //Mouse Movement
         if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE)
         {
-            olc_OnMouseMove(pCallbackData->pWindow, {e->targetX, e->targetY});
+            if(pCallbackData->pHost->bMouseIsLocked)
+                olc_OnMouseMove(pCallbackData->pWindow, {e->movementX, e->movementY});
+            else
+                olc_OnMouseMove(pCallbackData->pWindow, {e->targetX, e->targetY});
+            
             return EM_FALSE;
         }
 
@@ -468,6 +492,19 @@ namespace olc::host
         return EM_FALSE;
     }
     
+    // Callback when pointer lock state changes
+    EM_BOOL Host_Web_Emscripten::pointerlockchange_callback(int eventType, const EmscriptenPointerlockChangeEvent *e, void* userData)
+    {
+        CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
+        
+        if (e->isActive) {
+            pCallbackData->pHost->bMouseIsLocked = true;
+        } else {
+            pCallbackData->pHost->bMouseIsLocked = false;
+        }
+        return EM_TRUE;
+    }
+
     //TY Moros
     EM_BOOL Host_Web_Emscripten::wheel_callback(int eventType, const EmscriptenWheelEvent* e, void* userData)
     {

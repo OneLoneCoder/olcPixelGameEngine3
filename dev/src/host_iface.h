@@ -99,7 +99,9 @@ namespace olc
 			virtual bool SetMousePosition(olc::Window* pWindow, const olc::vi2d& vPos) = 0;
 			// Show or hide mouse cursor for given window
 			virtual bool SetMouseVisible(olc::Window* pWindow, const bool bVisible) = 0;
-
+			// Lock or unlock mouse cursor / relative mouse mode
+			virtual bool LockMouseCursor(olc::Window* pWindow, const bool bLocked) = 0;
+			
 		public: // OS Specific Environment Information
 			virtual olc::KeyboardLayout GetKeyboardLayout() const = 0;
 

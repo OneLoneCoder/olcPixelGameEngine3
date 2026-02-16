@@ -96,9 +96,13 @@ namespace olc
 		// Show or hide mouse cursor
 		void ShowMouseCursor(const bool bShow);
 
+		// Lock or Unlock mouse cursor / relative mouse mode
+		void LockMouseCursor(const bool bLocked);
+
 	protected:
 		bool bRequestToClose = false;
 		bool bShouldRemove = false;
+		bool bMouseIsLocked = false;
 
 	protected:
 		size_t nUniqueID = size_t(-1);

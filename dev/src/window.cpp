@@ -131,6 +131,10 @@ namespace olc
 	{
 		pHost->SetMouseVisible(this, bShow);
 	}
-
+	
+	void Window::LockMouseCursor(const bool bLocked)
+	{
+		bMouseIsLocked = pHost->LockMouseCursor(this, bLocked);
+	}
 };
 //! END IMPLEMENTATION

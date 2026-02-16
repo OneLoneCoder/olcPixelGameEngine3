@@ -41,6 +41,8 @@ namespace olc::host
         bool SetMousePosition(olc::Window* pWindow, const olc::vi2d& vPos) override;
         // Show or hide mouse cursor for given window
         bool SetMouseVisible(olc::Window* pWindow, const bool bVisible) override;
+        // Lock or unlock mouse cursor / relative mouse mode
+        bool LockMouseCursor(olc::Window* pWindow, const bool bLocked) override;
 
     public: // OS Specific Environment Information
         olc::KeyboardLayout GetKeyboardLayout() const override;
@@ -66,6 +68,7 @@ namespace olc::host
     public: // event callbacks
         static EM_BOOL keyboard_callback(int eventType, const EmscriptenKeyboardEvent* e, void* userData);
         static EM_BOOL mouse_callback(int eventType, const EmscriptenMouseEvent* e, void* userData);
+        static EM_BOOL pointerlockchange_callback(int eventType, const EmscriptenPointerlockChangeEvent *e, void* userData);
         static EM_BOOL wheel_callback(int eventType, const EmscriptenWheelEvent* e, void* userData);
         static EM_BOOL touch_callback(int eventType, const EmscriptenTouchEvent* e, void* userData);
         static EM_BOOL fullscreen_change_callback(int eventType, const EmscriptenFullscreenChangeEvent *event, void *userData);
@@ -103,6 +106,7 @@ namespace olc::host
         std::unordered_map<int32_t, olc::Key> mapKeys;
         // Map of system mouse buttons to olc mouse buttons
         std::unordered_map<int32_t, int32_t> mapMouseButtons;
+        bool bMouseIsLocked = false;
     };
     
     

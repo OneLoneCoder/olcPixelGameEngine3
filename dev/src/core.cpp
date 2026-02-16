@@ -194,6 +194,9 @@ namespace olc
 		//pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
 		pRenderer->DisplayDraw(pHost->GetHostWindowDescriptor(this));
 
+		// Zero out the mouse position if the mouse is locked
+		if(bMouseIsLocked) mouse.SetPosition({0,0});
+
 		return true;
 	}
 
@@ -314,6 +317,13 @@ namespace olc
 	bool PGEWindow::olc_OnMouseMove(const olc::vi2d& vMousePos)
 	{
 		olc::vi2d pos = vMousePos;
+
+		// locked and relative
+		if(bMouseIsLocked)
+		{
+			mouse.SetPosition(pos);
+			return true;
+		}
 
 		// TODO: Concept in v2d prevents this from being cleaner
 		// Full screen windows may have different scaling
