@@ -140,7 +140,7 @@ namespace olc
 	
 	void Window::LockMouseCursor(const bool bLocked)
 	{
-		bMouseIsLocked = pHost->LockMouseCursor(this, bLocked);
+		pHost->LockMouseCursor(this, bLocked);
 	}
 	
 	bool Window::IsMouseLocked() const
