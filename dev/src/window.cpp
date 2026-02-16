@@ -43,7 +43,13 @@ namespace olc
 		mouse.SetWheel(nScroll);
 		return true;
 	}
-
+	
+	bool Window::olc_OnMouseLock(const bool bLocked)
+	{
+		bMouseIsLocked = bLocked;
+		return true;
+	}
+	
 	bool Window::olc_OnMouseFocus(const bool bHasFocus)
 	{
 		olc_IgnoreUnused(bHasFocus);
@@ -135,6 +141,11 @@ namespace olc
 	void Window::LockMouseCursor(const bool bLocked)
 	{
 		bMouseIsLocked = pHost->LockMouseCursor(this, bLocked);
+	}
+	
+	bool Window::IsMouseLocked() const
+	{
+		return bMouseIsLocked;
 	}
 };
 //! END IMPLEMENTATION
