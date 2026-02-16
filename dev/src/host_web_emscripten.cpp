@@ -499,7 +499,6 @@ namespace olc::host
         CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
         pCallbackData->pHost->bMouseIsLocked = e->isActive;
         pCallbackData->pHost->olc_OnMouseLock(pCallbackData->pWindow, e->isActive);
-        std::cout << e->isActive << "\n";
         return EM_TRUE;
     }
 
