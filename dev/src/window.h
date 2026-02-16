@@ -62,6 +62,7 @@ namespace olc
 		virtual bool olc_OnMouseButton(const uint8_t nButton, const bool bPressed);
 		virtual bool olc_OnMouseMove(const olc::vi2d& vMousePos);
 		virtual bool olc_OnMouseWheel(const int32_t nScroll);
+		virtual bool olc_OnMouseLock(const bool bLocked);
 		virtual bool olc_OnMouseFocus(const bool bHasFocus);
 		
 		// Set Window State
@@ -96,9 +97,15 @@ namespace olc
 		// Show or hide mouse cursor
 		void ShowMouseCursor(const bool bShow);
 
+		// Lock or Unlock mouse cursor / relative mouse mode
+		void LockMouseCursor(const bool bLocked);
+
+		bool IsMouseLocked() const;
+
 	protected:
 		bool bRequestToClose = false;
 		bool bShouldRemove = false;
+		bool bMouseIsLocked = false;
 
 	protected:
 		size_t nUniqueID = size_t(-1);

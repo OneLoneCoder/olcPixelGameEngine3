@@ -5615,16 +5615,28 @@ namespace olc::host
     {
     public:
         Host_Web_Emscripten();
+    
+    public: // OS Window Handling
+        // Make OS Create a window frame, associated with olc::Window
         bool AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen) override;
+        // Make OS Close a window frame, associated with olc::Window
         bool CloseWindowFrame(olc::Window* pWindow) override;
+        // Make OS Update a window frame title, associated with olc::Window
         bool UpdateWindowFrameTitle(olc::Window* pWindow) override;
-
+        // Get OS-specific window descriptor(s) for given olc::Window
         std::vector<void*> GetHostWindowDescriptor(olc::Window* pWindow) override;
-        
         // Wait for entire host desktop refresh (for smooooth vsync)
         bool SyncWithDesktopComposite() override;
+
+    public: // Platform specific Mouse Control
+        // Force the mouse position in pixels relative to window
+        bool SetMousePosition(olc::Window* pWindow, const olc::vi2d& vPos) override;
+        // Show or hide mouse cursor for given window
+        bool SetMouseVisible(olc::Window* pWindow, const bool bVisible) override;
+
+    public: // OS Specific Environment Information
         olc::KeyboardLayout GetKeyboardLayout() const override;
-    
+
     public:
         // Called at very start of application
         bool OnApplicationStart(olc::PixelGameEngine* pPrimary) override;
@@ -5645,8 +5657,8 @@ namespace olc::host
 
     public: // event callbacks
         static EM_BOOL keyboard_callback(int eventType, const EmscriptenKeyboardEvent* e, void* userData);
-        static EM_BOOL wheel_callback(int eventType, const EmscriptenWheelEvent* e, void* userData);
         static EM_BOOL mouse_callback(int eventType, const EmscriptenMouseEvent* e, void* userData);
+        static EM_BOOL wheel_callback(int eventType, const EmscriptenWheelEvent* e, void* userData);
         static EM_BOOL touch_callback(int eventType, const EmscriptenTouchEvent* e, void* userData);
         static EM_BOOL fullscreen_change_callback(int eventType, const EmscriptenFullscreenChangeEvent *event, void *userData);
         static EM_BOOL resize_callback(int eventType, const EmscriptenUiEvent *event, void *userData);
@@ -5667,9 +5679,6 @@ namespace olc::host
 		static bool olc_OnWindowSize(olc::Window* pWindow, const olc::vi2d& vWindowSize);
 		static bool olc_OnWindowClose(olc::Window* pWindow);
     
-    private: // helpers
-        static olc::Window* GetWindowFromCanvasId(std::string canvasId);
-        
     public: // Callback data type
         struct CallbackData {
             Host_Web_Emscripten* pHost;
@@ -11217,80 +11226,6 @@ namespace olc::host
     std::unordered_map<std::string, olc::Window*> Host_Web_Emscripten::mapCanvasId2PTR;
     std::unordered_map<size_t, std::unique_ptr<Host_Web_Emscripten::CallbackData>> Host_Web_Emscripten::mapUID2CallbackData;
 
-    // Called at very start of application
-    bool Host_Web_Emscripten::OnApplicationStart(olc::PixelGameEngine* pPrimary)
-    {
-        std::cout << "Emscripten: OnApplicationStart.\n";
-        pPrimaryPGE = pPrimary;
-        return true;
-    }
-    
-    void Host_Web_Emscripten::MainLoop(void* userData)
-    {
-        auto pHost = reinterpret_cast<Host_Web_Emscripten*>(userData);
-
-        if(!pHost->OnSystemTick())
-        {
-            pHost->StopSystem();
-        }
-    }
-
-    // Called to start the host - this may mean different things on different hosts
-    bool Host_Web_Emscripten::StartSystem()
-    {
-		// Pre-context start hook
-		pPrimaryPGE->OnPreContextStart();
-
-        if(!OnSystemThreadStart())
-        {
-            // PGE->ContextStart() failed, or user aborted OnUserCreate()
-            return false;
-        }
-        
-        emscripten_set_main_loop_arg(Host_Web_Emscripten::MainLoop, reinterpret_cast<void*>(this), 0, 1);
-        
-        // EMSCRIPTEN QUIRK: this code is never reached, the main loop is simulating a while(true);
-        
-        return true;
-    }
-    
-    // Called to stop the host, and shutdown all resources
-    bool Host_Web_Emscripten::StopSystem()
-    {
-        std::cout << "Emscripten: StopSystem.\n";
-        OnSystemThreadEnd();
-        pPrimaryPGE->OnPostContextEnd();
-        emscripten_cancel_main_loop();
-        return true;
-    }
-
-    // Called at start of system event loop
-    bool Host_Web_Emscripten::OnSystemThreadStart()
-    {
-        std::cout << "Emscripten: OnSystemThreadStart.\n";
-        return pPrimaryPGE->OnContextStart();
-    }
-    
-    // Called to perform primary window update
-    bool Host_Web_Emscripten::OnSystemTick()
-    {
-        return pPrimaryPGE->OnContextTick();
-    }
-    
-    // Called at end of system event loop
-    bool Host_Web_Emscripten::OnSystemThreadEnd()
-    {
-        std::cout << "Emscripten: OnSystemThreadEnd.\n";
-        return pPrimaryPGE->OnContextEnd();
-    }
-    
-    // Called at very end of application
-    bool Host_Web_Emscripten::OnApplicationEnd()
-    {
-        std::cout << "Emscripten: OnApplicationEnd.\n";
-        return true;
-    }
-
     Host_Web_Emscripten::Host_Web_Emscripten()
     {
         std::cout << "Emscripten: host constructed.\n";
@@ -11510,6 +11445,141 @@ namespace olc::host
 
         return true;
     }
+    
+    bool Host_Web_Emscripten::CloseWindowFrame(olc::Window* pWindow)
+    {
+        std::cout << "Emscripten: CloseWindowFrame not implemented.\n";
+        return true;
+    }
+
+    bool Host_Web_Emscripten::UpdateWindowFrameTitle(olc::Window* pWindow)
+    {
+        // not implemented for emscripten platform
+        return true;
+    }
+
+    std::vector<void*> Host_Web_Emscripten::GetHostWindowDescriptor(olc::Window* pWindow)
+    {
+        const auto window_handle = mapUID2CanvasId.find(pWindow->GetUID());
+        if(window_handle != mapUID2CanvasId.end())
+        {
+            return { (void*)(window_handle->second.c_str()) };
+        }
+        
+        return {};
+    }
+
+    // Wait for entire host desktop refresh (for smooooth vsync)
+    bool Host_Web_Emscripten::SyncWithDesktopComposite()
+    {
+        // SyncWithDesktopComposite not implemented on this platform
+        return true;
+    }
+
+    // Force the mouse position in pixels relative to window
+    bool Host_Web_Emscripten::SetMousePosition(olc::Window* pWindow, const olc::vi2d& vPos)
+    {
+        // Not supported on the web platform
+        olc_IgnoreUnused(pWindow, vPos);
+        
+        static bool debounce = false;
+        if(debounce)
+            return false;
+        
+        debounce = true;
+        std::cout << "SetMousePosition is not supported on this platform.\n";
+        return false;
+    }
+
+    // Show or hide mouse cursor for given window
+    bool Host_Web_Emscripten::SetMouseVisible(olc::Window* pWindow, const bool bVisible)
+    {
+        if(!mapUID2CanvasId.contains(pWindow->GetUID()))
+            return false;
+
+        auto canvasID = mapUID2CanvasId.at(pWindow->GetUID());
+        if(bVisible)
+            EM_ASM({ document.querySelector(UTF8ToString($0)).style.cursor = 'default'; }, canvasID.c_str());
+        else
+            EM_ASM({ document.querySelector(UTF8ToString($0)).style.cursor = 'none'; }, canvasID.c_str());
+
+        return true;
+    }
+
+    olc::KeyboardLayout Host_Web_Emscripten::GetKeyboardLayout() const
+	{
+		return static_cast<olc::KeyboardLayout>(EM_ASM_INT({ return Module.keyboardLayout || 0; }));
+    }
+
+    // Called at very start of application
+    bool Host_Web_Emscripten::OnApplicationStart(olc::PixelGameEngine* pPrimary)
+    {
+        std::cout << "Emscripten: OnApplicationStart.\n";
+        pPrimaryPGE = pPrimary;
+        return true;
+    }
+
+    // Called to start the host - this may mean different things on different hosts
+    bool Host_Web_Emscripten::StartSystem()
+    {
+		// Pre-context start hook
+		pPrimaryPGE->OnPreContextStart();
+
+        if(!OnSystemThreadStart())
+        {
+            // PGE->ContextStart() failed, or user aborted OnUserCreate()
+            return false;
+        }
+        
+        emscripten_set_main_loop_arg(Host_Web_Emscripten::MainLoop, reinterpret_cast<void*>(this), 0, 1);
+        
+        // EMSCRIPTEN QUIRK: this code is never reached, the main loop is simulating a while(true);
+        
+        return true;
+    }
+    
+    // Called to stop the host, and shutdown all resources
+    bool Host_Web_Emscripten::StopSystem()
+    {
+        OnSystemThreadEnd();
+        pPrimaryPGE->OnPostContextEnd();
+        emscripten_cancel_main_loop();
+        return true;
+    }
+
+    // Called at start of system event loop
+    bool Host_Web_Emscripten::OnSystemThreadStart()
+    {
+        return pPrimaryPGE->OnContextStart();
+    }
+    
+    // Called to perform primary window update
+    bool Host_Web_Emscripten::OnSystemTick()
+    {
+        return pPrimaryPGE->OnContextTick();
+    }
+    
+    // Called at end of system event loop
+    bool Host_Web_Emscripten::OnSystemThreadEnd()
+    {
+        return pPrimaryPGE->OnContextEnd();
+    }
+    
+    // Called at very end of application
+    bool Host_Web_Emscripten::OnApplicationEnd()
+    {
+        return true;
+    }
+
+    void Host_Web_Emscripten::MainLoop(void* userData)
+    {
+        auto pHost = reinterpret_cast<Host_Web_Emscripten*>(userData);
+
+        if(!pHost->OnSystemTick())
+        {
+            pHost->StopSystem();
+        }
+    }
 
     //TY Moros
     EM_BOOL Host_Web_Emscripten::keyboard_callback(int eventType, const EmscriptenKeyboardEvent* e, void* userData)
@@ -11576,29 +11646,6 @@ namespace olc::host
     }
 
     //TY Moros
-    EM_BOOL Host_Web_Emscripten::wheel_callback(int eventType, const EmscriptenWheelEvent* e, void* userData)
-    {
-        CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
-        
-        if (eventType == EMSCRIPTEN_EVENT_WHEEL)
-            olc_OnMouseWheel(pCallbackData->pWindow, -1 * e->deltaY);
-    
-        return EM_TRUE;
-    }
-
-    olc::Window* Host_Web_Emscripten::GetWindowFromCanvasId(std::string canvasId)
-    {
-        auto itr = mapCanvasId2PTR.find(canvasId);
-        if(itr != mapCanvasId2PTR.end())
-        {
-            return itr->second;
-        }
-
-        throw std::runtime_error("failed to get window for canvas id: " + canvasId);
-        return nullptr;
-    }
-
-    //TY Moros
     EM_BOOL Host_Web_Emscripten::mouse_callback(int eventType, const EmscriptenMouseEvent* e, void* userData)
     {
         CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
@@ -11639,6 +11686,17 @@ namespace olc::host
         
         return EM_FALSE;
     }
+    
+    //TY Moros
+    EM_BOOL Host_Web_Emscripten::wheel_callback(int eventType, const EmscriptenWheelEvent* e, void* userData)
+    {
+        CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
+        
+        if (eventType == EMSCRIPTEN_EVENT_WHEEL)
+            olc_OnMouseWheel(pCallbackData->pWindow, -1 * e->deltaY);
+    
+        return EM_TRUE;
+    }
 
     //TY Bispoo
     EM_BOOL Host_Web_Emscripten::touch_callback(int eventType, const EmscriptenTouchEvent* e, void* userData)
@@ -11668,22 +11726,6 @@ namespace olc::host
         }
 
         return EM_TRUE;
-    }
-    //TY Gorbit
-    EM_BOOL Host_Web_Emscripten::focus_callback(int eventType, const EmscriptenFocusEvent* focusEvent, void* userData)
-    {
-        CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
- 
-        if (eventType == EMSCRIPTEN_EVENT_BLUR)
-        {
-            olc_OnMouseFocus(pCallbackData->pWindow, false);
-        }
-        else if (eventType == EMSCRIPTEN_EVENT_FOCUS)
-        {
-            olc_OnMouseFocus(pCallbackData->pWindow, true);
-        }
-
-        return 0;
     }
 
     //TY Moros
@@ -11735,39 +11777,21 @@ namespace olc::host
         return 0;
     }
 
-    bool Host_Web_Emscripten::CloseWindowFrame(olc::Window* pWindow)
+    //TY Gorbit
+    EM_BOOL Host_Web_Emscripten::focus_callback(int eventType, const EmscriptenFocusEvent* focusEvent, void* userData)
     {
-        std::cout << "Emscripten: CloseWindowFrame not implemented.\n";
-        return true;
-    }
-
-    bool Host_Web_Emscripten::UpdateWindowFrameTitle(olc::Window* pWindow)
-    {
-        // not implemented for emscripten platform
-        return true;
-    }
-
-    std::vector<void*> Host_Web_Emscripten::GetHostWindowDescriptor(olc::Window* pWindow)
-    {
-        const auto window_handle = mapUID2CanvasId.find(pWindow->GetUID());
-        if(window_handle != mapUID2CanvasId.end())
+        CallbackData* pCallbackData = reinterpret_cast<CallbackData*>(userData);
+ 
+        if (eventType == EMSCRIPTEN_EVENT_BLUR)
         {
-            return { (void*)(window_handle->second.c_str()) };
+            olc_OnMouseFocus(pCallbackData->pWindow, false);
         }
-        
-        return {};
-    }
+        else if (eventType == EMSCRIPTEN_EVENT_FOCUS)
+        {
+            olc_OnMouseFocus(pCallbackData->pWindow, true);
+        }
 
-    // Wait for entire host desktop refresh (for smooooth vsync)
-    bool Host_Web_Emscripten::SyncWithDesktopComposite()
-    {
-        // SyncWithDesktopComposite not implemented on this platform
-        return true;
-    }
-	
-    olc::KeyboardLayout Host_Web_Emscripten::GetKeyboardLayout() const
-	{
-		return static_cast<olc::KeyboardLayout>(EM_ASM_INT({ return Module.keyboardLayout || 0; }));
+        return 0;
     }
 
     bool Host_Web_Emscripten::olc_OnMouseButton(olc::Window* pWindow, const uint8_t nButton, const bool bPressed)
@@ -11809,8 +11833,6 @@ namespace olc::host
     {
         return pWindow->olc_OnWindowClose();
     }
-
-
 }
 #endif
 
