@@ -358,7 +358,7 @@ const ImageBatch& olc::Draw::Image(ImageBatch& batch, olc::ImageRegion image, co
 const ImageBatch& olc::Draw::ImageRotated(olc::ImageBatch& batch, olc::ImageRegion image, const olc::vf2d& pos, const float theta, const olc::vf2d& center, const olc::vf2d& scale, const olc::Pixel tint)
 {
 	// Add quad to existing task
-	olc::vf2d size = image.regionsize * scale;
+	olc::vf2d size = image.regionsize;
 
 	std::array<olc::vf2d, 4> vPoints;
 	vPoints[0] = (olc::vf2d(0.0f, 0.0f) - center) * scale;

@@ -995,7 +995,7 @@ const GPUTask& olc::Draw::ImageRotated(olc::ImageRegion image, const olc::vf2d& 
 	PrepareImageForHW(image.image);
 	PrepareTargetForHW();
 
-	olc::vf2d size = image.regionsize * scale;
+	olc::vf2d size = image.regionsize;
 
 	std::vector<olc::vf2d> vPoints(4);
 	vPoints[0] = olc::vf2d(0.0f, 0.0f) - (center * scale);
