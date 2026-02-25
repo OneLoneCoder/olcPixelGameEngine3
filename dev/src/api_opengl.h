@@ -183,6 +183,10 @@ namespace olc
 		typedef void CALLSTYLE wglSwapIntervalEXT_t(GLsizei n);
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_X11
+		typedef GLint CALLSTYLE glXSwapIntervalEXT_t(X11::Display* dpy, X11::GLXDrawable drawable, GLint interval);
+#endif
+
 		// A little GL class (singleton)
 		class gl
 		{
@@ -245,6 +249,10 @@ namespace olc
 			wglSwapIntervalEXT_t* _wglSwapIntervalEXT = nullptr;
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_X11
+		public:
+			glXSwapIntervalEXT_t* XSwapIntervalEXT = nullptr;
+#endif
 
 		public:
 			// Proxies allow switchable, clutter-free error checking

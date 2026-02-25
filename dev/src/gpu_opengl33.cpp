@@ -352,19 +352,24 @@ void main()
 			// Enable VSync - lock to display refresh
 			// May also be governed by OS / driver settings
 			// and desktop compositor settings
-#if !((OLC_HOST == OLC_HOST_EMSCRIPTEN) || (OLC_HOST == OLC_HOST_LINUX_WAYLAND))
-			gl.glSwapInterval(1);
-#else
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
 			eglSwapInterval(glRenderContext.display, 1);
+#elif OLC_HOST == OLC_HOST_LINUX_X11
+			gl.XSwapIntervalEXT(display, window_handle, 1);
+#else
+			gl.glSwapInterval(1);
 #endif
+
 		}
 		else
 		{
 			// Disable VSync - run like the clappers!
-#if !((OLC_HOST == OLC_HOST_EMSCRIPTEN) || (OLC_HOST == OLC_HOST_LINUX_WAYLAND))
-			gl.glSwapInterval(0);
-#else
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
 			eglSwapInterval(glRenderContext.display, 0);
+#elif OLC_HOST == OLC_HOST_LINUX_X11
+			gl.XSwapIntervalEXT(display, window_handle, 0);
+#else
+			gl.glSwapInterval(0);
 #endif
 		}
 		

@@ -85,6 +85,9 @@ namespace olc::apis::opengl
 		bLoaded &= (_wglSwapIntervalEXT = OGL_LOAD(wglSwapIntervalEXT)) != nullptr;
 #endif
 
+#if OLC_HOST == OLC_HOST_LINUX_X11
+		bLoaded &= (XSwapIntervalEXT = OGL_LOAD(glXSwapIntervalEXT)) != nullptr;
+#endif
 		
 		return bLoaded;
 	}
