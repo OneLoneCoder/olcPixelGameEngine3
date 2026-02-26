@@ -17,7 +17,6 @@ namespace olc::host
         std::string lang = locale.substr(0, sep);
         std::string region = (sep != std::string::npos) ? locale.substr(sep + 1) : "";
         
-        // give us a scope we can break from
         if(region == "ch" || region == "li")
         {
             keyboardLayout = KeyboardLayout::QWERTZ;
