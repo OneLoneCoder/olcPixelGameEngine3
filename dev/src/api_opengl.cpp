@@ -137,127 +137,127 @@ namespace olc::apis::opengl
 
 	void gl::glGenTextures(GLsizei n, GLuint* textures)
 	{
-		::glGenTextures(n, textures);
+		ZERO_GL(glGenTextures)(n, textures);
 		CheckError();
 	}
 
 	void gl::glBindTexture(GLenum target, GLuint texture)
 	{
-		::glBindTexture(target, texture);
+		ZERO_GL(glBindTexture)(target, texture);
 		CheckError();
 	}
 
 	void gl::glTexParameteri(GLenum target, GLenum pname, GLint param)
 	{
-		::glTexParameteri(target, pname, param);
+		ZERO_GL(glTexParameteri)(target, pname, param);
 		CheckError();
 	}
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
 #if OLC_HOST != OLC_HOST_ANDROID
-		::glTexEnvf(target, pname, param);
+		ZERO_GL(glTexEnvf)(target, pname, param);
 		CheckError();
 #endif
 	}
 
 	void gl::glDeleteTextures(GLsizei n, const GLuint* textures)
 	{
-		::glDeleteTextures(n, textures);
+		ZERO_GL(glDeleteTextures)(n, textures);
 		CheckError();
 	}
 
 	void gl::glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels)
 	{
-		::glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+		ZERO_GL(glTexImage2D)(target, level, internalformat, width, height, border, format, type, pixels);
 		CheckError();
 	}
 
 	void gl::glClear(GLbitfield mask)
 	{
-		::glClear(mask);
+		ZERO_GL(glClear)(mask);
 		CheckError();
 	}
 
 	void gl::glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	{
-		::glViewport(x, y, width, height);
+		ZERO_GL(glViewport)(x, y, width, height);
 		CheckError();
 	}
 
 	void gl::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	{
-		::glClearColor(red, green, blue, alpha);
+		ZERO_GL(glClearColor)(red, green, blue, alpha);
 		CheckError();
 	}
 
 	void gl::glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* data)
 	{
-		::glReadPixels(x, y, width, height, format, type, data);
+		ZERO_GL(glReadPixels)(x, y, width, height, format, type, data);
 		CheckError();
 	}
 
 	void gl::glCullFace(GLenum mode)
 	{
-		::glCullFace(mode);
+		ZERO_GL(glCullFace)(mode);
 		CheckError();
 	}
 
 	void gl::glEnable(GLenum cap)
 	{
-		::glEnable(cap);
+		ZERO_GL(glEnable)(cap);
 		CheckError();
 	}
 
 	void gl::glDisable(GLenum cap)
 	{
-		::glDisable(cap);
+		ZERO_GL(glDisable)(cap);
 		CheckError();
 	}
 
 	void gl::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	{
-		::glDrawArrays(mode, first, count);
+		ZERO_GL(glDrawArrays)(mode, first, count);
 		CheckError();
 	}
 
 	void gl::glBlendFunc(GLenum sfactor, GLenum dfactor)
 	{
-		::glBlendFunc(sfactor, dfactor);
+		ZERO_GL(glBlendFunc)(sfactor, dfactor);
 		CheckError();
 	}
 
 	void gl::glDepthFunc(GLenum func)
 	{
-		::glDepthFunc(func);
+		ZERO_GL(glDepthFunc)(func);
 		CheckError();
 	}
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
-		::glGetTexImage(target, level, format, type, pixels);
+		ZERO_GL(glGetTexImage)(target, level, format, type, pixels);
 		CheckError();
 #endif
 	}
 
 	void gl::glHint(GLenum target, GLenum mode)
 	{
-		::glHint(target, mode);
+		ZERO_GL(glHint)(target, mode);
 		CheckError();
 	}
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
-		::glPolygonMode(face, mode);
+		ZERO_GL(glPolygonMode)(face, mode);
 		CheckError();
 #endif
 	}
 
 	void gl::glFrontFace(GLenum mode)
 	{
-		::glFrontFace(mode);
+		ZERO_GL(glFrontFace)(mode);
 		CheckError();
 	}
 

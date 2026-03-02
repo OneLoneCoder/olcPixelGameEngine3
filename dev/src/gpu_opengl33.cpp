@@ -258,13 +258,13 @@ void main()
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
         GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
 
-		X11::XVisualInfo* olc_VisualInfo = X11::glXChooseVisual(display, 0, olc_GLAttribs);
-		glRenderContext = X11::glXCreateContext(display, olc_VisualInfo, nullptr, GL_TRUE);
-		glXMakeCurrent(display, window_handle, glRenderContext);
+		X11::XVisualInfo* olc_VisualInfo = zero_glXChooseVisual(display, 0, olc_GLAttribs);
+		glRenderContext = zero_glXCreateContext(display, olc_VisualInfo, nullptr, GL_TRUE);
+		zero_glXMakeCurrent(display, window_handle, glRenderContext);
 
 		X11::XWindowAttributes gwa;
-		X11::XGetWindowAttributes(display, window_handle, &gwa);
-		glViewport(0, 0, gwa.width, gwa.height);
+		zero_XGetWindowAttributes(display, window_handle, &gwa);
+		ZERO_GL(glViewport)(0, 0, gwa.width, gwa.height);
 #endif
 
 #if OLC_HOST == OLC_HOST_MACOS
@@ -513,9 +513,9 @@ void main()
 		CGLDestroyContext((CGLContextObj)glRenderContext);
 #endif
 #if OLC_HOST == OLC_HOST_LINUX_X11
-		auto* display = X11::XOpenDisplay(nullptr);
-		X11::glXMakeCurrent(display, 0, NULL);
-		X11::glXDestroyContext(display, glRenderContext);
+		auto* display = zero_XOpenDisplay(nullptr);
+		zero_glXMakeCurrent(display, 0, NULL);
+		zero_glXDestroyContext(display, glRenderContext);
 #endif
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 		eglMakeCurrent(glRenderContext.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -552,7 +552,7 @@ void main()
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		const auto window = reinterpret_cast<X11::Window>(os_win_id[0]);
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
-		if(!X11::glXMakeCurrent(display, window, glRenderContext))
+		if(!zero_glXMakeCurrent(display, window, glRenderContext))
 		{
 			lastError = RendererError::FailedToSwitchRenderContext;
 			return false;
@@ -623,7 +623,7 @@ void main()
 		{
 			uint32_t new_id = 0;
 			gl.glGenTextures(1, &new_id);
-			glBindTexture(GL_TEXTURE_2D, new_id);
+			gl.glBindTexture(GL_TEXTURE_2D, new_id);
 
 			if (cfg.Filtered)
 			{
@@ -940,7 +940,7 @@ void main()
 		uint32_t rboId = mapTextureToRenderbuffer[texid];
 
 		// Ensure all rendering to MSAA texture is finished
-		glFinish();
+		ZERO_GL(glFinish)();
 
 		// Bind renderbuffer to read FBO
 		gl.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER_X, nResolveFBO_Read);
@@ -1115,8 +1115,8 @@ void main()
 				//// Apply Depth Testing (if required)
 				if (task.bDepth)
 					gl.glEnable(GL_DEPTH_TEST);
-
-				glDepthFunc(GL_LESS);
+				
+				gl.glDepthFunc(GL_LESS);
 
 				gl.glEnable(GL_BLEND);
 				//gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1225,7 +1225,7 @@ void main()
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		const auto window_handle = reinterpret_cast<X11::Window>(os_win_id[0]);
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
-		X11::glXSwapBuffers(display, window_handle);
+		zero_glXSwapBuffers(display, window_handle);
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND

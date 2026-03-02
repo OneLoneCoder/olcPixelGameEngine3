@@ -17,6 +17,11 @@
 #endif
 
 //! START OPENGL_CONFIG
+#if OLC_HOST == OLC_HOST_LINUX_X11
+#define ZERO_GL(func) zero_##func
+#else
+#define ZERO_GL(func) ::func
+#endif
 
 #if OLC_HOST == OLC_HOST_WINDOWS
 	#include <windows.h>
@@ -34,7 +39,7 @@
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
 	#include <GL/gl.h>
-	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(X11::glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
+	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(zero_glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND

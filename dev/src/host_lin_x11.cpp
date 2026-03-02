@@ -6,13 +6,90 @@ namespace olc::host
     Host_Linux_X11::Host_Linux_X11()
     {
         using namespace X11;
-        XInitThreads();
-        olc_Display = XOpenDisplay(NULL);
+
+        libx11_handle = dlopen("libX11.so", RTLD_LAZY);
+        if(libx11_handle)
+        {
+            ZERO_LOAD_SYM(libx11_handle, XCreateBitmapFromData)
+            ZERO_LOAD_SYM(libx11_handle, XCreateColormap)
+            ZERO_LOAD_SYM(libx11_handle, XCreatePixmapCursor)
+            ZERO_LOAD_SYM(libx11_handle, XCreateWindow)
+            ZERO_LOAD_SYM(libx11_handle, XDefineCursor)
+            ZERO_LOAD_SYM(libx11_handle, XDestroyWindow)
+            ZERO_LOAD_SYM(libx11_handle, XFlush)
+            ZERO_LOAD_SYM(libx11_handle, XFree)
+            ZERO_LOAD_SYM(libx11_handle, XFreeCursor)
+            ZERO_LOAD_SYM(libx11_handle, XFreePixmap)
+            ZERO_LOAD_SYM(libx11_handle, XGetAtomName)
+            ZERO_LOAD_SYM(libx11_handle, XGetWindowAttributes)
+            ZERO_LOAD_SYM(libx11_handle, XGrabPointer)
+            ZERO_LOAD_SYM(libx11_handle, XInitThreads)
+            ZERO_LOAD_SYM(libx11_handle, XInternAtom)
+            ZERO_LOAD_SYM(libx11_handle, XLookupString)
+            ZERO_LOAD_SYM(libx11_handle, XMapWindow)
+            ZERO_LOAD_SYM(libx11_handle, XNextEvent)
+            ZERO_LOAD_SYM(libx11_handle, XOpenDisplay)
+            ZERO_LOAD_SYM(libx11_handle, XPending)
+            ZERO_LOAD_SYM(libx11_handle, XSetWMProtocols)
+            ZERO_LOAD_SYM(libx11_handle, XStoreName)
+            ZERO_LOAD_SYM(libx11_handle, XUndefineCursor)
+            ZERO_LOAD_SYM(libx11_handle, XUngrabPointer)
+            ZERO_LOAD_SYM(libx11_handle, XWarpPointer)
+            ZERO_LOAD_SYM(libx11_handle, XkbFreeKeyboard)
+            ZERO_LOAD_SYM(libx11_handle, XkbGetMap)
+            ZERO_LOAD_SYM(libx11_handle, XkbGetNames)
+            ZERO_LOAD_SYM(libx11_handle, XkbGetState)
+            ZERO_LOAD_SYM(libx11_handle, XkbQueryExtension)
+            ZERO_LOAD_SYM(libx11_handle, XkbSelectEventDetails)
+        }
+        else throw std::runtime_error("Failed to load libX11.so");
+        
+        libglx_handle = dlopen("libGLX.so", RTLD_LAZY);
+        if(libglx_handle)
+        {
+            ZERO_LOAD_SYM(libglx_handle, glXChooseVisual)
+            ZERO_LOAD_SYM(libglx_handle, glXCreateContext)
+            ZERO_LOAD_SYM(libglx_handle, glXDestroyContext)
+            ZERO_LOAD_SYM(libglx_handle, glXGetProcAddress)
+            ZERO_LOAD_SYM(libglx_handle, glXMakeCurrent)
+            ZERO_LOAD_SYM(libglx_handle, glXSwapBuffers)
+        }
+        else throw std::runtime_error("Failed to load libGLX.so");
+        
+        libgl_handle = dlopen("libGL.so", RTLD_LAZY);
+        if(libgl_handle)
+        {
+            ZERO_LOAD_SYM(libgl_handle, glGenTextures)
+            ZERO_LOAD_SYM(libgl_handle, glBindTexture)
+            ZERO_LOAD_SYM(libgl_handle, glTexParameteri)
+            ZERO_LOAD_SYM(libgl_handle, glTexEnvf)
+            ZERO_LOAD_SYM(libgl_handle, glDeleteTextures)
+            ZERO_LOAD_SYM(libgl_handle, glTexImage2D)
+            ZERO_LOAD_SYM(libgl_handle, glClear)
+            ZERO_LOAD_SYM(libgl_handle, glViewport)
+            ZERO_LOAD_SYM(libgl_handle, glClearColor)
+            ZERO_LOAD_SYM(libgl_handle, glReadPixels)
+            ZERO_LOAD_SYM(libgl_handle, glCullFace)
+            ZERO_LOAD_SYM(libgl_handle, glEnable)
+            ZERO_LOAD_SYM(libgl_handle, glDisable)
+            ZERO_LOAD_SYM(libgl_handle, glDrawArrays)
+            ZERO_LOAD_SYM(libgl_handle, glBlendFunc)
+            ZERO_LOAD_SYM(libgl_handle, glDepthFunc)
+            ZERO_LOAD_SYM(libgl_handle, glGetTexImage)
+            ZERO_LOAD_SYM(libgl_handle, glHint)
+            ZERO_LOAD_SYM(libgl_handle, glPolygonMode)
+            ZERO_LOAD_SYM(libgl_handle, glFrontFace)
+            ZERO_LOAD_SYM(libgl_handle, glFinish)
+        }
+        else throw std::runtime_error("Failed to load libGLX.so");
+
+        zero_XInitThreads();
+        olc_Display = zero_XOpenDisplay(NULL);
         olc_WindowRoot = DefaultRootWindow(olc_Display);
 
-        if(XkbQueryExtension(olc_Display, nullptr, &xkbEventBase, &xkbErrorBase, nullptr, nullptr))
+        if(zero_XkbQueryExtension(olc_Display, nullptr, &xkbEventBase, &xkbErrorBase, nullptr, nullptr))
         {
-            XkbSelectEventDetails(olc_Display, XkbUseCoreKbd, XkbStateNotify, XkbGroupStateMask, XkbGroupStateMask);
+            zero_XkbSelectEventDetails(olc_Display, XkbUseCoreKbd, XkbStateNotify, XkbGroupStateMask, XkbGroupStateMask);
             kbExtensionsFound = true;
             UpdateKeyboardLayout();
         }
@@ -78,6 +155,17 @@ namespace olc::host
         mapMouseButtons[8] = 3;
         mapMouseButtons[9] = 4;
     }
+    
+    Host_Linux_X11::~Host_Linux_X11()
+    {
+        if(libglx_handle) dlclose(libglx_handle);
+        if(libx11_handle) dlclose(libx11_handle);
+        if(libgl_handle) dlclose(libgl_handle);
+
+        libglx_handle = nullptr;
+        libx11_handle = nullptr;
+        libgl_handle = nullptr;
+    }
 
     bool Host_Linux_X11::OnApplicationStart(olc::PixelGameEngine* pPrimary)
     {
@@ -129,9 +217,9 @@ namespace olc::host
 
         X11::XEvent xev;
         while(systemActive){
-            while (XPending(olc_Display))
+            while (zero_XPending(olc_Display))
             {
-                XNextEvent(olc_Display, &xev);
+                zero_XNextEvent(olc_Display, &xev);
                 
                 // If there's an update to the keyboard, update it's layout.
                 if (xev.type == xkbEventBase + XkbEventCode && kbExtensionsFound)
@@ -145,7 +233,7 @@ namespace olc::host
                     X11::XExposeEvent& e = xev.xexpose;
                     if(auto* pge_window = get_pge_window(e.window); pge_window) {
                         X11::XWindowAttributes gwa;
-                        X11::XGetWindowAttributes(e.display, e.window, &gwa);
+                        zero_XGetWindowAttributes(e.display, e.window, &gwa);
                         pge_window->olc_OnWindowSize(olc::vi2d{gwa.width, gwa.height});
                     }
                 }
@@ -164,7 +252,7 @@ namespace olc::host
                     // since the system kind of assumes this
                     xev.xkey.state &= ~(1); 
 
-                    XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                    zero_XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
                     
                     if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
                         auto it = mapKeys.find(static_cast<uint32_t>(ks));
@@ -177,7 +265,7 @@ namespace olc::host
                 {
                     KeySym ks;
 
-                    XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                    zero_XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
 
                     if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
                         auto it = mapKeys.find(static_cast<uint32_t>(ks));
@@ -285,8 +373,8 @@ namespace olc::host
         // Based on the display capabilities, configure the appearance of the window
         // to do this namespacing, both x11 and glx have to be included in the x11 namespace
         GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
-        olc_VisualInfo = glXChooseVisual(olc_Display, 0, olc_GLAttribs);
-        olc_ColourMap = XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
+        olc_VisualInfo = zero_glXChooseVisual(olc_Display, 0, olc_GLAttribs);
+        olc_ColourMap = zero_XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
         olc_SetWindowAttribs.colormap = olc_ColourMap;
 
         // Register which events we are interested in receiving
@@ -294,17 +382,17 @@ namespace olc::host
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask | StructureNotifyMask;
 
         // Create the window
-        X11::Window olc_Window = XCreateWindow(olc_Display, olc_WindowRoot, vWindowPos.x, vWindowPos.y,
+        X11::Window olc_Window = zero_XCreateWindow(olc_Display, olc_WindowRoot, vWindowPos.x + 1920, vWindowPos.y,
             vWindowSize.x, vWindowSize.y,
             0, olc_VisualInfo->depth, InputOutput, olc_VisualInfo->visual,
             CWColormap | CWEventMask, &olc_SetWindowAttribs);
 
             
-        X11::Atom wmDelete = XInternAtom(olc_Display, "WM_DELETE_WINDOW", true);
-        X11::XSetWMProtocols(olc_Display, olc_Window, &wmDelete, 1);
+        X11::Atom wmDelete = zero_XInternAtom(olc_Display, "WM_DELETE_WINDOW", true);
+        zero_XSetWMProtocols(olc_Display, olc_Window, &wmDelete, 1);
         
-        XMapWindow(olc_Display, olc_Window);
-        XStoreName(olc_Display, olc_Window, "OneLoneCoder.com - Pixel Game Engine");
+        zero_XMapWindow(olc_Display, olc_Window);
+        zero_XStoreName(olc_Display, olc_Window, "OneLoneCoder.com - Pixel Game Engine");
         pWindow->SetWindowSize(vWindowSize);
             
         mapUID2X11Window.insert_or_assign(pWindow->GetUID(), olc_Window);
@@ -312,10 +400,10 @@ namespace olc::host
 
         // Create invisible cursor
         char data[1] = {0};
-        X11::Pixmap blank = XCreateBitmapFromData(olc_Display, olc_Window, data, 1, 1);
+        X11::Pixmap blank = zero_XCreateBitmapFromData(olc_Display, olc_Window, data, 1, 1);
         X11::XColor dummy = {0};
-        X11::Cursor cursor = XCreatePixmapCursor(olc_Display, blank, blank, &dummy, &dummy, 0, 0);
-        XFreePixmap(olc_Display, blank);
+        X11::Cursor cursor = zero_XCreatePixmapCursor(olc_Display, blank, blank, &dummy, &dummy, 0, 0);
+        zero_XFreePixmap(olc_Display, blank);
         
         // Add invisible cursor for this window
         mapUID2X11Cursor.insert_or_assign(pWindow->GetUID(), cursor);
@@ -329,8 +417,8 @@ namespace olc::host
         const auto invisible_cursor = mapUID2X11Cursor.find(pWindow->GetUID());
 
         if (window_handle != mapUID2X11Window.end() && invisible_cursor != mapUID2X11Cursor.end()) {
-            X11::XFreeCursor(olc_Display, invisible_cursor->second);
-            X11::XDestroyWindow(olc_Display, window_handle->second);
+            zero_XFreeCursor(olc_Display, invisible_cursor->second);
+            zero_XDestroyWindow(olc_Display, window_handle->second);
             mapUID2X11Window.erase(window_handle);
         }
         return true;
@@ -340,7 +428,7 @@ namespace olc::host
     {
         const auto window_handle = mapUID2X11Window.find(pWindow->GetUID());
         if (window_handle != mapUID2X11Window.end()) {
-            X11::XStoreName(olc_Display, window_handle->second, pWindow->GetWindowTitle().c_str());
+            zero_XStoreName(olc_Display, window_handle->second, pWindow->GetWindowTitle().c_str());
         }
         return true;
     }
@@ -366,7 +454,7 @@ namespace olc::host
         keyboardLayout = OLC_DEFAULT_KEYBOARD_LAYOUT;
 
         XkbStateRec state;
-        if (XkbGetState(olc_Display, XkbUseCoreKbd, &state) != Success)
+        if (zero_XkbGetState(olc_Display, XkbUseCoreKbd, &state) != Success)
         {
             return;
         }
@@ -374,22 +462,22 @@ namespace olc::host
         // state.group contains the currently active layout group
         unsigned int currentGroup = state.group;
 
-        XkbDescPtr xkb = XkbGetMap(olc_Display, 0, XkbUseCoreKbd);
+        XkbDescPtr xkb = zero_XkbGetMap(olc_Display, 0, XkbUseCoreKbd);
         if (!xkb)
         {
             return;
         }
 
-        XkbGetNames(olc_Display, XkbGroupNamesMask, xkb);
+        zero_XkbGetNames(olc_Display, XkbGroupNamesMask, xkb);
     
         if (!xkb->names)
         {
-            XkbFreeKeyboard(xkb, 0, True);
+            zero_XkbFreeKeyboard(xkb, 0, True);
             return;
         }
 
         Atom layoutAtom = xkb->names->groups[currentGroup];
-        char* layoutName = layoutAtom ? XGetAtomName(olc_Display, layoutAtom) : nullptr;
+        char* layoutName = layoutAtom ? zero_XGetAtomName(olc_Display, layoutAtom) : nullptr;
     
         if (layoutName)
         {
@@ -407,10 +495,10 @@ namespace olc::host
             else if (layout.find("fr") != std::string::npos || layout.find("french") != std::string::npos)
                 keyboardLayout = olc::KeyboardLayout::AZERTY;
             
-            XFree(layoutName);
+            zero_XFree(layoutName);
         }
     
-        XkbFreeKeyboard(xkb, 0, True);
+        zero_XkbFreeKeyboard(xkb, 0, True);
     }
 
     // Wait for entire host desktop refresh (for smooooth vsync)
@@ -426,18 +514,18 @@ namespace olc::host
         // NOTE: xwayland will only allow warping when we have an active grab on a
         //       hidden mouse cursor.
 
-        X11::XGrabPointer(
+        zero_XGrabPointer(
             olc_Display, win, True,
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
             GrabModeAsync, GrabModeAsync,
             win, X11::None, CurrentTime
         );
 
-        X11::XWarpPointer(olc_Display, X11::None, win, 0, 0, 0, 0, vPos.x, vPos.y);
-        X11::XFlush(olc_Display);
+        zero_XWarpPointer(olc_Display, X11::None, win, 0, 0, 0, 0, vPos.x, vPos.y);
+        zero_XFlush(olc_Display);
 
-        X11::XUngrabPointer(olc_Display, CurrentTime);
-        X11::XFlush(olc_Display);
+        zero_XUngrabPointer(olc_Display, CurrentTime);
+        zero_XFlush(olc_Display);
 
         return true;
     }
@@ -457,11 +545,11 @@ namespace olc::host
         
         if(bMouseIsVisible)
         {
-            X11::XUndefineCursor(olc_Display, win);
+            zero_XUndefineCursor(olc_Display, win);
             return true;
         }
         
-        X11::XDefineCursor(olc_Display, win, cursor);
+        zero_XDefineCursor(olc_Display, win, cursor);
         return true;
     }
 

@@ -5471,17 +5471,85 @@ namespace olc
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
 
+#include <dlfcn.h>
+
+#define ZERO_DECLARE_SYM(ns, func) static decltype(ns::func)* zero_##func;
+#define ZERO_LOAD_SYM(lib, sym) \
+    *reinterpret_cast<void**>(&zero_##sym) = dlsym(lib, #sym);
+
 #include <GL/gl.h>
 namespace X11
 {
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <X11/XKBlib.h>
-#include <X11/Xutil.h>
-#include <GL/glx.h>
-#undef None
-constexpr int None = 0L;
+    #include <X11/X.h>
+    #include <X11/Xlib.h>
+    #include <X11/XKBlib.h>
+    #include <X11/Xutil.h>
+    #include <GL/glx.h>
+    #undef None
+    constexpr int None = 0L;
 }
+
+ZERO_DECLARE_SYM(X11, XCreateBitmapFromData)
+ZERO_DECLARE_SYM(X11, XCreateColormap)
+ZERO_DECLARE_SYM(X11, XCreatePixmapCursor)
+ZERO_DECLARE_SYM(X11, XCreateWindow)
+ZERO_DECLARE_SYM(X11, XDefineCursor)
+ZERO_DECLARE_SYM(X11, XDestroyWindow)
+ZERO_DECLARE_SYM(X11, XFlush)
+ZERO_DECLARE_SYM(X11, XFree)
+ZERO_DECLARE_SYM(X11, XFreeCursor)
+ZERO_DECLARE_SYM(X11, XFreePixmap)
+ZERO_DECLARE_SYM(X11, XGetAtomName)
+ZERO_DECLARE_SYM(X11, XGetWindowAttributes)
+ZERO_DECLARE_SYM(X11, XGrabPointer)
+ZERO_DECLARE_SYM(X11, XInitThreads)
+ZERO_DECLARE_SYM(X11, XInternAtom)
+ZERO_DECLARE_SYM(X11, XLookupString)
+ZERO_DECLARE_SYM(X11, XMapWindow)
+ZERO_DECLARE_SYM(X11, XNextEvent)
+ZERO_DECLARE_SYM(X11, XOpenDisplay)
+ZERO_DECLARE_SYM(X11, XPending)
+ZERO_DECLARE_SYM(X11, XSetWMProtocols)
+ZERO_DECLARE_SYM(X11, XStoreName)
+ZERO_DECLARE_SYM(X11, XUndefineCursor)
+ZERO_DECLARE_SYM(X11, XUngrabPointer)
+ZERO_DECLARE_SYM(X11, XWarpPointer)
+ZERO_DECLARE_SYM(X11, XkbFreeKeyboard)
+ZERO_DECLARE_SYM(X11, XkbGetMap)
+ZERO_DECLARE_SYM(X11, XkbGetNames)
+ZERO_DECLARE_SYM(X11, XkbGetState)
+ZERO_DECLARE_SYM(X11, XkbQueryExtension)
+ZERO_DECLARE_SYM(X11, XkbSelectEventDetails)
+
+ZERO_DECLARE_SYM(X11, glXChooseVisual)
+ZERO_DECLARE_SYM(X11, glXCreateContext)
+ZERO_DECLARE_SYM(X11, glXDestroyContext)
+ZERO_DECLARE_SYM(X11, glXGetProcAddress)
+ZERO_DECLARE_SYM(X11, glXMakeCurrent)
+ZERO_DECLARE_SYM(X11, glXSwapBuffers)
+
+ZERO_DECLARE_SYM( , glGenTextures)
+ZERO_DECLARE_SYM( , glBindTexture)
+ZERO_DECLARE_SYM( , glTexParameteri)
+ZERO_DECLARE_SYM( , glTexEnvf)
+ZERO_DECLARE_SYM( , glDeleteTextures)
+ZERO_DECLARE_SYM( , glTexImage2D)
+ZERO_DECLARE_SYM( , glClear)
+ZERO_DECLARE_SYM( , glViewport)
+ZERO_DECLARE_SYM( , glClearColor)
+ZERO_DECLARE_SYM( , glReadPixels)
+ZERO_DECLARE_SYM( , glCullFace)
+ZERO_DECLARE_SYM( , glEnable)
+ZERO_DECLARE_SYM( , glDisable)
+ZERO_DECLARE_SYM( , glDrawArrays)
+ZERO_DECLARE_SYM( , glBlendFunc)
+ZERO_DECLARE_SYM( , glDepthFunc)
+ZERO_DECLARE_SYM( , glGetTexImage)
+ZERO_DECLARE_SYM( , glHint)
+ZERO_DECLARE_SYM( , glPolygonMode)
+ZERO_DECLARE_SYM( , glFrontFace)
+ZERO_DECLARE_SYM( , glFinish)
+
 
 namespace olc::host
 {
@@ -5495,6 +5563,7 @@ namespace olc::host
 		X11::XSetWindowAttributes    olc_SetWindowAttribs;
     public:
         Host_Linux_X11();
+        ~Host_Linux_X11();
 
         bool AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen) override;
         bool CloseWindowFrame(olc::Window* pWindow) override;
@@ -5539,6 +5608,10 @@ namespace olc::host
         // Mouse Variables
         std::unordered_map<size_t, X11::Cursor> mapUID2X11Cursor;
         bool bMouseIsVisible = true;
+    private:
+        void* libx11_handle{nullptr};
+        void* libgl_handle{nullptr};
+        void* libglx_handle{nullptr};
     };
 }
 
@@ -6164,6 +6237,11 @@ namespace olc::gpu
 
 
 #if OLC_GPU == OLC_GPU_OPENGL33
+#if OLC_HOST == OLC_HOST_LINUX_X11
+#define ZERO_GL(func) zero_##func
+#else
+#define ZERO_GL(func) ::func
+#endif
 
 #if OLC_HOST == OLC_HOST_WINDOWS
 	#include <windows.h>
@@ -6181,7 +6259,7 @@ namespace olc::gpu
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
 	#include <GL/gl.h>
-	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(X11::glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
+	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(zero_glXGetProcAddress(reinterpret_cast<const GLubyte*>(#t)))
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_WAYLAND
@@ -6719,10 +6797,49 @@ namespace olc
 
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG
 #if !defined(PGE_IMAGELOADER_LIB_PNG_DECLARED)
+#include <png.h>
+
+#if OLC_HOST == OLC_HOST_LINUX_X11
+
+#define ZEROPNG_DECLARE_SYM(func) static decltype(func)* zero_##func;
+#define ZEROPNG_LOAD_SYM(lib, sym) \
+    *reinterpret_cast<void**>(&zero_##sym) = dlsym(lib, #sym);
+#define ZEROPNG(func) zero_##func
+
+ZEROPNG_DECLARE_SYM(png_read_info)
+ZEROPNG_DECLARE_SYM(png_get_image_width)
+ZEROPNG_DECLARE_SYM(png_get_image_height)
+ZEROPNG_DECLARE_SYM(png_get_color_type)
+ZEROPNG_DECLARE_SYM(png_get_bit_depth)
+ZEROPNG_DECLARE_SYM(png_set_palette_to_rgb)
+ZEROPNG_DECLARE_SYM(png_set_strip_16)
+ZEROPNG_DECLARE_SYM(png_set_expand_gray_1_2_4_to_8)
+ZEROPNG_DECLARE_SYM(png_set_tRNS_to_alpha)
+ZEROPNG_DECLARE_SYM(png_get_valid)
+ZEROPNG_DECLARE_SYM(png_set_filler)
+ZEROPNG_DECLARE_SYM(png_set_gray_to_rgb)
+ZEROPNG_DECLARE_SYM(png_get_rowbytes)
+ZEROPNG_DECLARE_SYM(png_read_image)
+ZEROPNG_DECLARE_SYM(png_destroy_read_struct)
+ZEROPNG_DECLARE_SYM(png_create_read_struct)
+ZEROPNG_DECLARE_SYM(png_create_info_struct)
+ZEROPNG_DECLARE_SYM(png_init_io)
+ZEROPNG_DECLARE_SYM(png_read_update_info)
+ZEROPNG_DECLARE_SYM(png_set_longjmp_fn)
+
+
+#else
+#define ZEROPNG(func) func
+#endif
+
 namespace olc::imload
 {
     class ImageLoader_LibPNG : public ImageLoader
     {	
+    public:
+        ImageLoader_LibPNG();
+        ~ImageLoader_LibPNG();
+
         // Create an image resource based on an image file asset on disk
         bool CreateImageFromFile(olc::Image& image, const std::string& sFileName) override;
 
@@ -6737,7 +6854,10 @@ namespace olc::imload
 
         // Store an image as a file asset in memory
         bool WriteImageToMemoryFile(olc::Image& image, const std::vector<uint8_t>& data) override;
-
+    private:
+    #if OLC_HOST == OLC_HOST_LINUX_X11
+        void* libpng_handle{nullptr};
+    #endif
     };
 }
 
@@ -10573,13 +10693,90 @@ namespace olc::host
     Host_Linux_X11::Host_Linux_X11()
     {
         using namespace X11;
-        XInitThreads();
-        olc_Display = XOpenDisplay(NULL);
+
+        libx11_handle = dlopen("libX11.so", RTLD_LAZY);
+        if(libx11_handle)
+        {
+            ZERO_LOAD_SYM(libx11_handle, XCreateBitmapFromData)
+            ZERO_LOAD_SYM(libx11_handle, XCreateColormap)
+            ZERO_LOAD_SYM(libx11_handle, XCreatePixmapCursor)
+            ZERO_LOAD_SYM(libx11_handle, XCreateWindow)
+            ZERO_LOAD_SYM(libx11_handle, XDefineCursor)
+            ZERO_LOAD_SYM(libx11_handle, XDestroyWindow)
+            ZERO_LOAD_SYM(libx11_handle, XFlush)
+            ZERO_LOAD_SYM(libx11_handle, XFree)
+            ZERO_LOAD_SYM(libx11_handle, XFreeCursor)
+            ZERO_LOAD_SYM(libx11_handle, XFreePixmap)
+            ZERO_LOAD_SYM(libx11_handle, XGetAtomName)
+            ZERO_LOAD_SYM(libx11_handle, XGetWindowAttributes)
+            ZERO_LOAD_SYM(libx11_handle, XGrabPointer)
+            ZERO_LOAD_SYM(libx11_handle, XInitThreads)
+            ZERO_LOAD_SYM(libx11_handle, XInternAtom)
+            ZERO_LOAD_SYM(libx11_handle, XLookupString)
+            ZERO_LOAD_SYM(libx11_handle, XMapWindow)
+            ZERO_LOAD_SYM(libx11_handle, XNextEvent)
+            ZERO_LOAD_SYM(libx11_handle, XOpenDisplay)
+            ZERO_LOAD_SYM(libx11_handle, XPending)
+            ZERO_LOAD_SYM(libx11_handle, XSetWMProtocols)
+            ZERO_LOAD_SYM(libx11_handle, XStoreName)
+            ZERO_LOAD_SYM(libx11_handle, XUndefineCursor)
+            ZERO_LOAD_SYM(libx11_handle, XUngrabPointer)
+            ZERO_LOAD_SYM(libx11_handle, XWarpPointer)
+            ZERO_LOAD_SYM(libx11_handle, XkbFreeKeyboard)
+            ZERO_LOAD_SYM(libx11_handle, XkbGetMap)
+            ZERO_LOAD_SYM(libx11_handle, XkbGetNames)
+            ZERO_LOAD_SYM(libx11_handle, XkbGetState)
+            ZERO_LOAD_SYM(libx11_handle, XkbQueryExtension)
+            ZERO_LOAD_SYM(libx11_handle, XkbSelectEventDetails)
+        }
+        else throw std::runtime_error("Failed to load libX11.so");
+        
+        libglx_handle = dlopen("libGLX.so", RTLD_LAZY);
+        if(libglx_handle)
+        {
+            ZERO_LOAD_SYM(libglx_handle, glXChooseVisual)
+            ZERO_LOAD_SYM(libglx_handle, glXCreateContext)
+            ZERO_LOAD_SYM(libglx_handle, glXDestroyContext)
+            ZERO_LOAD_SYM(libglx_handle, glXGetProcAddress)
+            ZERO_LOAD_SYM(libglx_handle, glXMakeCurrent)
+            ZERO_LOAD_SYM(libglx_handle, glXSwapBuffers)
+        }
+        else throw std::runtime_error("Failed to load libGLX.so");
+        
+        libgl_handle = dlopen("libGL.so", RTLD_LAZY);
+        if(libgl_handle)
+        {
+            ZERO_LOAD_SYM(libgl_handle, glGenTextures)
+            ZERO_LOAD_SYM(libgl_handle, glBindTexture)
+            ZERO_LOAD_SYM(libgl_handle, glTexParameteri)
+            ZERO_LOAD_SYM(libgl_handle, glTexEnvf)
+            ZERO_LOAD_SYM(libgl_handle, glDeleteTextures)
+            ZERO_LOAD_SYM(libgl_handle, glTexImage2D)
+            ZERO_LOAD_SYM(libgl_handle, glClear)
+            ZERO_LOAD_SYM(libgl_handle, glViewport)
+            ZERO_LOAD_SYM(libgl_handle, glClearColor)
+            ZERO_LOAD_SYM(libgl_handle, glReadPixels)
+            ZERO_LOAD_SYM(libgl_handle, glCullFace)
+            ZERO_LOAD_SYM(libgl_handle, glEnable)
+            ZERO_LOAD_SYM(libgl_handle, glDisable)
+            ZERO_LOAD_SYM(libgl_handle, glDrawArrays)
+            ZERO_LOAD_SYM(libgl_handle, glBlendFunc)
+            ZERO_LOAD_SYM(libgl_handle, glDepthFunc)
+            ZERO_LOAD_SYM(libgl_handle, glGetTexImage)
+            ZERO_LOAD_SYM(libgl_handle, glHint)
+            ZERO_LOAD_SYM(libgl_handle, glPolygonMode)
+            ZERO_LOAD_SYM(libgl_handle, glFrontFace)
+            ZERO_LOAD_SYM(libgl_handle, glFinish)
+        }
+        else throw std::runtime_error("Failed to load libGLX.so");
+
+        zero_XInitThreads();
+        olc_Display = zero_XOpenDisplay(NULL);
         olc_WindowRoot = DefaultRootWindow(olc_Display);
 
-        if(XkbQueryExtension(olc_Display, nullptr, &xkbEventBase, &xkbErrorBase, nullptr, nullptr))
+        if(zero_XkbQueryExtension(olc_Display, nullptr, &xkbEventBase, &xkbErrorBase, nullptr, nullptr))
         {
-            XkbSelectEventDetails(olc_Display, XkbUseCoreKbd, XkbStateNotify, XkbGroupStateMask, XkbGroupStateMask);
+            zero_XkbSelectEventDetails(olc_Display, XkbUseCoreKbd, XkbStateNotify, XkbGroupStateMask, XkbGroupStateMask);
             kbExtensionsFound = true;
             UpdateKeyboardLayout();
         }
@@ -10645,6 +10842,17 @@ namespace olc::host
         mapMouseButtons[8] = 3;
         mapMouseButtons[9] = 4;
     }
+    
+    Host_Linux_X11::~Host_Linux_X11()
+    {
+        if(libglx_handle) dlclose(libglx_handle);
+        if(libx11_handle) dlclose(libx11_handle);
+        if(libgl_handle) dlclose(libgl_handle);
+
+        libglx_handle = nullptr;
+        libx11_handle = nullptr;
+        libgl_handle = nullptr;
+    }
 
     bool Host_Linux_X11::OnApplicationStart(olc::PixelGameEngine* pPrimary)
     {
@@ -10696,9 +10904,9 @@ namespace olc::host
 
         X11::XEvent xev;
         while(systemActive){
-            while (XPending(olc_Display))
+            while (zero_XPending(olc_Display))
             {
-                XNextEvent(olc_Display, &xev);
+                zero_XNextEvent(olc_Display, &xev);
                 
                 // If there's an update to the keyboard, update it's layout.
                 if (xev.type == xkbEventBase + XkbEventCode && kbExtensionsFound)
@@ -10712,7 +10920,7 @@ namespace olc::host
                     X11::XExposeEvent& e = xev.xexpose;
                     if(auto* pge_window = get_pge_window(e.window); pge_window) {
                         X11::XWindowAttributes gwa;
-                        X11::XGetWindowAttributes(e.display, e.window, &gwa);
+                        zero_XGetWindowAttributes(e.display, e.window, &gwa);
                         pge_window->olc_OnWindowSize(olc::vi2d{gwa.width, gwa.height});
                     }
                 }
@@ -10731,7 +10939,7 @@ namespace olc::host
                     // since the system kind of assumes this
                     xev.xkey.state &= ~(1); 
 
-                    XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                    zero_XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
                     
                     if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
                         auto it = mapKeys.find(static_cast<uint32_t>(ks));
@@ -10744,7 +10952,7 @@ namespace olc::host
                 {
                     KeySym ks;
 
-                    XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
+                    zero_XLookupString(&xev.xkey, NULL, 0, &ks, NULL);
 
                     if(auto* pge_window = get_pge_window(xev.xkey.window); pge_window) {
                         auto it = mapKeys.find(static_cast<uint32_t>(ks));
@@ -10852,8 +11060,8 @@ namespace olc::host
         // Based on the display capabilities, configure the appearance of the window
         // to do this namespacing, both x11 and glx have to be included in the x11 namespace
         GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
-        olc_VisualInfo = glXChooseVisual(olc_Display, 0, olc_GLAttribs);
-        olc_ColourMap = XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
+        olc_VisualInfo = zero_glXChooseVisual(olc_Display, 0, olc_GLAttribs);
+        olc_ColourMap = zero_XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
         olc_SetWindowAttribs.colormap = olc_ColourMap;
 
         // Register which events we are interested in receiving
@@ -10861,17 +11069,17 @@ namespace olc::host
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask | StructureNotifyMask;
 
         // Create the window
-        X11::Window olc_Window = XCreateWindow(olc_Display, olc_WindowRoot, vWindowPos.x, vWindowPos.y,
+        X11::Window olc_Window = zero_XCreateWindow(olc_Display, olc_WindowRoot, vWindowPos.x + 1920, vWindowPos.y,
             vWindowSize.x, vWindowSize.y,
             0, olc_VisualInfo->depth, InputOutput, olc_VisualInfo->visual,
             CWColormap | CWEventMask, &olc_SetWindowAttribs);
 
             
-        X11::Atom wmDelete = XInternAtom(olc_Display, "WM_DELETE_WINDOW", true);
-        X11::XSetWMProtocols(olc_Display, olc_Window, &wmDelete, 1);
+        X11::Atom wmDelete = zero_XInternAtom(olc_Display, "WM_DELETE_WINDOW", true);
+        zero_XSetWMProtocols(olc_Display, olc_Window, &wmDelete, 1);
         
-        XMapWindow(olc_Display, olc_Window);
-        XStoreName(olc_Display, olc_Window, "OneLoneCoder.com - Pixel Game Engine");
+        zero_XMapWindow(olc_Display, olc_Window);
+        zero_XStoreName(olc_Display, olc_Window, "OneLoneCoder.com - Pixel Game Engine");
         pWindow->SetWindowSize(vWindowSize);
             
         mapUID2X11Window.insert_or_assign(pWindow->GetUID(), olc_Window);
@@ -10879,10 +11087,10 @@ namespace olc::host
 
         // Create invisible cursor
         char data[1] = {0};
-        X11::Pixmap blank = XCreateBitmapFromData(olc_Display, olc_Window, data, 1, 1);
+        X11::Pixmap blank = zero_XCreateBitmapFromData(olc_Display, olc_Window, data, 1, 1);
         X11::XColor dummy = {0};
-        X11::Cursor cursor = XCreatePixmapCursor(olc_Display, blank, blank, &dummy, &dummy, 0, 0);
-        XFreePixmap(olc_Display, blank);
+        X11::Cursor cursor = zero_XCreatePixmapCursor(olc_Display, blank, blank, &dummy, &dummy, 0, 0);
+        zero_XFreePixmap(olc_Display, blank);
         
         // Add invisible cursor for this window
         mapUID2X11Cursor.insert_or_assign(pWindow->GetUID(), cursor);
@@ -10896,8 +11104,8 @@ namespace olc::host
         const auto invisible_cursor = mapUID2X11Cursor.find(pWindow->GetUID());
 
         if (window_handle != mapUID2X11Window.end() && invisible_cursor != mapUID2X11Cursor.end()) {
-            X11::XFreeCursor(olc_Display, invisible_cursor->second);
-            X11::XDestroyWindow(olc_Display, window_handle->second);
+            zero_XFreeCursor(olc_Display, invisible_cursor->second);
+            zero_XDestroyWindow(olc_Display, window_handle->second);
             mapUID2X11Window.erase(window_handle);
         }
         return true;
@@ -10907,7 +11115,7 @@ namespace olc::host
     {
         const auto window_handle = mapUID2X11Window.find(pWindow->GetUID());
         if (window_handle != mapUID2X11Window.end()) {
-            X11::XStoreName(olc_Display, window_handle->second, pWindow->GetWindowTitle().c_str());
+            zero_XStoreName(olc_Display, window_handle->second, pWindow->GetWindowTitle().c_str());
         }
         return true;
     }
@@ -10933,7 +11141,7 @@ namespace olc::host
         keyboardLayout = OLC_DEFAULT_KEYBOARD_LAYOUT;
 
         XkbStateRec state;
-        if (XkbGetState(olc_Display, XkbUseCoreKbd, &state) != Success)
+        if (zero_XkbGetState(olc_Display, XkbUseCoreKbd, &state) != Success)
         {
             return;
         }
@@ -10941,22 +11149,22 @@ namespace olc::host
         // state.group contains the currently active layout group
         unsigned int currentGroup = state.group;
 
-        XkbDescPtr xkb = XkbGetMap(olc_Display, 0, XkbUseCoreKbd);
+        XkbDescPtr xkb = zero_XkbGetMap(olc_Display, 0, XkbUseCoreKbd);
         if (!xkb)
         {
             return;
         }
 
-        XkbGetNames(olc_Display, XkbGroupNamesMask, xkb);
+        zero_XkbGetNames(olc_Display, XkbGroupNamesMask, xkb);
     
         if (!xkb->names)
         {
-            XkbFreeKeyboard(xkb, 0, True);
+            zero_XkbFreeKeyboard(xkb, 0, True);
             return;
         }
 
         Atom layoutAtom = xkb->names->groups[currentGroup];
-        char* layoutName = layoutAtom ? XGetAtomName(olc_Display, layoutAtom) : nullptr;
+        char* layoutName = layoutAtom ? zero_XGetAtomName(olc_Display, layoutAtom) : nullptr;
     
         if (layoutName)
         {
@@ -10974,10 +11182,10 @@ namespace olc::host
             else if (layout.find("fr") != std::string::npos || layout.find("french") != std::string::npos)
                 keyboardLayout = olc::KeyboardLayout::AZERTY;
             
-            XFree(layoutName);
+            zero_XFree(layoutName);
         }
     
-        XkbFreeKeyboard(xkb, 0, True);
+        zero_XkbFreeKeyboard(xkb, 0, True);
     }
 
     // Wait for entire host desktop refresh (for smooooth vsync)
@@ -10993,18 +11201,18 @@ namespace olc::host
         // NOTE: xwayland will only allow warping when we have an active grab on a
         //       hidden mouse cursor.
 
-        X11::XGrabPointer(
+        zero_XGrabPointer(
             olc_Display, win, True,
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
             GrabModeAsync, GrabModeAsync,
             win, X11::None, CurrentTime
         );
 
-        X11::XWarpPointer(olc_Display, X11::None, win, 0, 0, 0, 0, vPos.x, vPos.y);
-        X11::XFlush(olc_Display);
+        zero_XWarpPointer(olc_Display, X11::None, win, 0, 0, 0, 0, vPos.x, vPos.y);
+        zero_XFlush(olc_Display);
 
-        X11::XUngrabPointer(olc_Display, CurrentTime);
-        X11::XFlush(olc_Display);
+        zero_XUngrabPointer(olc_Display, CurrentTime);
+        zero_XFlush(olc_Display);
 
         return true;
     }
@@ -11024,11 +11232,11 @@ namespace olc::host
         
         if(bMouseIsVisible)
         {
-            X11::XUndefineCursor(olc_Display, win);
+            zero_XUndefineCursor(olc_Display, win);
             return true;
         }
         
-        X11::XDefineCursor(olc_Display, win, cursor);
+        zero_XDefineCursor(olc_Display, win, cursor);
         return true;
     }
 
@@ -13527,127 +13735,127 @@ namespace olc::apis::opengl
 
 	void gl::glGenTextures(GLsizei n, GLuint* textures)
 	{
-		::glGenTextures(n, textures);
+		ZERO_GL(glGenTextures)(n, textures);
 		CheckError();
 	}
 
 	void gl::glBindTexture(GLenum target, GLuint texture)
 	{
-		::glBindTexture(target, texture);
+		ZERO_GL(glBindTexture)(target, texture);
 		CheckError();
 	}
 
 	void gl::glTexParameteri(GLenum target, GLenum pname, GLint param)
 	{
-		::glTexParameteri(target, pname, param);
+		ZERO_GL(glTexParameteri)(target, pname, param);
 		CheckError();
 	}
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
 #if OLC_HOST != OLC_HOST_ANDROID
-		::glTexEnvf(target, pname, param);
+		ZERO_GL(glTexEnvf)(target, pname, param);
 		CheckError();
 #endif
 	}
 
 	void gl::glDeleteTextures(GLsizei n, const GLuint* textures)
 	{
-		::glDeleteTextures(n, textures);
+		ZERO_GL(glDeleteTextures)(n, textures);
 		CheckError();
 	}
 
 	void gl::glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels)
 	{
-		::glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+		ZERO_GL(glTexImage2D)(target, level, internalformat, width, height, border, format, type, pixels);
 		CheckError();
 	}
 
 	void gl::glClear(GLbitfield mask)
 	{
-		::glClear(mask);
+		ZERO_GL(glClear)(mask);
 		CheckError();
 	}
 
 	void gl::glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	{
-		::glViewport(x, y, width, height);
+		ZERO_GL(glViewport)(x, y, width, height);
 		CheckError();
 	}
 
 	void gl::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	{
-		::glClearColor(red, green, blue, alpha);
+		ZERO_GL(glClearColor)(red, green, blue, alpha);
 		CheckError();
 	}
 
 	void gl::glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* data)
 	{
-		::glReadPixels(x, y, width, height, format, type, data);
+		ZERO_GL(glReadPixels)(x, y, width, height, format, type, data);
 		CheckError();
 	}
 
 	void gl::glCullFace(GLenum mode)
 	{
-		::glCullFace(mode);
+		ZERO_GL(glCullFace)(mode);
 		CheckError();
 	}
 
 	void gl::glEnable(GLenum cap)
 	{
-		::glEnable(cap);
+		ZERO_GL(glEnable)(cap);
 		CheckError();
 	}
 
 	void gl::glDisable(GLenum cap)
 	{
-		::glDisable(cap);
+		ZERO_GL(glDisable)(cap);
 		CheckError();
 	}
 
 	void gl::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	{
-		::glDrawArrays(mode, first, count);
+		ZERO_GL(glDrawArrays)(mode, first, count);
 		CheckError();
 	}
 
 	void gl::glBlendFunc(GLenum sfactor, GLenum dfactor)
 	{
-		::glBlendFunc(sfactor, dfactor);
+		ZERO_GL(glBlendFunc)(sfactor, dfactor);
 		CheckError();
 	}
 
 	void gl::glDepthFunc(GLenum func)
 	{
-		::glDepthFunc(func);
+		ZERO_GL(glDepthFunc)(func);
 		CheckError();
 	}
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
-		::glGetTexImage(target, level, format, type, pixels);
+		ZERO_GL(glGetTexImage)(target, level, format, type, pixels);
 		CheckError();
 #endif
 	}
 
 	void gl::glHint(GLenum target, GLenum mode)
 	{
-		::glHint(target, mode);
+		ZERO_GL(glHint)(target, mode);
 		CheckError();
 	}
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
 #if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
-		::glPolygonMode(face, mode);
+		ZERO_GL(glPolygonMode)(face, mode);
 		CheckError();
 #endif
 	}
 
 	void gl::glFrontFace(GLenum mode)
 	{
-		::glFrontFace(mode);
+		ZERO_GL(glFrontFace)(mode);
 		CheckError();
 	}
 
@@ -14171,13 +14379,13 @@ void main()
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
         GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, X11::None };
 
-		X11::XVisualInfo* olc_VisualInfo = X11::glXChooseVisual(display, 0, olc_GLAttribs);
-		glRenderContext = X11::glXCreateContext(display, olc_VisualInfo, nullptr, GL_TRUE);
-		glXMakeCurrent(display, window_handle, glRenderContext);
+		X11::XVisualInfo* olc_VisualInfo = zero_glXChooseVisual(display, 0, olc_GLAttribs);
+		glRenderContext = zero_glXCreateContext(display, olc_VisualInfo, nullptr, GL_TRUE);
+		zero_glXMakeCurrent(display, window_handle, glRenderContext);
 
 		X11::XWindowAttributes gwa;
-		X11::XGetWindowAttributes(display, window_handle, &gwa);
-		glViewport(0, 0, gwa.width, gwa.height);
+		zero_XGetWindowAttributes(display, window_handle, &gwa);
+		ZERO_GL(glViewport)(0, 0, gwa.width, gwa.height);
 #endif
 
 #if OLC_HOST == OLC_HOST_MACOS
@@ -14426,9 +14634,9 @@ void main()
 		CGLDestroyContext((CGLContextObj)glRenderContext);
 #endif
 #if OLC_HOST == OLC_HOST_LINUX_X11
-		auto* display = X11::XOpenDisplay(nullptr);
-		X11::glXMakeCurrent(display, 0, NULL);
-		X11::glXDestroyContext(display, glRenderContext);
+		auto* display = zero_XOpenDisplay(nullptr);
+		zero_glXMakeCurrent(display, 0, NULL);
+		zero_glXDestroyContext(display, glRenderContext);
 #endif
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 		eglMakeCurrent(glRenderContext.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -14465,7 +14673,7 @@ void main()
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		const auto window = reinterpret_cast<X11::Window>(os_win_id[0]);
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
-		if(!X11::glXMakeCurrent(display, window, glRenderContext))
+		if(!zero_glXMakeCurrent(display, window, glRenderContext))
 		{
 			lastError = RendererError::FailedToSwitchRenderContext;
 			return false;
@@ -14536,7 +14744,7 @@ void main()
 		{
 			uint32_t new_id = 0;
 			gl.glGenTextures(1, &new_id);
-			glBindTexture(GL_TEXTURE_2D, new_id);
+			gl.glBindTexture(GL_TEXTURE_2D, new_id);
 
 			if (cfg.Filtered)
 			{
@@ -14853,7 +15061,7 @@ void main()
 		uint32_t rboId = mapTextureToRenderbuffer[texid];
 
 		// Ensure all rendering to MSAA texture is finished
-		glFinish();
+		ZERO_GL(glFinish)();
 
 		// Bind renderbuffer to read FBO
 		gl.glBindFramebuffer(gl.GL_READ_FRAMEBUFFER_X, nResolveFBO_Read);
@@ -15028,8 +15236,8 @@ void main()
 				//// Apply Depth Testing (if required)
 				if (task.bDepth)
 					gl.glEnable(GL_DEPTH_TEST);
-
-				glDepthFunc(GL_LESS);
+				
+				gl.glDepthFunc(GL_LESS);
 
 				gl.glEnable(GL_BLEND);
 				//gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -15138,7 +15346,7 @@ void main()
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		const auto window_handle = reinterpret_cast<X11::Window>(os_win_id[0]);
 		auto* display = reinterpret_cast<X11::Display*>(os_win_id[1]);
-		X11::glXSwapBuffers(display, window_handle);
+		zero_glXSwapBuffers(display, window_handle);
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND
@@ -18219,10 +18427,48 @@ namespace olc::imload
 }
 #endif
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG
-#include <png.h>
-
 namespace olc::imload
 {
+    ImageLoader_LibPNG::ImageLoader_LibPNG()
+    {
+#if OLC_HOST == OLC_HOST_LINUX_X11
+        libpng_handle = dlopen("libpng.so", RTLD_LAZY);
+        if(libpng_handle)
+        {
+            ZEROPNG_LOAD_SYM(libpng_handle, png_read_info)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_get_image_width)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_get_image_height)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_get_color_type)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_get_bit_depth)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_palette_to_rgb)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_strip_16)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_expand_gray_1_2_4_to_8)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_tRNS_to_alpha)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_get_valid)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_filler)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_gray_to_rgb)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_get_rowbytes)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_read_image)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_destroy_read_struct)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_create_read_struct)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_create_info_struct)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_init_io)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_read_update_info)
+            ZEROPNG_LOAD_SYM(libpng_handle, png_set_longjmp_fn)
+        }
+        else throw std::runtime_error("Failed to load libpng.so");
+#endif
+    }
+    
+    ImageLoader_LibPNG::~ImageLoader_LibPNG()
+    {
+#if OLC_HOST == OLC_HOST_LINUX_X11
+        if(libpng_handle) dlclose(libpng_handle);
+        
+        libpng_handle = nullptr;
+#endif
+    }
+
     // Create an image resource based on an image file asset on disk
     bool ImageLoader_LibPNG::CreateImageFromFile(olc::Image& image, const std::string& sFileName)
     {
@@ -18236,33 +18482,33 @@ namespace olc::imload
 
         auto loadPNG = [&]()
             {
-                png_read_info(png, info);
+                ZEROPNG(png_read_info)(png, info);
                 png_byte color_type;
                 png_byte bit_depth;
                 png_bytep* row_pointers;
                 image.Create(
                     {
-                        static_cast<int>(png_get_image_width(png, info)),
-                        static_cast<int>(png_get_image_height(png, info))
+                        static_cast<int>(ZEROPNG(png_get_image_width)(png, info)),
+                        static_cast<int>(ZEROPNG(png_get_image_height)(png, info))
                     }
                 );
 
-                color_type = png_get_color_type(png, info);
-                bit_depth = png_get_bit_depth(png, info);
-                if (bit_depth == 16) png_set_strip_16(png);
-                if (color_type == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png);
-                if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)	png_set_expand_gray_1_2_4_to_8(png);
-                if (png_get_valid(png, info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png);
+                color_type = ZEROPNG(png_get_color_type)(png, info);
+                bit_depth = ZEROPNG(png_get_bit_depth)(png, info);
+                if (bit_depth == 16) ZEROPNG(png_set_strip_16)(png);
+                if (color_type == PNG_COLOR_TYPE_PALETTE) ZEROPNG(png_set_palette_to_rgb)(png);
+                if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)	ZEROPNG(png_set_expand_gray_1_2_4_to_8)(png);
+                if (ZEROPNG(png_get_valid)(png, info, PNG_INFO_tRNS)) ZEROPNG(png_set_tRNS_to_alpha)(png);
                 if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_PALETTE)
-                    png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+                    ZEROPNG(png_set_filler)(png, 0xFF, PNG_FILLER_AFTER);
                 if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-                    png_set_gray_to_rgb(png);
-                png_read_update_info(png, info);
+                    ZEROPNG(png_set_gray_to_rgb)(png);
+                ZEROPNG(png_read_update_info)(png, info);
                 row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * image.Size().y);
                 for (int y = 0; y < image.Size().y; y++) {
-                    row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png, info));
+                    row_pointers[y] = (png_byte*)malloc(ZEROPNG(png_get_rowbytes)(png, info));
                 }
-                png_read_image(png, row_pointers);
+                ZEROPNG(png_read_image)(png, row_pointers);
 
                 // Iterate through image rows, converting into sprite format
                 for (int y = 0; y < image.Size().y; y++)
@@ -18278,24 +18524,24 @@ namespace olc::imload
                 for (int y = 0; y < image.Size().y; y++) // Thanks maksym33
                     free(row_pointers[y]);
                 free(row_pointers);
-                png_destroy_read_struct(&png, &info, nullptr);
+                ZEROPNG(png_destroy_read_struct)(&png, &info, nullptr);
             };
 
-        png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        png = ZEROPNG(png_create_read_struct)(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
         if (!png)
             return false;
 
-        info = png_create_info_struct(png);
+        info = ZEROPNG(png_create_info_struct)(png);
         if (!info)
             return false;
 
-        if (setjmp(png_jmpbuf(png)))
+        if (setjmp((*ZEROPNG(png_set_longjmp_fn)((png), longjmp, (sizeof (jmp_buf))))))
             return false;
 
         {
             FILE* f = fopen(sFileName.c_str(), "rb");
             if (!f) return false;
-            png_init_io(png, f);
+            ZEROPNG(png_init_io)(png, f);
             loadPNG();
             fclose(f);
         }

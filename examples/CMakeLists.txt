@@ -197,12 +197,6 @@ foreach(source ${SOURCES})
                 PNG::PNG
                 Threads::Threads
             )            
-
-        else() # x11
-            target_link_libraries(${EXE_NAME} PRIVATE png)
-            target_link_libraries(${EXE_NAME} PRIVATE GL)
-            target_link_libraries(${EXE_NAME} PRIVATE pthread)
-            target_link_libraries(${EXE_NAME} PRIVATE X11)
         endif()
         
     endif()
