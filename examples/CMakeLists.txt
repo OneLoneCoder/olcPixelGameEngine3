@@ -85,9 +85,12 @@ foreach(source ${SOURCES})
     get_filename_component(EXE_NAME ${source} NAME_WE)
     add_executable(${EXE_NAME} ${source})
     target_link_libraries(${EXE_NAME} PRIVATE olcPixelGameEngine3)
-    
+    target_include_directories(${EXE_NAME} PRIVATE ../)
+    target_include_directories(${EXE_NAME} PRIVATE ${miniaudio_SOURCE_DIR})
+
     if(USE_STB)
         target_compile_definitions(${EXE_NAME} PRIVATE OLC_USE_STB_IMAGE=1)
+        target_include_directories(${EXE_NAME} PRIVATE ${stb_SOURCE_DIR})
     endif()
 
     if(APPLE)

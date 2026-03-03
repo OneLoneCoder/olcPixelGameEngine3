@@ -82,6 +82,9 @@ examples/xdg-shell.c
 examples/xdg-shell.h
 examples/xdg-shell.o
 
-# stb image headerss
+# stb image headers
 stb_image_write.h
 stb_image.h
+
+# miniaudio header
+miniaudio.h

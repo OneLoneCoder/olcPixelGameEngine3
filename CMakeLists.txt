@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 project(olcPixelGameEngine VERSION 3.0.0)
 
 option(BUILD_EXAMPLES "Build example programs" OFF)
+option(USE_STB "Use stb_image.h for image loading" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -48,6 +49,29 @@ add_custom_target(CopyHeader
 
 add_library(olcPixelGameEngine3 INTERFACE olcPixelGameEngine3.h)
 add_dependencies(olcPixelGameEngine3 CopyHeader)
+
+# Get 3rd Party Libs
+if(BUILD_EXAMPLES OR BUILD_TEST)
+    FetchContent_Declare(
+        miniaudio
+        GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+        GIT_TAG        0.11.25
+        EXCLUDE_FROM_ALL
+    )
+
+    FetchContent_MakeAvailable(miniaudio)
+
+    if(USE_STB)
+        FetchContent_Declare(
+            stb
+            GIT_REPOSITORY https://github.com/nothings/stb.git
+            GIT_TAG        f1c79c02822848a9bed4315b12c8c8f3761e1296
+            EXCLUDE_FROM_ALL
+        )
+
+        FetchContent_MakeAvailable(stb)
+    endif()
+endif()
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

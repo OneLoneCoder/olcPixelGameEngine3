@@ -190,7 +190,12 @@ set(EXE_NAME test_mh)
 
 add_executable(${EXE_NAME} test_mh.cpp ${HOST_SOURCE_FILES} ${GPU_SOURCE_FILES} ${IMAGELOADER_SOURCE_FILES} ${SOURCES})
 
+# Make it build the single header too
+add_dependencies(${EXE_NAME} olcPixelGameEngine3)
 target_include_directories(${EXE_NAME} PRIVATE ../src)
+target_include_directories(${EXE_NAME} PRIVATE ../..)
+target_include_directories(${EXE_NAME} PRIVATE ${miniaudio_SOURCE_DIR})
+
 
 if(USE_HEADLESS)
     target_compile_definitions(${EXE_NAME} PRIVATE OLC_USE_HEADLESS=1)
@@ -336,5 +341,8 @@ if(NOT EMSCRIPTEN)
     )        
 endif()
 
+if(USE_STB)
+    target_include_directories(${EXE_NAME} PRIVATE ${stb_SOURCE_DIR})
+endif()
 
 
