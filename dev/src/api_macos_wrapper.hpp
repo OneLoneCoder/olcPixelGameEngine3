@@ -481,6 +481,18 @@ namespace olc {
                     }
                 }
                 
+                void toggleFullScreen() noexcept {
+                    if (window_) {
+                        window_toggleFullScreen(window_);
+                    }
+                }
+
+                bool isFullScreen() noexcept {
+                    if (window_) {
+                        return window_isFullScreen(window_);
+                    }
+                    return false;
+                }
                 
                 // Non-copyable but movable
                 Window(const Window&) = delete;

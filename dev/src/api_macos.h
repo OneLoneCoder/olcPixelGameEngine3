@@ -72,6 +72,8 @@ extern "C" {
     void window_setContentViewFrame      (struct Window* self, double* x, double* y, double* width, double* height);
     void window_setCursorVisibility      (struct Window* self, BOOL visible);
     void window_setCursorPosition        (struct Window* self, double x, double y);
+    void window_toggleFullScreen         (struct Window* self);
+    bool window_isFullScreen             (struct Window* self);
 
     // OpenGL Renderer API - as implemented in api_macos.c
     struct OpenGLRenderer* opengl_init    (void);

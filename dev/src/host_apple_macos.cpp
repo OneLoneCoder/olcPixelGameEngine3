@@ -207,6 +207,18 @@ namespace olc::host {
         });
         return true;
     }
+    
+    bool Host_Apple_MacOS::SetFullScreen(olc::Window* pWindow, const bool bFullScreen)
+    {
+        // if we're already in the specified state, return early
+        if(pMacOSWindow->isFullScreen() == bFullScreen)
+            return true;
+
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            pMacOSWindow->toggleFullScreen();
+        });
+        return true;
+    }
 
     bool Host_Apple_MacOS::OnApplicationStart(olc::PixelGameEngine* pPrimary){
         pPrimaryPGE = pPrimary;
