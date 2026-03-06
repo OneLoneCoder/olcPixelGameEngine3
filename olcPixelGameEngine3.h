@@ -14313,34 +14313,9 @@ void main()
 		}
 
 		auto glDeviceContext = GetDC((HWND)(os_win_id[0]));
-		HGLRC tempContext = wglCreateContext(glDeviceContext);
-		if (!tempContext)
-		{
-			lastError = RendererError::FailedToCreateRenderContext;
-			return false;
-		}
-		wglMakeCurrent(glDeviceContext, tempContext);
-
-		typedef HGLRC(WINAPI* PFN_wglCreateContextAttribsARB)(HDC, HGLRC, const int*);
-		auto pfnCreateContextAttribs = (PFN_wglCreateContextAttribsARB)wglGetProcAddress("wglCreateContextAttribsARB");
-
-		wglMakeCurrent(nullptr, nullptr);
-		wglDeleteContext(tempContext);
-
-		if (pfnCreateContextAttribs)
-		{
-			int gl33_attribs[] = {
-				0x2091, 3,			// WGL_CONTEXT_MAJOR_VERSION_ARB
-				0x2092, 3,			// WGL_CONTEXT_MINOR_VERSION_ARB
-				0x9126, 0x00000001, // WGL_CONTEXT_PROFILE_MASK_ARB = CORE
-				0};
-			glRenderContext = pfnCreateContextAttribs(glDeviceContext, nullptr, gl33_attribs);
-		}
-		else
-			glRenderContext = wglCreateContext(glDeviceContext);
 
 		// Create OpenGL Render Context
-		if (!glRenderContext)
+		if (!(glRenderContext = wglCreateContext(glDeviceContext))) 
 		{
 			lastError = RendererError::FailedToCreateRenderContext;
 			return false;
@@ -14351,7 +14326,6 @@ void main()
 			lastError = RendererError::FailedToSwitchRenderContext;
 			return false;
 		}
-
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
