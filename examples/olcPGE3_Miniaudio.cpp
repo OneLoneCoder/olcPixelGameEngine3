@@ -15,9 +15,10 @@
 #define OLC_PGEX3_MINIAUDIO
 #include "extensions/olcPGEX3_miniaudio.h"
 
-// Example application demonstrating audiokeyboard input. This class
-// overrides the olc::PixelGameEngine base class by implementing
-// the OnUserCreate() and OnUserUpdate() functions
+// Example application demonstrating the miniaudio extension.
+// This class overrides the olc::PixelGameEngine base class
+// by implementing the OnUserCreate() and OnUserUpdate()
+// functions
 class Example_Miniaudio : public olc::PixelGameEngine
 {
 public:
@@ -34,9 +35,21 @@ public:
 	{
 		// load `assets/song1.mp3` into `song1`
 		audio.CreateSoundFromFile(song1, "assets/song1.mp3");
+		
+        /**
+         * this is here to demonstrate how the adventurous can
+         * exploit other features of miniaudio that hasn't been
+         * abstracted by the PGEX
+         * 
+         * Here you get a pointer to a next active voice, or the
+		 * currently playing voice.
+         */
+        ma_sound_set_position(song1.GetMASound(), 0.0f, 0.0f, 0.0f);
+
 		// load `assets/SampleA.wav` into `sample`
 		audio.CreateSoundFromFile(sample, "assets/SampleA.wav");
         
+		// create all of the waveforms at 0.1 amplitude at 440Mhz (A4)
 		audio.CreateWaveform(sine, olc::PGEX::Waveform::Type::Sine, 0.1, 440.0);
 		audio.CreateWaveform(square, olc::PGEX::Waveform::Type::Square, 0.1, 440.0);
         audio.CreateWaveform(triangle, olc::PGEX::Waveform::Type::Triangle, 0.1, 440.0);
@@ -59,6 +72,7 @@ public:
 		}
 
 		// ensure all waveforms are stopped
+		// before we check for held keys
 		sine.Stop(); square.Stop();
 		triangle.Stop(); sawtooth.Stop();
 
@@ -85,25 +99,29 @@ public:
 		// play `sample`
 		if(keyboard.GetKey(olc::Key::S).bPressed)
 			sample.Play();
-
+		
+		// panning
         if(keyboard.GetKey(olc::Key::MINUS).bHeld)
             pan -= 1.0f * fElapsedTime;
-            
+        
         if(keyboard.GetKey(olc::Key::EQUALS).bHeld)
             pan += 1.0f * fElapsedTime;
-
+		
+		// pitch
         if(keyboard.GetKey(olc::Key::OEM_4).bHeld)
             pitch -= 1.0f * fElapsedTime;
 
         if(keyboard.GetKey(olc::Key::OEM_6).bHeld)
             pitch += 1.0f * fElapsedTime;
-
+		
+		// volume
         if(keyboard.GetKey(olc::Key::DOWN).bHeld)
             volume -= 1.0f * fElapsedTime;
             
         if(keyboard.GetKey(olc::Key::UP).bHeld)
             volume += 1.0f * fElapsedTime;
         
+		// distance
         if(keyboard.GetKey(olc::Key::LEFT).bHeld)
             distance -= 10.0f * fElapsedTime;
             
@@ -118,6 +136,7 @@ public:
             volume = 1.0f;
             distance = 0.0f;
         }
+		
 		// panning
 		pan = std::clamp(pan, -1.0f, 1.0f);
 		song1.SetPan(pan);
@@ -129,7 +148,12 @@ public:
 		// volume
 		volume = std::clamp(volume, 0.0f, 1.0f);
 		song1.SetVolume(volume);
-		
+
+		// this is here to demosntrate how the adventurous can exploit other
+		// features of miniaudio that haven't been abstracted by the PGEX.
+        distance = std::clamp(distance, 0.0f, 100.0f);
+        ma_engine_listener_set_position(&audio.GetEngine(), 0, 0.0f, distance, 0.0f);
+
 		// // get float cursor. 0.0f to 1.0f
  		cursorFloat  = song1.GetCursorFloat();
 		// // get cursor in milliseconds

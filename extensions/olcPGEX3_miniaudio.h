@@ -134,6 +134,8 @@ namespace olc::PGEX
         float GetCursorFloat();
 		// determine if this sound has been loaded successfully
 		bool IsLoaded() const;
+	public: // advanced usage
+		ma_sound* GetMASound();
 
 	private:
 		// pointer to the calling pgex
@@ -621,6 +623,20 @@ namespace olc::PGEX
 	bool Sound::IsLoaded() const
 	{
 		return m_is_loaded;
+	}
+
+	ma_sound* Sound::GetMASound()
+	{
+		// realistically, one wouldn't call this unless it was loaded
+		if(!IsLoaded())
+			return nullptr;
+		
+		// if we're not currently playing, get the pointer of the next voice
+		if(!IsPlaying())
+			return &m_voices[(m_current_voice + 1) % m_num_voices];
+		
+		// if we're playing, get the pointer of the current voice
+		return &m_voices[m_current_voice];
 	}
 
 #pragma endregion
