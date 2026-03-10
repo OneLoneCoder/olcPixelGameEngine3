@@ -702,9 +702,9 @@ const GPUTask& olc::Draw::Triangle(const olc::vf2d& p1, const olc::vf2d& p2, con
 
 	return vecGPUTasks.data.emplace_back(std::move(
 		TaskDrawPolygon(
-			olc::Structure::Fan,
-			transformAffine.forwardRoundX<float>({ p1, p2, p3 }),
-			{ c1, c2, c3 },
+			olc::Structure::Line,
+			transformAffine.forwardRoundX<float>({ p1, p2, p3, p1 }),
+			{ c1, c2, c3, c1 },
 			tint
 		)));
 }
