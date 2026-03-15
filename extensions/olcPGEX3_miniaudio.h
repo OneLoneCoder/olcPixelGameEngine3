@@ -210,9 +210,11 @@ namespace olc::Miniaudio
 		ma_waveform& Get();
 
 	private:
-		bool m_is_playing{false};
 		bool m_is_loaded{false};
-		
+		float m_gain     = 0.0f;  // current gain
+		float m_target   = 0.0f;  // 0.0 = stopped, 1.0 = playing
+		float m_rampStep = 0.0f;  // set once at init: 1.0f / (sampleRate * 0.010f)
+
 		ma_waveform m_waveform;
 		ma_waveform_config m_waveform_config;
 
@@ -655,6 +657,8 @@ namespace olc::Miniaudio
 				amplitude,
 				frequency
 		);
+		
+		m_rampStep = 1.0f / (m_pgex->GetDeviceSampleRate() * 0.02f);
 
 		if(ma_waveform_init(&m_waveform_config, &m_waveform) != MA_SUCCESS)
 		{
@@ -676,7 +680,7 @@ namespace olc::Miniaudio
 		if(!IsLoaded())
 			return;
 
-		m_is_playing = true;
+		m_target = 1.0f;
 	}
 	
 	void Waveform::Stop()
@@ -684,7 +688,7 @@ namespace olc::Miniaudio
 		if(!IsLoaded())
 			return;
 		
-		m_is_playing = false;
+		m_target = 0.0f;
 	}
 
 	
@@ -711,7 +715,7 @@ namespace olc::Miniaudio
 
 	bool Waveform::IsPlaying() const
 	{
-		return m_is_playing;
+		return m_target > 0.0f || m_gain > 0.0f;
 	}
 
 	bool Waveform::IsLoaded() const
@@ -800,16 +804,28 @@ namespace olc::Miniaudio
 		// waveforms
 		for(auto& waveform : ma->m_waveforms)
 		{
-			if(!waveform->IsPlaying())
+			if (!waveform->IsPlaying())
 				continue;
-			
+
+
 			ma_waveform_read_pcm_frames(&waveform->m_waveform, ma->m_waveform_buffer.data(), frameCount, NULL);
-			for(int i = 0; i < engineBuffer.size(); i++)
+
+			for(int frame = 0; frame < frameCount; ++frame)
 			{
-				engineBuffer[i] += ma->m_waveform_buffer[i];
+				// Ramp gain toward target one step per frame
+				if (waveform->m_gain < waveform->m_target)
+					waveform->m_gain = std::min(waveform->m_gain + waveform->m_rampStep, waveform->m_target);
+				else if (waveform->m_gain > waveform->m_target)
+					waveform->m_gain = std::max(waveform->m_gain - waveform->m_rampStep, waveform->m_target);
+
+				for(int channel = 0; channel < ma->GetDeviceChannels(); ++channel)
+				{
+					int i = frame * ma->GetDeviceChannels() + channel;
+					engineBuffer[i] += ma->m_waveform_buffer[i] * waveform->m_gain;
+				}
 			}
 		}
-		
+
 		// synth function
 		if(ma->m_synth_callback)
 		{
