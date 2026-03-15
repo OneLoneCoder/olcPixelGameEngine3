@@ -50,10 +50,10 @@ public:
 		audio.CreateSoundFromFile(sample, "assets/SampleA.wav");
         
 		// create all of the waveforms at 0.1 amplitude at 440Mhz (A4)
-		audio.CreateWaveform(sine, olc::PGEX::Waveform::Type::Sine, 0.1, 440.0);
-		audio.CreateWaveform(square, olc::PGEX::Waveform::Type::Square, 0.1, 440.0);
-        audio.CreateWaveform(triangle, olc::PGEX::Waveform::Type::Triangle, 0.1, 440.0);
-		audio.CreateWaveform(sawtooth, olc::PGEX::Waveform::Type::Sawtooth, 0.1, 440.0);
+		audio.CreateWaveform(sine,     olc::Miniaudio::Waveform::Type::Sine, 0.1, 440.0);
+		audio.CreateWaveform(square,   olc::Miniaudio::Waveform::Type::Square, 0.1, 440.0);
+		audio.CreateWaveform(triangle, olc::Miniaudio::Waveform::Type::Triangle, 0.1, 440.0);
+		audio.CreateWaveform(sawtooth, olc::Miniaudio::Waveform::Type::Sawtooth, 0.1, 440.0);
 		
 		return true;
 	}
@@ -252,17 +252,17 @@ public:
 	}
 
 	// put this here to have access to audio!
-	olc::PGEX::Miniaudio audio;
+	olc::Miniaudio::AudioEngine audio;
 
 private:	
 	// sounds
-	olc::PGEX::Sound song1;
-	olc::PGEX::Sound sample;
+	olc::Miniaudio::Sound song1;
+	olc::Miniaudio::Sound sample;
 
-	olc::PGEX::Waveform sine;
-	olc::PGEX::Waveform square;
-	olc::PGEX::Waveform triangle;
-	olc::PGEX::Waveform sawtooth;
+	olc::Miniaudio::Waveform sine;
+	olc::Miniaudio::Waveform square;
+	olc::Miniaudio::Waveform triangle;
+	olc::Miniaudio::Waveform sawtooth;
 
     // For demonstration controls, with sensible default values
     float pan    = 0.0f;

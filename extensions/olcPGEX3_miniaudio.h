@@ -69,26 +69,26 @@
 #include <vector>
 #include <span>
 
-namespace olc::PGEX
+namespace olc::Miniaudio
 {
-    class Miniaudio;
+    class AudioEngine;
 
 #pragma region Sound
 
 	class Sound
 	{
-		friend class Miniaudio;
+		friend class AudioEngine;
 	public:
 		Sound() = default;
 		~Sound();
 
 	public: // Loaders
 		// Create an image resource based on an image file asset on disk
-		bool CreateSoundFromFile(const std::string& sFileName, Miniaudio* pgex, uint32_t nNumVoices);
+		bool CreateSoundFromFile(const std::string& sFileName, AudioEngine* pgex, uint32_t nNumVoices);
 		// Create an image resource based on an image file asset in memory
-		bool CreateSoundFromMemory(const uint8_t* data, const size_t bytes, Miniaudio* pgex, uint32_t nNumVoices);
+		bool CreateSoundFromMemory(const uint8_t* data, const size_t bytes, AudioEngine* pgex, uint32_t nNumVoices);
 		// Create an image resource based on an image file asset in memory
-		bool CreateSoundFromMemory(const std::vector<uint8_t>& data, Miniaudio* pgex, uint32_t nNumVoices);
+		bool CreateSoundFromMemory(const std::vector<uint8_t>& data, AudioEngine* pgex, uint32_t nNumVoices);
 	private:
 		// performs the necessary unloading of the parts of this sound
 		void DestroySound();
@@ -139,7 +139,7 @@ namespace olc::PGEX
 
 	private:
 		// pointer to the calling pgex
-		Miniaudio* m_pgex;
+		AudioEngine* m_pgex;
 		// contains the sound file in memory
 		std::vector<uint8_t> m_buffer;
 		// the base sound from which the voices are copied
@@ -177,7 +177,7 @@ namespace olc::PGEX
 	
 	class Waveform
 	{
-		friend class Miniaudio;
+		friend class AudioEngine;
 
 	public:
 		enum class Type
@@ -191,7 +191,7 @@ namespace olc::PGEX
 	public: // lifecycle
 		Waveform() = default;
 	
-		bool CreateWaveform(Waveform& waveform, const Type type, const double amplitude, const double frequency, Miniaudio* pgex);
+		bool CreateWaveform(Waveform& waveform, const Type type, const double amplitude, const double frequency, AudioEngine* pgex);
 	private: 
 		void DestroyWaveform();
 	
@@ -216,14 +216,14 @@ namespace olc::PGEX
 		ma_waveform m_waveform;
 		ma_waveform_config m_waveform_config;
 
-		Miniaudio* m_pgex{nullptr};
+		AudioEngine* m_pgex{nullptr};
 	};
 
 #pragma endregion
 
 #pragma region Miniaudio
 
-	class Miniaudio : public olc::PGESystemExtension
+	class AudioEngine : public olc::PGESystemExtension
     {
 		friend class Sound;
 		friend class Waveform;
@@ -285,8 +285,8 @@ namespace olc::PGEX
 		ma_device_type GetDeviceType() const;
 		
 	public:
-        Miniaudio();
-		~Miniaudio();
+        AudioEngine();
+		~AudioEngine();
 
 		virtual bool OnInstall([[maybe_unused]] olc::PixelGameEngine* pge);
 		virtual bool OnBeforeUserCreate([[maybe_unused]] olc::PixelGameEngine* pge);
@@ -325,7 +325,7 @@ namespace olc::PGEX
 #if defined(OLC_PGEX3_MINIAUDIO)
 #undef OLC_PGEX3_MINIAUDIO
 
-namespace olc::PGEX
+namespace olc::Miniaudio
 {
 
 #pragma region Sound
@@ -337,7 +337,7 @@ namespace olc::PGEX
 		DestroySound();
 	}
 
-	bool Sound::CreateSoundFromFile(const std::string& sFileName, Miniaudio* pgex, uint32_t nNumVoices)
+	bool Sound::CreateSoundFromFile(const std::string& sFileName, AudioEngine* pgex, uint32_t nNumVoices)
 	{
 #if OLC_HOST == OLC_HOST_ANDROID
 		AAsset* pAsset = AAssetManager_open(
@@ -367,7 +367,7 @@ namespace olc::PGEX
 		return _internalSoundLoader();
 	}
 
-	bool Sound::CreateSoundFromMemory(const uint8_t* data, const size_t bytes, Miniaudio* pgex, uint32_t nNumVoices)
+	bool Sound::CreateSoundFromMemory(const uint8_t* data, const size_t bytes, AudioEngine* pgex, uint32_t nNumVoices)
 	{
 		if(!data) return false;
 		if(bytes <= 0) return false;
@@ -382,7 +382,7 @@ namespace olc::PGEX
 		return _internalSoundLoader();
 	}
 
-	bool Sound::CreateSoundFromMemory(const std::vector<uint8_t>& data, Miniaudio* pgex, uint32_t nNumVoices)
+	bool Sound::CreateSoundFromMemory(const std::vector<uint8_t>& data, AudioEngine* pgex, uint32_t nNumVoices)
 	{
 		if(data.size() <= 0) return false;
 		m_buffer = data;
@@ -644,7 +644,7 @@ namespace olc::PGEX
 
 #pragma region Waveform
 
-	bool Waveform::CreateWaveform(Waveform& waveform, const Type type, const double amplitude, const double frequency, Miniaudio* pgex)
+	bool Waveform::CreateWaveform(Waveform& waveform, const Type type, const double amplitude, const double frequency, AudioEngine* pgex)
 	{
 		m_pgex = pgex;
 		m_waveform_config = ma_waveform_config_init(
@@ -728,11 +728,11 @@ namespace olc::PGEX
 
 #pragma region Miniaudio
 
-	Miniaudio::Miniaudio()
+	AudioEngine::AudioEngine()
     {
     }
 
-	Miniaudio::~Miniaudio()
+	AudioEngine::~AudioEngine()
     {
 		if(m_is_initialized)
 		{
@@ -751,7 +751,7 @@ namespace olc::PGEX
 		}
     }
 	
-	void Miniaudio::Configure(const Config& cfg)
+	void AudioEngine::Configure(const Config& cfg)
 	{
 		if(m_is_initialized)
 		{
@@ -762,19 +762,19 @@ namespace olc::PGEX
 		m_cfg = cfg;
 	}
 
-	void Miniaudio::EnableBackgroundPlayback()
+	void AudioEngine::EnableBackgroundPlayback()
 	{
 		m_cfg.BackgroundPlay = true;
 	}
 	
-	void Miniaudio::DisableBackgroundPlayback()
+	void AudioEngine::DisableBackgroundPlayback()
 	{
 		m_cfg.BackgroundPlay = false;
 	}
 
-    void Miniaudio::data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
+    void AudioEngine::data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
     {
-		Miniaudio* ma = (Miniaudio*)pDevice->pUserData;
+		AudioEngine* ma = (AudioEngine*)pDevice->pUserData;
         if(ma == nullptr)
             throw std::runtime_error{"unable to access miniaudio pgex instance from data_callback"};
 
@@ -839,25 +839,25 @@ namespace olc::PGEX
 		}
     }
 
-	bool Miniaudio::CreateSoundFromFile(Sound& sound, const std::string& sFileName, uint32_t nNumVoices)
+	bool AudioEngine::CreateSoundFromFile(Sound& sound, const std::string& sFileName, uint32_t nNumVoices)
 	{
 		m_sounds.push_back(&sound);
 		return sound.CreateSoundFromFile(sFileName, this, nNumVoices);
 	}
 	
-	bool Miniaudio::CreateSoundFromMemory(Sound& sound, const uint8_t* data, const size_t bytes, uint32_t nNumVoices)
+	bool AudioEngine::CreateSoundFromMemory(Sound& sound, const uint8_t* data, const size_t bytes, uint32_t nNumVoices)
 	{
 		m_sounds.push_back(&sound);
 		return sound.CreateSoundFromMemory(data, bytes, this, nNumVoices);
 	}
 	
-	bool Miniaudio::CreateSoundFromMemory(Sound& sound, const std::vector<uint8_t>& data, uint32_t nNumVoices)
+	bool AudioEngine::CreateSoundFromMemory(Sound& sound, const std::vector<uint8_t>& data, uint32_t nNumVoices)
 	{
 		m_sounds.push_back(&sound);
 		return sound.CreateSoundFromMemory(data, this, nNumVoices);
 	}
 	
-	void Miniaudio::DestroySound(Sound& sound)
+	void AudioEngine::DestroySound(Sound& sound)
 	{
 		sound.DestroySound();
 		
@@ -871,13 +871,13 @@ namespace olc::PGEX
 		);
 	}
 
-	bool Miniaudio::CreateWaveform(Waveform& waveform, const Waveform::Type type, const double amplitude, const double frequency)
+	bool AudioEngine::CreateWaveform(Waveform& waveform, const Waveform::Type type, const double amplitude, const double frequency)
 	{
 		m_waveforms.push_back(&waveform);
 		return waveform.CreateWaveform(waveform, type, amplitude, frequency, this);
 	}
 
-	void Miniaudio::DestroyWaveform(Waveform& waveform)
+	void AudioEngine::DestroyWaveform(Waveform& waveform)
 	{
 		waveform.DestroyWaveform();
 		m_waveforms.erase(
@@ -890,62 +890,62 @@ namespace olc::PGEX
 		);
 	}
 
-    void Miniaudio::SetSynthCallback(std::function<void(float& fLeftChannel, float& fRightChannel, float fElapsedTime)> callback)
+    void AudioEngine::SetSynthCallback(std::function<void(float& fLeftChannel, float& fRightChannel, float fElapsedTime)> callback)
     {
         m_synth_callback = callback;
     }
 
-    void Miniaudio::ClearSynthCallback()
+    void AudioEngine::ClearSynthCallback()
     {
         m_synth_callback = {};
     }	
 
-	void Miniaudio::SetDataCallback(std::function<void(float* pFramesOut, ma_uint64 frameCount)> callback)
+	void AudioEngine::SetDataCallback(std::function<void(float* pFramesOut, ma_uint64 frameCount)> callback)
 	{
 		m_data_callback = callback;
 	}
 
-	void Miniaudio::ClearDataCallback()
+	void AudioEngine::ClearDataCallback()
 	{
 		m_data_callback = {};
 	}
 	
-	ma_device& Miniaudio::GetDevice()
+	ma_device& AudioEngine::GetDevice()
 	{
 		return m_device;
 	}
 
-	ma_engine& Miniaudio::GetEngine()
+	ma_engine& AudioEngine::GetEngine()
 	{
 		return m_engine;
 	}
 
-	ma_resource_manager& Miniaudio::GetResourceManager()
+	ma_resource_manager& AudioEngine::GetResourceManager()
 	{
 		return m_resource_manager;
 	}
 
-	int Miniaudio::GetDeviceChannels() const
+	int AudioEngine::GetDeviceChannels() const
 	{
 		return m_cfg.DeviceChannels;
 	}
 
-	ma_format Miniaudio::GetDeviceFormat() const
+	ma_format AudioEngine::GetDeviceFormat() const
 	{
 		return m_cfg.DeviceFormat;
 	}
 	
-	int Miniaudio::GetDeviceSampleRate() const
+	int AudioEngine::GetDeviceSampleRate() const
 	{
 		return m_cfg.DeviceSampleRate;
 	}
 	
-	ma_device_type Miniaudio::GetDeviceType() const
+	ma_device_type AudioEngine::GetDeviceType() const
 	{
 		return m_cfg.DeviceType;
 	}
 
-	bool Miniaudio::OnInstall([[maybe_unused]] olc::PixelGameEngine* pge)
+	bool AudioEngine::OnInstall([[maybe_unused]] olc::PixelGameEngine* pge)
 	{
         m_pge = pge;
 
@@ -953,7 +953,7 @@ namespace olc::PGEX
         m_device_config.playback.format = GetDeviceFormat();
         m_device_config.playback.channels = GetDeviceChannels();
         m_device_config.sampleRate = GetDeviceSampleRate();
-        m_device_config.dataCallback = Miniaudio::data_callback;
+        m_device_config.dataCallback = AudioEngine::data_callback;
         m_device_config.pUserData = this;
 		
         if(ma_device_init(NULL, &m_device_config, &m_device) != MA_SUCCESS)
@@ -992,17 +992,17 @@ namespace olc::PGEX
 		return true;
 	}
 	
-	bool Miniaudio::OnBeforeUserCreate([[maybe_unused]] olc::PixelGameEngine* pge)
+	bool AudioEngine::OnBeforeUserCreate([[maybe_unused]] olc::PixelGameEngine* pge)
 	{
 		return true;
 	}
 	
-	bool Miniaudio::OnAfterUserCreate([[maybe_unused]] olc::PixelGameEngine* pge)
+	bool AudioEngine::OnAfterUserCreate([[maybe_unused]] olc::PixelGameEngine* pge)
 	{
 		return true;
 	}
 	
-	bool Miniaudio::OnBeforeSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime)
+	bool AudioEngine::OnBeforeSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime)
 	{
         #if OLC_HOST == OLC_HOST_EMSCRIPTEN
         ma_resource_manager_process_next_job(&m_resource_manager);
@@ -1011,7 +1011,7 @@ namespace olc::PGEX
 		return true;
 	}
 	
-	bool Miniaudio::OnAfterSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime)
+	bool AudioEngine::OnAfterSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime)
 	{
 		return true;
 	}
