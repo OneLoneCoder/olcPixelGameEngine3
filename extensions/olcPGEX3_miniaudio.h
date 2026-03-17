@@ -1,6 +1,6 @@
 #pragma once
 /*
-	olcPGEX_MiniAudio.h
+	olcPGEX3_MiniAudio.h
 
 	+-------------------------------------------------------------+
 	|         OneLoneCoder Pixel Game Engine Extension            |
