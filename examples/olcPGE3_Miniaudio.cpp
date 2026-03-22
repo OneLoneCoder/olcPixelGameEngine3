@@ -13,7 +13,7 @@
 #include "../olcPixelGameEngine3.h"
 
 #define OLC_PGEX3_MINIAUDIO
-#include "extensions/olcPGEX3_miniaudio.h"
+#include "extensions/olcPGEX3_Miniaudio.h"
 
 // Example application demonstrating the miniaudio extension.
 // This class overrides the olc::PixelGameEngine base class
