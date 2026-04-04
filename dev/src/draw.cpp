@@ -273,11 +273,22 @@ GPUTask olc::Draw::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const std
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
 	GPUTask task;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+	task.structure = olc::Structure::Line;
+	task.bWireframe = true;
+	task.vertexBuffer.resize(vPoints.size() + 1);
+	size_t i;
+	for (i = 0; i < vPoints.size(); i++)
+		task.vertexBuffer[i] = { {vPoints[i].x, vPoints[i].y, 1.0f, 1.0f}, vColours[i], {0, 0}, {0, 0}, {0, 0}, {0, 0} };
+	task.vertexBuffer[i] = {{vPoints[0].x, vPoints[0].y, 1.0f, 1.0f}, vColours[0], {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+#else
 	task.structure = structure;
 	task.bWireframe = true;
 	task.vertexBuffer.resize(vPoints.size());
+
 	for (size_t i = 0; i < vPoints.size(); i++)
 		task.vertexBuffer[i] = { {vPoints[i].x, vPoints[i].y, 1.0f, 1.0f}, vColours[i], {0, 0}, {0, 0}, {0, 0}, {0, 0} };
+#endif
 	task.tint = tint;
 	return task;
 }
@@ -285,11 +296,22 @@ GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<o
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
 {	
 	GPUTask task;
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
+	task.structure = olc::Structure::Line;
+	task.bWireframe = true;
+	task.vertexBuffer.resize(vPoints.size() + 1);
+	size_t i;
+	for (i = 0; i < vPoints.size(); i++)
+		task.vertexBuffer[i] = {{vPoints[i].x, vPoints[i].y, 1.0f, 1.0f}, colour, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+	
+	task.vertexBuffer[i] = {{vPoints[0].x, vPoints[0].y, 1.0f, 1.0f}, colour, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+#else
 	task.structure = structure;
 	task.bWireframe = true;
 	task.vertexBuffer.resize(vPoints.size());
 	for (size_t i = 0; i < vPoints.size(); i++)
 		task.vertexBuffer[i] = {{vPoints[i].x, vPoints[i].y, 1.0f, 1.0f}, colour, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+#endif
 	task.tint = tint;
 	return task;
 }
