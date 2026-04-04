@@ -273,7 +273,7 @@ GPUTask olc::Draw::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const std
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
 	GPUTask task;
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
 	task.structure = olc::Structure::Line;
 	task.bWireframe = true;
 	task.vertexBuffer.resize(vPoints.size() + 1);
@@ -296,7 +296,7 @@ GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<o
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
 {	
 	GPUTask task;
-#if OLC_HOST == OLC_HOST_EMSCRIPTEN
+#if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
 	task.structure = olc::Structure::Line;
 	task.bWireframe = true;
 	task.vertexBuffer.resize(vPoints.size() + 1);
