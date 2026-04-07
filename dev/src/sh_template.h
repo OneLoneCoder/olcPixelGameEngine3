@@ -80,6 +80,87 @@
 	Homepage:	https://www.onelonecoder.com
 	Patreon:	https://www.patreon.com/javidx9
 
+
+
+	Compiling in Linux (X11)
+	~~~~~~~~~~~~~~~~~~~~~~~~
+	You will need a modern C++ compiler, so update yours!
+
+	To compile with GCC:
+	g++ -O2 YourSource.cpp -o YourProgName -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++20
+
+	To compile with Clang:
+	clang++ -O2 YourSource.cpp -o YourProgName -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++20
+
+
+
+	Compiling in Linux (Wayland)
+	~~~~~~~~~~~~~~~~~~~~~~~~
+	You will need a modern C++ compiler, so update yours!
+
+	TODO: fill this in.
+
+
+
+	Compiling in Code::Blocks on Windows
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Set the wayback machine to 8 years ago and the version of MinGW that shipped with
+	Code::Blocks was too old to compile olcPixelGameEngine, this is not true today!
+
+	Nowadays, all you should need to do is set your linker and compiler options for your
+	project as follows.
+
+	Add these libraries to "Linker Options":
+	user32 gdi32 opengl32 gdiplus Shlwapi dwmapi stdc++fs
+
+	Set these compiler options: -std=c++20
+
+	TODO: Check out this video: <<link to Code::Blocks video tutorial>>
+
+
+
+	Compiling on MacOS (with XCode Command Line Tools)
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	At last my love has come along... And made olcPixelGameEngine on MacOS a
+	FIRST CLASS CITIZEN! PGEv3 has a custom written C to Objective C glue
+	code that makes it possible for us to stay 100% in C++ land without
+	compromising language features, flexibility, and ease of use.
+
+	To compile, adapt the following command:
+	clang++ -O2 YourSource.cpp -o YourProgName -framework Metal -framework MetalKit -framework AppKit -framework QuartzCore -framework OpenGL -framework Foundation -std=c++20
+
+	TODO: Alternatively you can use PGEv3 in your XCode project directly.
+	TODO: Check out this video: <<link to XCode video tutorial>>
+
+
+
+	Compiling with Emscripten
+	~~~~~~~~~~~~~~~~~~~~~~~~~
+	Emscripten compiler will turn your awesome C++ PixelGameEngine project into WASM!
+	This means you can run your application in the browser, great for distributing
+	and submission into jams and things!
+
+	TODO: Check out this video: <<link to emscripten tutorial>>
+	
+	To compile use the command:
+	em++ -O2 YourSource.cpp -o YourProgName.html -sASYNCIFY -sSTACK_SIZE=524288 -sALLOW_MEMORY_GROWTH=1 -sMAX_WEBGL_VERSION=2 -sMIN_WEBGL_VERSION=2 -sUSE_LIBPNG=1 -std=c++20
+
+	A quick note about assets, if you wish to use any assets in your program they
+	must be	compiled into your program. The convenient way of doing it is having
+	all of your assets in a single folder and then using the `--preload-file`
+	command to bring that entire folder into your program, like so:
+
+	--preload-file ./assets@assets
+
+	This tells the compiler to add all of the files located in ./assets in a virtual
+	filesystem your program can access located at `assets`
+
+	Files compiled into your program in this way can be accessed, for example:
+
+	`./assets/my_gfx.png` or `assets/my_gfx.png`
+
+
+
 	AI Disclosure
 	~~~~~~~~~~~~~
 	Parts of this code may have been generated with the assistance of AI tools. Instances
