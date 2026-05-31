@@ -156,7 +156,7 @@
 			 |              |              |              |              |              |              |
 	---------+--------------+--------------+--------------+--------------+--------------+--------------+
 	RECT     | contains     | contains     | contains     | contains     | contains     |              |
-			 | closest      |              |              |              |              |              |
+			 | closest      |              |              | closest      |              |              |
 			 | overlaps     | overlaps     | overlaps     | overlaps     | overlaps     |              |
 			 | intersects   | intersects   | intersects   | intersects   | intersects   |              |
 			 |              |              |              |              |              |              |
@@ -976,8 +976,9 @@ namespace olc::utils::geom2d
 	template<typename T1, typename T2>
 	inline olc::v_2d<T1> closest(const rect<T1>& r, const circle<T2>& l)
 	{
-		// TODO:
-		return {};
+		const auto pX = std::clamp(l.pos.x, r.pos.x, r.pos.x + r.size.x);
+		const auto pY = std::clamp(l.pos.y, r.pos.y, r.pos.y + r.size.y);
+		return { pX, pY };
 	}
 
 	// closest(c,c)
