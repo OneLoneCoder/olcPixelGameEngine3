@@ -44,19 +44,27 @@
 	#define OGL_LOAD(t) reinterpret_cast<t##_t*>(eglGetProcAddress(#t))
 #endif
 
-#if OLC_HOST == OLC_HOST_MACOS
-		#define GL_SILENCE_DEPRECATION // Stops MacOS & iOS whining about OpenGL is deprecated and we should use Metal
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
         #define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED // Stops MacOS & iOS whining about OpenGL even more
         #define CALLSTYLE
         #define OGL_LOAD(t) &::t
         #define GL_GLEXT_PROTOTYPES
-        #undef GL_CLAMP
+		#undef GL_CLAMP
 		#define GL_CLAMP GL_CLAMP_TO_EDGE
-        #include <stddef.h>                         // Correct issue with Unknown type name 'ptrdiff_t'
-        #include <OpenGL/OpenGL.h>
-        #include <OpenGL/gl3.h>
-        #include <OpenGL/gl3ext.h>
-        #include <OpenGL/glu.h>
+        #include <stddef.h>
+		#if OLC_HOST == OLC_HOST_MACOS
+        	#include <OpenGL/OpenGL.h>
+        	#include <OpenGL/gl3.h>
+        	#include <OpenGL/gl3ext.h>
+        	#include <OpenGL/glu.h>
+		#endif
+		#if OLC_HOST == OLC_HOST_IOS
+			#define GL_LINE GL_LINES
+			#define GL_FILL GL_LINE_STRIP
+        	#include <OpenGLES/ES3/gl.h>
+        	#include <OpenGLES/ES3/glext.h>
+		#endif
+		
 #endif
 
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN
@@ -115,6 +123,12 @@ namespace olc
         typedef void* glDeviceContext_t;
         typedef CGLContextObj glRenderContext_t;
         typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei count, const GLchar* const *string, const GLint *length);
+#endif
+
+#if OLC_HOST == OLC_HOST_IOS
+		typedef void* glDeviceContext_t;
+		typedef void* glRenderContext_t;  // EAGLContext is the OpenGL ES rendering context for iOS
+		typedef void CALLSTYLE glShaderSource_t(GLuint shader, GLsizei count, const GLchar* const *string, const GLint *length);
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11

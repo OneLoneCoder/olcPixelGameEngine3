@@ -8,17 +8,37 @@
 
 /* Begin PBXBuildFile section */
 		460496082E362F190047E223 /* test_mh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495FB2E300E0F0047E223 /* test_mh.cpp */; };
-		46152BD72FE2DD1E00DCAC34 /* hw_touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46152BD62FE2DD1E00DCAC34 /* hw_touch.cpp */; };
+		460496092E362F190047E224 /* test_mh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495FB2E300E0F0047E223 /* test_mh.cpp */; };
+		461B0B6D2F04346B00F47017 /* host_apple_ios.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 461B0B692F04346B00F47017 /* host_apple_ios.cpp */; };
 		462680A42E69D03800799C36 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495EC2E300E000047E223 /* image.cpp */; };
 		462680A52E69D15C00799C36 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF82E39135B00B74FA3 /* OpenGL.framework */; };
+		462680A72E69D03800799C37 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495EC2E300E000047E223 /* image.cpp */; };
 		462680D12E6C3C4500799C36 /* gpu_iface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680D02E6C3C4500799C36 /* gpu_iface.cpp */; };
-		466C385E2F41D5D400F75AF4 /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466C385C2F41D5D400F75AF4 /* draw.cpp */; };
-		466C38602F41D69000F75AF4 /* draw_batch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 466C385F2F41D69000F75AF4 /* draw_batch.cpp */; };
+		462680D22E6C3C4500799C37 /* gpu_iface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680D02E6C3C4500799C36 /* gpu_iface.cpp */; };
 		467318BA2EEC213700714D4C /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467318B92EEC213700714D4C /* font.cpp */; };
+		467318BB2EEC213700714D4D /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467318B92EEC213700714D4C /* font.cpp */; };
+		467797882FF022A300171349 /* hw_keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797832FF022A300171349 /* hw_keyboard.cpp */; };
+		467797892FF022A300171349 /* hw_touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797852FF022A300171349 /* hw_touch.cpp */; };
+		4677978A2FF022A300171349 /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797812FF022A300171349 /* draw.cpp */; };
+		4677978B2FF022A300171349 /* draw_batch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797822FF022A300171349 /* draw_batch.cpp */; };
+		4677978C2FF022A300171349 /* hw_keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797832FF022A300171349 /* hw_keyboard.cpp */; };
+		4677978D2FF022A300171349 /* hw_touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797852FF022A300171349 /* hw_touch.cpp */; };
+		4677978E2FF022A300171349 /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797812FF022A300171349 /* draw.cpp */; };
+		4677978F2FF022A300171349 /* draw_batch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797822FF022A300171349 /* draw_batch.cpp */; };
 		46964CE82EE5C23300B7BCF1 /* api_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46964CE62EE5C23300B7BCF1 /* api_macos.cpp */; };
 		469A92132E79B0F1007BB460 /* hw_mouse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 469A92122E79B0F1007BB460 /* hw_mouse.cpp */; };
+		469A92142E79B0F1007BB461 /* hw_mouse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 469A92122E79B0F1007BB460 /* hw_mouse.cpp */; };
+		46A1B5982E40F8B0009734EE /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46A1B5972E40F8B0009734EE /* GLKit.framework */; };
+		46A1B5A02E39196500B74FA5 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DFC2E39137100B74FA3 /* Metal.framework */; };
+		46A1B5A12E39195A00B74FA5 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DFA2E39136800B74FA3 /* QuartzCore.framework */; };
+		46A1B5A22E39193D00B74FA5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF62E39135300B74FA3 /* Foundation.framework */; };
+		46ABFEA13028DB1800C95998 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46ABFEA03028DB1800C95998 /* AVFoundation.framework */; };
+		46ABFEA33028DB2400C95998 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46ABFEA23028DB2400C95998 /* OpenGLES.framework */; };
+		46ABFEA53028DB3400C95998 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46ABFEA43028DB3400C95998 /* UIKit.framework */; };
 		46B1E5932E40F8A6009734EC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5922E40F8A6009734EC /* AppKit.framework */; };
 		46B1E5952E40F8B0009734EC /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5942E40F8B0009734EC /* MetalKit.framework */; };
+		46C0F41D2F0D08940053B0C8 /* imload_ios.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46C0F41C2F0D08940053B0C8 /* imload_ios.cpp */; };
+		46C0F41E2F0D08940053B0C8 /* api_ios.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46C0F4192F0D08940053B0C8 /* api_ios.cpp */; };
 		46C8F5B92E7DA67900C11019 /* imload_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46C8F5B82E7DA67900C11019 /* imload_macos.cpp */; };
 		46E85DFE2E39193D00B74FA3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF62E39135300B74FA3 /* Foundation.framework */; };
 		46E85DFF2E39195A00B74FA3 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DFA2E39136800B74FA3 /* QuartzCore.framework */; };
@@ -28,7 +48,10 @@
 		46E85E092E3924FB00B74FA3 /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495DD2E300E000047E223 /* core.cpp */; };
 		46E85E0A2E39252200B74FA3 /* window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495F22E300E000047E223 /* window.cpp */; };
 		46E85E0B2E39252B00B74FA3 /* gpu_opengl33.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495E12E300E000047E223 /* gpu_opengl33.cpp */; };
-		46FD95932F2AA035004EAEC5 /* hw_keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46FD95922F2AA035004EAEC5 /* hw_keyboard.cpp */; };
+		46E85E0C2E3924CC00B74FA4 /* api_opengl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495DB2E300E000047E223 /* api_opengl.cpp */; };
+		46E85E0E2E3924FB00B74FA4 /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495DD2E300E000047E223 /* core.cpp */; };
+		46E85E0F2E39252200B74FA4 /* window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495F22E300E000047E223 /* window.cpp */; };
+		46E85E102E39252B00B74FA4 /* gpu_opengl33.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495E12E300E000047E223 /* gpu_opengl33.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -67,17 +90,19 @@
 		460495F12E300E000047E223 /* window.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = window.h; sourceTree = "<group>"; };
 		460495F22E300E000047E223 /* window.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window.cpp; sourceTree = "<group>"; };
 		460495FB2E300E0F0047E223 /* test_mh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_mh.cpp; sourceTree = "<group>"; };
-		46152BD52FE2DD1E00DCAC34 /* hw_touch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hw_touch.h; sourceTree = "<group>"; };
-		46152BD62FE2DD1E00DCAC34 /* hw_touch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_touch.cpp; sourceTree = "<group>"; };
+		461B0B682F04346B00F47017 /* host_apple_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = host_apple_ios.h; sourceTree = "<group>"; };
+		461B0B692F04346B00F47017 /* host_apple_ios.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = host_apple_ios.cpp; sourceTree = "<group>"; };
 		462680D02E6C3C4500799C36 /* gpu_iface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gpu_iface.cpp; sourceTree = "<group>"; };
-		466C38492F3A0B0E00F75AF4 /* matrix4d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = matrix4d.h; sourceTree = "<group>"; };
-		466C384A2F3A0B0E00F75AF4 /* vector4d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vector4d.h; sourceTree = "<group>"; };
-		466C385B2F41D5D400F75AF4 /* draw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = draw.h; sourceTree = "<group>"; };
-		466C385C2F41D5D400F75AF4 /* draw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw.cpp; sourceTree = "<group>"; };
-		466C385D2F41D5D400F75AF4 /* extension.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = extension.h; sourceTree = "<group>"; };
-		466C385F2F41D69000F75AF4 /* draw_batch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw_batch.cpp; sourceTree = "<group>"; };
 		467318B82EEC213700714D4C /* font.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = font.h; sourceTree = "<group>"; };
 		467318B92EEC213700714D4C /* font.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = font.cpp; sourceTree = "<group>"; };
+		467797802FF022A300171349 /* draw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = draw.h; sourceTree = "<group>"; };
+		467797812FF022A300171349 /* draw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw.cpp; sourceTree = "<group>"; };
+		467797822FF022A300171349 /* draw_batch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw_batch.cpp; sourceTree = "<group>"; };
+		467797832FF022A300171349 /* hw_keyboard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_keyboard.cpp; sourceTree = "<group>"; };
+		467797842FF022A300171349 /* hw_touch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hw_touch.h; sourceTree = "<group>"; };
+		467797852FF022A300171349 /* hw_touch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_touch.cpp; sourceTree = "<group>"; };
+		467797862FF022A300171349 /* matrix4d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = matrix4d.h; sourceTree = "<group>"; };
+		467797872FF022A300171349 /* vector4d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vector4d.h; sourceTree = "<group>"; };
 		46964CE52EE5C23300B7BCF1 /* api_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = api_macos.h; sourceTree = "<group>"; };
 		46964CE62EE5C23300B7BCF1 /* api_macos.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = api_macos.cpp; sourceTree = "<group>"; };
 		46964CE72EE5C23300B7BCF1 /* api_macos_wrapper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = api_macos_wrapper.hpp; sourceTree = "<group>"; };
@@ -86,21 +111,35 @@
 		469A92102E79B04B007BB460 /* hw_keyboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hw_keyboard.h; sourceTree = "<group>"; };
 		469A92112E79B0B0007BB460 /* hw_mouse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hw_mouse.h; sourceTree = "<group>"; };
 		469A92122E79B0F1007BB460 /* hw_mouse.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_mouse.cpp; sourceTree = "<group>"; };
+		46A1B5952E40F8A6009734ED /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		46A1B5972E40F8B0009734EE /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+		46A1B5A42E69D15C00799C38 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		46ABFEA03028DB1800C95998 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/AVFoundation.framework; sourceTree = DEVELOPER_DIR; };
+		46ABFEA23028DB2400C95998 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/OpenGLES.framework; sourceTree = DEVELOPER_DIR; };
+		46ABFEA43028DB3400C95998 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		46B1E5922E40F8A6009734EC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		46B1E5942E40F8B0009734EC /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		46C0F4182F0D08940053B0C8 /* api_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = api_ios.h; sourceTree = "<group>"; };
+		46C0F4192F0D08940053B0C8 /* api_ios.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = api_ios.cpp; sourceTree = "<group>"; };
+		46C0F41A2F0D08940053B0C8 /* api_ios_wrapper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = api_ios_wrapper.hpp; sourceTree = "<group>"; };
+		46C0F41B2F0D08940053B0C8 /* imload_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imload_ios.h; sourceTree = "<group>"; };
+		46C0F41C2F0D08940053B0C8 /* imload_ios.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imload_ios.cpp; sourceTree = "<group>"; };
+		46C0F41F2F0D347D0053B0C8 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/OpenGLES.framework; sourceTree = DEVELOPER_DIR; };
+		46C0F4212F0D348E0053B0C8 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
+		46C0F4232F0D34AE0053B0C8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/AVFoundation.framework; sourceTree = DEVELOPER_DIR; };
 		46C8F5B72E7DA67900C11019 /* imload_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imload_macos.h; sourceTree = "<group>"; };
 		46C8F5B82E7DA67900C11019 /* imload_macos.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imload_macos.cpp; sourceTree = "<group>"; };
 		46E85DF62E39135300B74FA3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		46E85DF82E39135B00B74FA3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		46E85DFA2E39136800B74FA3 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		46E85DFC2E39137100B74FA3 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		46FD95922F2AA035004EAEC5 /* hw_keyboard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_keyboard.cpp; sourceTree = "<group>"; };
 		8998CE202E057F4E007DDD96 /* olcPGE3 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = olcPGE3; sourceTree = BUILT_PRODUCTS_DIR; };
 		8998CE2C2E057F85007DDD96 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		8998CE332E057F92007DDD96 /* pixel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pixel.h; sourceTree = "<group>"; };
 		8998CE342E057F92007DDD96 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		8998CE362E057F92007DDD96 /* vector2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vector2d.h; sourceTree = "<group>"; };
 		8998CE372E057F92007DDD96 /* transform2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = transform2d.h; sourceTree = "<group>"; };
+		8998CE402E057F4E007DDD98 /* olcPGE3_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = olcPGE3_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,18 +156,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8998CE422E057F4E007DDD97 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46ABFEA33028DB2400C95998 /* OpenGLES.framework in Frameworks */,
+				46A1B5982E40F8B0009734EE /* GLKit.framework in Frameworks */,
+				46A1B5A02E39196500B74FA5 /* Metal.framework in Frameworks */,
+				46A1B5A12E39195A00B74FA5 /* QuartzCore.framework in Frameworks */,
+				46ABFEA13028DB1800C95998 /* AVFoundation.framework in Frameworks */,
+				46ABFEA53028DB3400C95998 /* UIKit.framework in Frameworks */,
+				46A1B5A22E39193D00B74FA5 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		46E85DF52E39135300B74FA3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				46ABFEA43028DB3400C95998 /* UIKit.framework */,
+				46ABFEA23028DB2400C95998 /* OpenGLES.framework */,
+				46C0F4232F0D34AE0053B0C8 /* AVFoundation.framework */,
+				46ABFEA03028DB1800C95998 /* AVFoundation.framework */,
+				46C0F4212F0D348E0053B0C8 /* UIKit.framework */,
+				46C0F41F2F0D347D0053B0C8 /* OpenGLES.framework */,
 				46B1E5942E40F8B0009734EC /* MetalKit.framework */,
 				46B1E5922E40F8A6009734EC /* AppKit.framework */,
 				46E85DFC2E39137100B74FA3 /* Metal.framework */,
 				46E85DFA2E39136800B74FA3 /* QuartzCore.framework */,
 				46E85DF82E39135B00B74FA3 /* OpenGL.framework */,
 				46E85DF62E39135300B74FA3 /* Foundation.framework */,
+				46A1B5952E40F8A6009734ED /* UIKit.framework */,
+				46A1B5972E40F8B0009734EE /* GLKit.framework */,
+				46A1B5A42E69D15C00799C38 /* OpenGLES.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -147,6 +209,7 @@
 			isa = PBXGroup;
 			children = (
 				8998CE202E057F4E007DDD96 /* olcPGE3 */,
+				8998CE402E057F4E007DDD98 /* olcPGE3_iOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -164,43 +227,51 @@
 		8998CE322E057F92007DDD96 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				46152BD52FE2DD1E00DCAC34 /* hw_touch.h */,
-				46152BD62FE2DD1E00DCAC34 /* hw_touch.cpp */,
-				466C385F2F41D69000F75AF4 /* draw_batch.cpp */,
-				466C385B2F41D5D400F75AF4 /* draw.h */,
-				466C385C2F41D5D400F75AF4 /* draw.cpp */,
-				466C385D2F41D5D400F75AF4 /* extension.h */,
-				466C38492F3A0B0E00F75AF4 /* matrix4d.h */,
-				466C384A2F3A0B0E00F75AF4 /* vector4d.h */,
-				46FD95922F2AA035004EAEC5 /* hw_keyboard.cpp */,
-				467318B82EEC213700714D4C /* font.h */,
-				467318B92EEC213700714D4C /* font.cpp */,
+				467797802FF022A300171349 /* draw.h */,
+				467797812FF022A300171349 /* draw.cpp */,
+				467797822FF022A300171349 /* draw_batch.cpp */,
+				467797832FF022A300171349 /* hw_keyboard.cpp */,
+				467797842FF022A300171349 /* hw_touch.h */,
+				467797852FF022A300171349 /* hw_touch.cpp */,
+				467797862FF022A300171349 /* matrix4d.h */,
+				467797872FF022A300171349 /* vector4d.h */,
+				46C0F4182F0D08940053B0C8 /* api_ios.h */,
+				46C0F4192F0D08940053B0C8 /* api_ios.cpp */,
+				46C0F41A2F0D08940053B0C8 /* api_ios_wrapper.hpp */,
 				46964CE52EE5C23300B7BCF1 /* api_macos.h */,
 				46964CE62EE5C23300B7BCF1 /* api_macos.cpp */,
 				46964CE72EE5C23300B7BCF1 /* api_macos_wrapper.hpp */,
-				469A92122E79B0F1007BB460 /* hw_mouse.cpp */,
-				469A92112E79B0B0007BB460 /* hw_mouse.h */,
-				469A92102E79B04B007BB460 /* hw_keyboard.h */,
-				469A920F2E79B03C007BB460 /* imload_iface.h */,
-				469A920E2E79B01E007BB460 /* hw_input.h */,
-				462680D02E6C3C4500799C36 /* gpu_iface.cpp */,
 				460495DA2E300E000047E223 /* api_opengl.h */,
 				460495DB2E300E000047E223 /* api_opengl.cpp */,
 				8998CE342E057F92007DDD96 /* config.h */,
 				460495DC2E300E000047E223 /* core.h */,
 				460495DD2E300E000047E223 /* core.cpp */,
+				467318B82EEC213700714D4C /* font.h */,
+				467318B92EEC213700714D4C /* font.cpp */,
 				460495DF2E300E000047E223 /* gpu_iface.h */,
+				462680D02E6C3C4500799C36 /* gpu_iface.cpp */,
 				460495E02E300E000047E223 /* gpu_opengl33.h */,
 				460495E12E300E000047E223 /* gpu_opengl33.cpp */,
 				460495E22E300E000047E223 /* gputask.h */,
+				461B0B682F04346B00F47017 /* host_apple_ios.h */,
+				461B0B692F04346B00F47017 /* host_apple_ios.cpp */,
 				460495E32E300E000047E223 /* host_apple_macos.h */,
 				460495E42E300E000047E223 /* host_apple_macos.cpp */,
 				460495E52E300E000047E223 /* host_iface.h */,
 				460495E62E300E000047E223 /* host_lin_wayland.h */,
 				460495E72E300E000047E223 /* host_lin_x11.h */,
 				460495E82E300E000047E223 /* host_web_emscripten.h */,
+				469A920E2E79B01E007BB460 /* hw_input.h */,
+				469A92102E79B04B007BB460 /* hw_keyboard.h */,
+				469A92112E79B0B0007BB460 /* hw_mouse.h */,
+				469A92122E79B0F1007BB460 /* hw_mouse.cpp */,
 				460495EB2E300E000047E223 /* image.h */,
 				460495EC2E300E000047E223 /* image.cpp */,
+				469A920F2E79B03C007BB460 /* imload_iface.h */,
+				46C0F41B2F0D08940053B0C8 /* imload_ios.h */,
+				46C0F41C2F0D08940053B0C8 /* imload_ios.cpp */,
+				46C8F5B72E7DA67900C11019 /* imload_macos.h */,
+				46C8F5B82E7DA67900C11019 /* imload_macos.cpp */,
 				460495ED2E300E000047E223 /* matrix3d.h */,
 				460495EE2E300E000047E223 /* olcpge3.h */,
 				8998CE332E057F92007DDD96 /* pixel.h */,
@@ -210,8 +281,6 @@
 				8998CE362E057F92007DDD96 /* vector2d.h */,
 				460495F12E300E000047E223 /* window.h */,
 				460495F22E300E000047E223 /* window.cpp */,
-				46C8F5B72E7DA67900C11019 /* imload_macos.h */,
-				46C8F5B82E7DA67900C11019 /* imload_macos.cpp */,
 			);
 			name = src;
 			path = ../src;
@@ -237,6 +306,22 @@
 			productReference = 8998CE202E057F4E007DDD96 /* olcPGE3 */;
 			productType = "com.apple.product-type.tool";
 		};
+		8998CE432E057F4E007DDD99 /* olcPGE3_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8998CE442E057F4E007DDD99 /* Build configuration list for PBXNativeTarget "olcPGE3_iOS" */;
+			buildPhases = (
+				8998CE452E057F4E007DDD99 /* Sources */,
+				8998CE422E057F4E007DDD97 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = olcPGE3_iOS;
+			productName = olcPGE3_iOS;
+			productReference = 8998CE402E057F4E007DDD98 /* olcPGE3_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -247,6 +332,9 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					8998CE1F2E057F4E007DDD96 = {
+						CreatedOnToolsVersion = 14.3.1;
+					};
+					8998CE432E057F4E007DDD99 = {
 						CreatedOnToolsVersion = 14.3.1;
 					};
 				};
@@ -265,6 +353,7 @@
 			projectRoot = "";
 			targets = (
 				8998CE1F2E057F4E007DDD96 /* olcPGE3 */,
+				8998CE432E057F4E007DDD99 /* olcPGE3_iOS */,
 			);
 		};
 /* End PBXProject section */
@@ -275,7 +364,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				462680D12E6C3C4500799C36 /* gpu_iface.cpp in Sources */,
-				466C38602F41D69000F75AF4 /* draw_batch.cpp in Sources */,
+				4677978F2FF022A300171349 /* draw_batch.cpp in Sources */,
 				462680A42E69D03800799C36 /* image.cpp in Sources */,
 				46E85E0B2E39252B00B74FA3 /* gpu_opengl33.cpp in Sources */,
 				46E85E0A2E39252200B74FA3 /* window.cpp in Sources */,
@@ -283,13 +372,36 @@
 				467318BA2EEC213700714D4C /* font.cpp in Sources */,
 				46E85E072E3924D900B74FA3 /* host_apple_macos.cpp in Sources */,
 				469A92132E79B0F1007BB460 /* hw_mouse.cpp in Sources */,
+				4677978C2FF022A300171349 /* hw_keyboard.cpp in Sources */,
+				4677978D2FF022A300171349 /* hw_touch.cpp in Sources */,
 				46E85E062E3924CC00B74FA3 /* api_opengl.cpp in Sources */,
 				46964CE82EE5C23300B7BCF1 /* api_macos.cpp in Sources */,
-				46FD95932F2AA035004EAEC5 /* hw_keyboard.cpp in Sources */,
 				46C8F5B92E7DA67900C11019 /* imload_macos.cpp in Sources */,
+				4677978E2FF022A300171349 /* draw.cpp in Sources */,
 				460496082E362F190047E223 /* test_mh.cpp in Sources */,
-				46152BD72FE2DD1E00DCAC34 /* hw_touch.cpp in Sources */,
-				466C385E2F41D5D400F75AF4 /* draw.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8998CE452E057F4E007DDD99 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				462680D22E6C3C4500799C37 /* gpu_iface.cpp in Sources */,
+				4677978B2FF022A300171349 /* draw_batch.cpp in Sources */,
+				462680A72E69D03800799C37 /* image.cpp in Sources */,
+				46E85E102E39252B00B74FA4 /* gpu_opengl33.cpp in Sources */,
+				46E85E0F2E39252200B74FA4 /* window.cpp in Sources */,
+				46E85E0E2E3924FB00B74FA4 /* core.cpp in Sources */,
+				467318BB2EEC213700714D4D /* font.cpp in Sources */,
+				461B0B6D2F04346B00F47017 /* host_apple_ios.cpp in Sources */,
+				469A92142E79B0F1007BB461 /* hw_mouse.cpp in Sources */,
+				467797882FF022A300171349 /* hw_keyboard.cpp in Sources */,
+				467797892FF022A300171349 /* hw_touch.cpp in Sources */,
+				46E85E0C2E3924CC00B74FA4 /* api_opengl.cpp in Sources */,
+				46C0F41E2F0D08940053B0C8 /* api_ios.cpp in Sources */,
+				4677978A2FF022A300171349 /* draw.cpp in Sources */,
+				46C0F41D2F0D08940053B0C8 /* imload_ios.cpp in Sources */,
+				460496092E362F190047E224 /* test_mh.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -411,8 +523,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1";
 				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
+				IPHONEOS_DEPLOYMENT_TARGET = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TVOS_DEPLOYMENT_TARGET = "";
+				WATCHOS_DEPLOYMENT_TARGET = "";
+				XROS_DEPLOYMENT_TARGET = "";
 			};
 			name = Debug;
 		};
@@ -422,8 +540,80 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1";
 				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
+				IPHONEOS_DEPLOYMENT_TARGET = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TVOS_DEPLOYMENT_TARGET = "";
+				WATCHOS_DEPLOYMENT_TARGET = "";
+				XROS_DEPLOYMENT_TARGET = "";
+			};
+			name = Release;
+		};
+		8998CE462E057F4E007DDD9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.0;
+				DEVELOPMENT_TEAM = "";
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1";
+				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
+				INFOPLIST_FILE = olcPGE3_iOS_Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = olcPGE3iOS;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "";
+				MARKETING_VERSION = 1.0;
+				OTHER_CFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = pge.onelonecoder.pge3ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TVOS_DEPLOYMENT_TARGET = "";
+				WATCHOS_DEPLOYMENT_TARGET = "";
+				XROS_DEPLOYMENT_TARGET = "";
+			};
+			name = Debug;
+		};
+		8998CE472E057F4E007DDD9B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.0;
+				DEVELOPMENT_TEAM = "";
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1 ";
+				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
+				INFOPLIST_FILE = olcPGE3_iOS_Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = olcPGE3iOS;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = "";
+				MARKETING_VERSION = 1.0;
+				OTHER_CFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = pge.onelonecoder.pge3ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TVOS_DEPLOYMENT_TARGET = "";
+				WATCHOS_DEPLOYMENT_TARGET = "";
+				XROS_DEPLOYMENT_TARGET = "";
 			};
 			name = Release;
 		};
@@ -444,6 +634,15 @@
 			buildConfigurations = (
 				8998CE282E057F4E007DDD96 /* Debug */,
 				8998CE292E057F4E007DDD96 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8998CE442E057F4E007DDD99 /* Build configuration list for PBXNativeTarget "olcPGE3_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8998CE462E057F4E007DDD9A /* Debug */,
+				8998CE472E057F4E007DDD9B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
