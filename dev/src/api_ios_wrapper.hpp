@@ -177,6 +177,19 @@ namespace olc {
                     }
                 }
                 
+                std::string getApplicationPath()
+                {
+                    if(app_) {
+                        const char* path = application_getApplicationPath(app_);
+                        if (path) {
+                            std::string appPath(path);
+                            return appPath;
+                        }
+                        
+                    }
+                    return std::string{};
+                }
+                
                 void initialize() noexcept {
                     if (app_) application_initialize(app_);
                 }
@@ -794,8 +807,6 @@ namespace olc {
             };
                 
             // Image loader wrapper class
-            // As of 6 Jan 2025 both MacOS and iOS use the same image loading C API
-            // However this may change in the future so we keep separate wrappers for now
             class ImageLoader {
             private:
                 struct ::ImageLoader* loader_;
@@ -815,6 +826,20 @@ namespace olc {
                         imageloader_destroy(loader_);
                         free(loader_);
                     }
+                }
+                
+                std::string GetApplicationPath()
+                {
+                    if(loader_) {
+                        char* path = imageloader_getApplicationPath(loader_);
+                        if (path) {
+                            std::string appPath(path);
+                            free(path);
+                            return appPath;
+                        }
+                        
+                    }
+                    return std::string{};
                 }
                 
                 bool loadFromFile(const std::string& filePath) {

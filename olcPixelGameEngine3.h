@@ -357,7 +357,7 @@ inline constexpr void olc_IgnoreUnused(Args&&...) noexcept {}
 
 
 #if !defined(PGE_PIXEL_DECLARED)
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy" // Silence warnings about implicitly generated copy constructor for Pixel
 #endif
@@ -668,7 +668,7 @@ namespace olc
 	}
 }
 
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
 #pragma clang diagnostic pop
 #endif
 
@@ -2002,7 +2002,7 @@ namespace olc
 #endif
 
 #if !defined(PGE_TRANSFORM2D_DECLARED)
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wignored-qualifiers" // Silence warnings about ignored qualifiers in olc::t_2d
 #endif
@@ -2248,7 +2248,7 @@ namespace olc
 	typedef t_2d<float> tf2d;
 	typedef t_2d<double> td2d;
 }
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
 #pragma clang diagnostic pop
 #endif
 #define PGE_TRANSFORM2D_DECLARED 1
@@ -5947,10 +5947,12 @@ extern "C" {
     
     // Application API - as implemented in api_.cpp
     struct Application* application_init        (void);
-    void application_initialize                 (struct Application* self); 
+    void application_initialize                 (struct Application* self);
     void application_activate                   (struct Application* self);
     void application_run                        (struct Application* self);
     void application_destroy                    (struct Application* self);
+    const char* application_getApplicationPath  (struct Application* self);
+    
     
     // View Controller API - as implemented in api_.cpp
     struct ViewController* viewcontroller_init  (double width, double height);
@@ -5997,6 +5999,7 @@ extern "C" {
     BOOL imageloader_isLoaded                   (const struct ImageLoader* self);
     BOOL imageloader_getPixel                   (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha);
     unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* self);
+    char* imageloader_getApplicationPath        (struct ImageLoader* self);
 
    
     // Autorelease pool management
@@ -6258,6 +6261,19 @@ namespace olc {
                     if (app_) {
                         appPath_ = path;
                     }
+                }
+                
+                std::string getApplicationPath()
+                {
+                    if(app_) {
+                        const char* path = application_getApplicationPath(app_);
+                        if (path) {
+                            std::string appPath(path);
+                            return appPath;
+                        }
+                        
+                    }
+                    return std::string{};
                 }
                 
                 void initialize() noexcept {
@@ -6877,8 +6893,6 @@ namespace olc {
             };
                 
             // Image loader wrapper class
-            // As of 6 Jan 2025 both MacOS and iOS use the same image loading C API
-            // However this may change in the future so we keep separate wrappers for now
             class ImageLoader {
             private:
                 struct ::ImageLoader* loader_;
@@ -6898,6 +6912,20 @@ namespace olc {
                         imageloader_destroy(loader_);
                         free(loader_);
                     }
+                }
+                
+                std::string GetApplicationPath()
+                {
+                    if(loader_) {
+                        char* path = imageloader_getApplicationPath(loader_);
+                        if (path) {
+                            std::string appPath(path);
+                            free(path);
+                            return appPath;
+                        }
+                        
+                    }
+                    return std::string{};
                 }
                 
                 bool loadFromFile(const std::string& filePath) {
@@ -14042,7 +14070,7 @@ static constexpr const char* kAddObserverSel                    = "addObserver:s
 static constexpr const char* kUIDeviceOrientationDidChangeNoti  = "UIDeviceOrientationDidChangeNotification";
 static constexpr const char* kUIDeviceClass                     = "UIDevice";
 
-// NSImage, NSBitmapImageRep, and image data access selectors
+// UIImage and image data access selectors
 static constexpr const char* kInitWithContentsOfFileSel         = "initWithContentsOfFile:";
 static constexpr const char* kRepresentationsSel                = "representations";
 static constexpr const char* kPixelsWideSel                     = "pixelsWide";
@@ -14052,6 +14080,7 @@ static constexpr const char* kBytesPerRowSel                    = "bytesPerRow";
 static constexpr const char* kHasAlphaSel                       = "hasAlpha";
 static constexpr const char* kBitmapDataSel                     = "bitmapData";
 static constexpr const char* kNSBitmapImageRepClass             = "NSBitmapImageRep";
+static constexpr const char* kCGImageSel                        = "CGImage";
 
 // OpenGL ES constants
 static constexpr int kEAGLRenderingAPIOpenGLES3                 = 3;
@@ -14111,7 +14140,6 @@ namespace ObjectiveCSEL {
     static SEL runSel                               = nullptr;
     static SEL setIdleTimerDisabledSel              = nullptr;
     static SEL setPausedSel                         = nullptr;
-
 
     // UIApplicationDelegate lifecycle methods
     static SEL applicationDidFinishLaunchingSel     = nullptr;
@@ -14208,7 +14236,7 @@ namespace ObjectiveCSEL {
     static SEL deviceOrientationDidChangeSel        = nullptr;
     static SEL beginGenDeviceOrientationNotifSel    = nullptr;
     
-    // NS Image
+    // UI Image
     static SEL initWithContentsOfFileSel            = nullptr;
     static SEL representationsSel                   = nullptr;
     static SEL pixelsWideSel                        = nullptr;
@@ -14217,6 +14245,7 @@ namespace ObjectiveCSEL {
     static SEL bytesPerRowSel                       = nullptr;
     static SEL hasAlphaSel                          = nullptr;
     static SEL bitmapDataSel                        = nullptr;
+    static SEL cgImageSel                           = nullptr;
 
     // NS Bundle selectors
     static SEL mainBundleSel                        = nullptr;
@@ -14340,7 +14369,7 @@ namespace ObjectiveCSEL {
         deviceOrientationDidChangeSel       = sel_registerName(kDeviceOrientationDidChangeSel);
         beginGenDeviceOrientationNotifSel   = sel_registerName(kBeginGenDeviceOrientationNotifSel);
         
-        // NS Image
+        // UI Image
         initWithContentsOfFileSel           = sel_registerName(kInitWithContentsOfFileSel);
         representationsSel                  = sel_registerName(kRepresentationsSel);
         pixelsWideSel                       = sel_registerName(kPixelsWideSel);
@@ -14349,7 +14378,7 @@ namespace ObjectiveCSEL {
         bytesPerRowSel                      = sel_registerName(kBytesPerRowSel);
         hasAlphaSel                         = sel_registerName(kHasAlphaSel);
         bitmapDataSel                       = sel_registerName(kBitmapDataSel);
-        
+        cgImageSel                          = sel_registerName(kCGImageSel);
         // NS Bundle selectors
         mainBundleSel                       = sel_registerName(kMainBundleSel);
         UTF8StringSel                       = sel_registerName(kUTF8StringSel);
@@ -14470,7 +14499,9 @@ struct Application {
     void (*activate)    (struct Application* self){nullptr};
     void (*run)         (struct Application* self){nullptr};
     void (*destroy)     (struct Application* self){nullptr};
+    
     std::string appPath = "";  // Application path
+    const char* (*getAppPath)  (struct Application* self);
     
     Application() = default;
     
@@ -14579,8 +14610,10 @@ struct ImageLoader {
     int bytesPerPixel           {kZeroBytes};          // Number of bytes per pixel (typically 4 for RGBA)
     int bytesPerRow             {kZeroRows};           // Number of bytes per row
     BOOL hasAlpha               {NO};                  // Whether image has alpha channel
+    std::string appPath         = "";  // Application path
 
     // Method function pointers with nullptr initialization
+    char (*getAppPath)                  (const struct ImageLoader* self){nullptr};
     BOOL (*loadFromFile)                (struct ImageLoader* self, const char* filePath){nullptr};
     void (*destroy)                     (struct ImageLoader* self){nullptr};
     unsigned char* (*getPixelData)      (const struct ImageLoader* self){nullptr};
@@ -14741,10 +14774,12 @@ struct Application* application_init(void) {
     app->activate   = application_activate;
     app->run        = application_run;
     app->destroy    = application_destroy;
+    app->getAppPath = application_getApplicationPath;
     
-
     return app;
 }
+
+
 
 
 char* get_application_path(void)
@@ -14878,6 +14913,13 @@ void application_destroy(struct Application* self) {
     }
     
     free(self);
+}
+
+const char* application_getApplicationPath(Application* self) {
+   (void)self;
+   
+    return get_application_path();
+    
 }
 
 // ============================================================================
@@ -15702,6 +15744,11 @@ void opengl_destroy(struct OpenGLRenderer* self) {
     free(self);
 }
 
+char* imageloader_getApplicationPath(struct ImageLoader* self)
+{
+    return get_application_path();
+}
+
 // Load image from file path using NSImage and NSBitmapImageRep
 BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
     // Clear any existing data
@@ -15710,16 +15757,15 @@ BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
         self->pixelData = NULL;
     }
 
-    self->width         = kZeroWidth;
-    self->height        = kZeroHeight;
-    self->bytesPerPixel = kZeroBytes;
-    self->bytesPerRow   = kZeroRows;
-    self->hasAlpha      = NO;
+    self->width             = kZeroWidth;
+    self->height            = kZeroHeight;
+    self->bytesPerPixel     = kZeroBytes;
+    self->bytesPerRow       = kZeroRows;
+    self->hasAlpha          = NO;
 
     // Get required classes and selectors
-    Class NSStringClass           = objc_getClass(kNSStringClass);
-    Class NSImageClass            = objc_getClass(kUIImageClass);
-    Class NSBitmapImageRepClass   = objc_getClass(kNSBitmapImageRepClass);
+    Class NSStringClass     = objc_getClass(kNSStringClass);
+    Class UIImageClass      = objc_getClass(kUIImageClass);
 
     // Create NSString from file path
     id pathString = ((id(*)(Class, SEL, const char*))objc_msgSend)(
@@ -15729,58 +15775,43 @@ BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
         return NO;
     }
     
-    // Create NSImage from file
+    // Create UIImage from file
     id image = ((id(*)(id, SEL, id))objc_msgSend)(
-                ((id(*)(Class, SEL))objc_msgSend)(NSImageClass, ObjectiveCSEL::allocSel),
+                ((id(*)(Class, SEL))objc_msgSend)(UIImageClass, ObjectiveCSEL::allocSel),
                ObjectiveCSEL::initWithContentsOfFileSel, pathString);
     
     if (!image) {
         return NO;
     }
     
-    // Get image representations
-    id representations = ((id(*)(id, SEL))objc_msgSend)(image, ObjectiveCSEL::representationsSel);
-    unsigned int repCount = ((unsigned int(*)(id, SEL))objc_msgSend)(representations, ObjectiveCSEL::countSel);
-    
-    if (repCount == 0) {
-        return NO;
-    }
-    
-    // Get first bitmap representation
-    id bitmapRep = ((id(*)(id, SEL, unsigned int))objc_msgSend)(representations, ObjectiveCSEL::objectAtIndexSel, 0);
-    
-    // Check if it's a bitmap representation
-    if (!((BOOL(*)(id, SEL, Class))objc_msgSend)(bitmapRep, ObjectiveCSEL::isKindOfClassSel, NSBitmapImageRepClass)) {
-        return NO;
-    }
-       
-    self->width          = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep,ObjectiveCSEL::pixelsWideSel);
-    self->height         = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::pixelsHighSel);
-    int bitsPerPixel     = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::bitsPerPixelSel);
-    self->bytesPerRow    = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::bytesPerRowSel);
-    self->hasAlpha       = (BOOL)((BOOL(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::hasAlphaSel);
+    CGImageRef cgImage = ((CGImageRef(*)(id, SEL))objc_msgSend)(image, ObjectiveCSEL::cgImageSel);
 
-    self->bytesPerPixel  = bitsPerPixel / kBitsPerByte;
+    if (!cgImage) {
+        return NO;
+    }
 
-    // Get raw bitmap data
-    unsigned char* sourceData = ((unsigned char*(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::bitmapDataSel);
-    
-    if (!sourceData || self->width <= kMinValidDimension || self->height <= kMinValidDimension) {
-        return NO;
+    self->width         = (int)CGImageGetWidth(cgImage);
+    self->height        = (int)CGImageGetHeight(cgImage);
+    self->bytesPerPixel = (int)CGImageGetBitsPerPixel(cgImage) / kBitsPerByte; // 4 for RGBA, 3 for RGB
+    self->bytesPerRow   = (int)CGImageGetBytesPerRow(cgImage); //  self->width * self->bytesPerPixel;
+    self->hasAlpha      = CGImageGetAlphaInfo(cgImage) != kCGImageAlphaNone;
+ 
+    // Get pixel data directly from CGImage without drawing
+    CGDataProviderRef dataProvider  = CGImageGetDataProvider(cgImage);
+    CFDataRef data                  = CGDataProviderCopyData(dataProvider);
+
+    if (data) {
+        const unsigned char* bytes  = CFDataGetBytePtr(data);
+        size_t dataLength           = CFDataGetLength(data);
+        self->pixelData             = (unsigned char*)malloc(dataLength);
+        
+        memcpy(self->pixelData, bytes, dataLength);
+        CFRelease(data);
+        return YES;
     }
     
-    // Allocate memory for pixel data
-    size_t totalBytes = self->height * self->bytesPerRow;
-    if(totalBytes == 0) {
-        return NO;
-    }
-    
-    self->pixelData = (unsigned char*)malloc(totalBytes);
-    
-    // Copy pixel data
-    memcpy(self->pixelData, sourceData, totalBytes);
-    
-    return YES;
+    return NO;
+
 }
 
 // Get raw pixel data pointer
@@ -24861,23 +24892,72 @@ namespace olc::imload
     
     bool ImageLoader_iOS::CreateImageFromFile(olc::Image& image, const std::string& sFileName)
     {
-        if(!std::filesystem::exists(sFileName)) {
-            
-            // TODO: we need to get the full path to the file in the app bundle
-            return false; // File does not exist
-        }
-
         try {
-            // Create macOS API wrapper image loader
+            
+            // Create iOS API wrapper image loader
             olc::apis::ios::ImageLoader loader;
             
+            // OK Working with mobile storage, we need to check for the file in various locations
+            std::filesystem::path filePath(sFileName);
+            
+            // Lets check if the developer has provided a full path to the file
+            if (!std::filesystem::exists(filePath)) {
+                
+                // File does not exist at the provided path, try to locate it in the app bundle
+                char* cAppFilePath = imageloader_getApplicationPath(loader.getCHandle());
+                if (cAppFilePath) {
+                    
+                    // we need the directory of the app bundle to search for the file
+                    std::filesystem::path fsAppDir(cAppFilePath);
+                    std::filesystem::path potentialPath = fsAppDir / sFileName;
+                    std::filesystem::path normalizedPath = std::filesystem::weakly_canonical(potentialPath);
+                    
+                    // lets check if the file exists in the app bundle directory (Project Directory)
+                    if(std::filesystem::exists(normalizedPath)) {
+                        filePath = normalizedPath;
+                    }
+                    else
+                    {
+                        bool bFound = false;
+                        // Try multiple locations
+                        for(auto& entry : std::filesystem::directory_iterator(fsAppDir))
+                        {
+                            if (entry.is_directory()) {
+                                potentialPath = entry.path() / sFileName;
+                                normalizedPath = std::filesystem::weakly_canonical(potentialPath);
+                                
+                                if (std::filesystem::exists(normalizedPath)) {
+                                    filePath = potentialPath;
+                                    bFound = true;
+                                    break;
+                                }
+                                
+                            } // end is entry directory
+                        } // end directory search
+                      
+                        if(!bFound) return false; // all done nothing found
+                        
+                    } // end (Project Directory) search
+
+                }
+                else
+                {
+                    return false; // Failed to get application path
+                }
+                    
+            }
+              
+            
+            // Convert back to string for the loader
+            std::string fullPath = filePath.string();
+
             // Load the image file
-            if (!loader.loadFromFile(sFileName) || !loader.isLoaded()) {
+            if (!loader.loadFromFile(fullPath) || !loader.isLoaded()) {
                 return false; // Failed to load file
             }
             
             // Get image dimensions and info
-            int width, height, bytesPerPixel;
+            int width =0; int height = 0; int bytesPerPixel = 0;
             loader.getImageInfo(width, height, bytesPerPixel);
             
             if (width <= 0 || height <= 0) {
@@ -24902,11 +24982,12 @@ namespace olc::imload
             // Copy pixel data - assuming the loader provides RGBA data
             // The api_ios should provide RGBA format with 4 bytes per pixel
             std::memcpy(image.GetPixels().data(), pixelData, width * height * 4);
-            
+         
             return true;
         }
         catch (const std::exception& e) {
             // Handle any exceptions from the wrapper
+            printf("Exception in CreateImageFromFile: %s\n", e.what());
             return false;
         }
     }
@@ -24914,6 +24995,7 @@ namespace olc::imload
     bool ImageLoader_iOS::CreateImageFromMemory(olc::Image& image, const uint8_t* data, const size_t bytes)
     {
         // TODO: Implement memory-based image loading for iOS
+        
         return false;
     }
 

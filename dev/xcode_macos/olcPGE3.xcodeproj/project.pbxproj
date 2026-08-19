@@ -16,6 +16,17 @@
 		462680D22E6C3C4500799C37 /* gpu_iface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680D02E6C3C4500799C36 /* gpu_iface.cpp */; };
 		467318BA2EEC213700714D4C /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467318B92EEC213700714D4C /* font.cpp */; };
 		467318BB2EEC213700714D4D /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467318B92EEC213700714D4C /* font.cpp */; };
+		46744203303606F600E2DD84 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46744202303606F600E2DD84 /* CoreGraphics.framework */; };
+		467442043036070200E2DD84 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46744202303606F600E2DD84 /* CoreGraphics.framework */; };
+		467442053036072B00E2DD84 /* olcPGE3_ImageQuads.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46ABFEFF302CC2DE00C95998 /* olcPGE3_ImageQuads.cpp */; };
+		467442083036078000E2DD84 /* gamescene.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEE9302CC2DE00C95998 /* gamescene.png */; };
+		467442093036078000E2DD84 /* graph_paper.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEEA302CC2DE00C95998 /* graph_paper.png */; };
+		4674420A3036078000E2DD84 /* minsanity_texture.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEEB302CC2DE00C95998 /* minsanity_texture.png */; };
+		4674420B3036078000E2DD84 /* olc_font.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEEC302CC2DE00C95998 /* olc_font.png */; };
+		4674420C3036078000E2DD84 /* pixelfish.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEED302CC2DE00C95998 /* pixelfish.png */; };
+		4674420D3036078000E2DD84 /* sanity_cube.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEEE302CC2DE00C95998 /* sanity_cube.png */; };
+		4674420E3036078000E2DD84 /* sanity_texture.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEEF302CC2DE00C95998 /* sanity_texture.png */; };
+		4674420F3036078000E2DD84 /* tile_atlas_4x4_16x16.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 46ABFEF0302CC2DE00C95998 /* tile_atlas_4x4_16x16.png */; };
 		467797882FF022A300171349 /* hw_keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797832FF022A300171349 /* hw_keyboard.cpp */; };
 		467797892FF022A300171349 /* hw_touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797852FF022A300171349 /* hw_touch.cpp */; };
 		4677978A2FF022A300171349 /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 467797812FF022A300171349 /* draw.cpp */; };
@@ -46,7 +57,6 @@
 		46ABFEE1302CC25F00C95998 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DFA2E39136800B74FA3 /* QuartzCore.framework */; };
 		46ABFEE2302CC25F00C95998 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF62E39135300B74FA3 /* Foundation.framework */; };
 		46ABFF58302CC3D200C95998 /* gpu_iface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 462680D02E6C3C4500799C36 /* gpu_iface.cpp */; };
-		46ABFF59302CC40700C95998 /* olcPGE3_Touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46ABFF11302CC2DE00C95998 /* olcPGE3_Touch.cpp */; };
 		46ABFF5A302CC44100C95998 /* olcPGE3_Touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46ABFF11302CC2DE00C95998 /* olcPGE3_Touch.cpp */; };
 		46B1E5932E40F8A6009734EC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5922E40F8A6009734EC /* AppKit.framework */; };
 		46B1E5952E40F8B0009734EC /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5942E40F8B0009734EC /* MetalKit.framework */; };
@@ -68,6 +78,32 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		467442063036073C00E2DD84 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		467442073036076000E2DD84 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = assets;
+			dstSubfolderSpec = 7;
+			files = (
+				467442083036078000E2DD84 /* gamescene.png in CopyFiles */,
+				467442093036078000E2DD84 /* graph_paper.png in CopyFiles */,
+				4674420A3036078000E2DD84 /* minsanity_texture.png in CopyFiles */,
+				4674420B3036078000E2DD84 /* olc_font.png in CopyFiles */,
+				4674420C3036078000E2DD84 /* pixelfish.png in CopyFiles */,
+				4674420D3036078000E2DD84 /* sanity_cube.png in CopyFiles */,
+				4674420E3036078000E2DD84 /* sanity_texture.png in CopyFiles */,
+				4674420F3036078000E2DD84 /* tile_atlas_4x4_16x16.png in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		46ABFEC4302CC20600C95998 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -117,6 +153,7 @@
 		462680D02E6C3C4500799C36 /* gpu_iface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gpu_iface.cpp; sourceTree = "<group>"; };
 		467318B82EEC213700714D4C /* font.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = font.h; sourceTree = "<group>"; };
 		467318B92EEC213700714D4C /* font.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = font.cpp; sourceTree = "<group>"; };
+		46744202303606F600E2DD84 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/CoreGraphics.framework; sourceTree = DEVELOPER_DIR; };
 		467797802FF022A300171349 /* draw.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = draw.h; sourceTree = "<group>"; };
 		467797812FF022A300171349 /* draw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw.cpp; sourceTree = "<group>"; };
 		467797822FF022A300171349 /* draw_batch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = draw_batch.cpp; sourceTree = "<group>"; };
@@ -223,6 +260,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				467442043036070200E2DD84 /* CoreGraphics.framework in Frameworks */,
 				46ABFEDD302CC25F00C95998 /* OpenGLES.framework in Frameworks */,
 				46ABFEDE302CC25F00C95998 /* UIKit.framework in Frameworks */,
 				46ABFEDF302CC25F00C95998 /* GLKit.framework in Frameworks */,
@@ -249,6 +287,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46744203303606F600E2DD84 /* CoreGraphics.framework in Frameworks */,
 				46ABFEA7302CC0B600C95998 /* OpenGLES.framework in Frameworks */,
 				46ABFEA9302CC0BF00C95998 /* UIKit.framework in Frameworks */,
 				46A1B5982E40F8B0009734EE /* GLKit.framework in Frameworks */,
@@ -342,6 +381,7 @@
 		46E85DF52E39135300B74FA3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				46744202303606F600E2DD84 /* CoreGraphics.framework */,
 				46ABFEA8302CC0BF00C95998 /* UIKit.framework */,
 				46ABFEA6302CC0B600C95998 /* OpenGLES.framework */,
 				46B1E5942E40F8B0009734EC /* MetalKit.framework */,
@@ -475,6 +515,7 @@
 			buildPhases = (
 				46ABFECB302CC25F00C95998 /* Sources */,
 				46ABFEDC302CC25F00C95998 /* Frameworks */,
+				467442073036076000E2DD84 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -508,6 +549,7 @@
 			buildPhases = (
 				8998CE452E057F4E007DDD99 /* Sources */,
 				8998CE422E057F4E007DDD97 /* Frameworks */,
+				467442063036073C00E2DD84 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -570,7 +612,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46ABFF59302CC40700C95998 /* olcPGE3_Touch.cpp in Sources */,
+				467442053036072B00E2DD84 /* olcPGE3_ImageQuads.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -663,11 +705,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1.0;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TCY2PTFQ7T;
 				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1";
 				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
-				INFOPLIST_FILE = "olcPGE3_iOS copy-Info.plist";
+				INFOPLIST_FILE = olcPGE3_iOS_Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = olcPGE3iOS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
@@ -698,7 +740,7 @@
 				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1 ";
 				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
-				INFOPLIST_FILE = "olcPGE3_iOS copy-Info.plist";
+				INFOPLIST_FILE = olcPGE3_iOS_Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = olcPGE3iOS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
@@ -708,7 +750,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = "";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.olcpge.olcPGE3iOS;
+				PRODUCT_BUNDLE_IDENTIFIER = pge.onelonecoder.olcPGE3iOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -868,7 +910,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1.0;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TCY2PTFQ7T;
 				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = "GL_SILENCE_DEPRECATION=1";
 				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
@@ -913,7 +955,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = "";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.olcpge.olcPGE3iOS;
+				PRODUCT_BUNDLE_IDENTIFIER = "pge.onelonecoder.olcPGE3iOS-MH";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

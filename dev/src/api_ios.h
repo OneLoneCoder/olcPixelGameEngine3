@@ -39,10 +39,12 @@ extern "C" {
     
     // Application API - as implemented in api_.cpp
     struct Application* application_init        (void);
-    void application_initialize                 (struct Application* self); 
+    void application_initialize                 (struct Application* self);
     void application_activate                   (struct Application* self);
     void application_run                        (struct Application* self);
     void application_destroy                    (struct Application* self);
+    const char* application_getApplicationPath  (struct Application* self);
+    
     
     // View Controller API - as implemented in api_.cpp
     struct ViewController* viewcontroller_init  (double width, double height);
@@ -89,6 +91,7 @@ extern "C" {
     BOOL imageloader_isLoaded                   (const struct ImageLoader* self);
     BOOL imageloader_getPixel                   (const struct ImageLoader* self, int x, int y, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha);
     unsigned int imageloader_createOpenGLTexture(const struct ImageLoader* self);
+    char* imageloader_getApplicationPath        (struct ImageLoader* self);
 
    
     // Autorelease pool management

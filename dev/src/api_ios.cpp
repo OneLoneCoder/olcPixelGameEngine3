@@ -142,7 +142,7 @@ static constexpr const char* kAddObserverSel                    = "addObserver:s
 static constexpr const char* kUIDeviceOrientationDidChangeNoti  = "UIDeviceOrientationDidChangeNotification";
 static constexpr const char* kUIDeviceClass                     = "UIDevice";
 
-// NSImage, NSBitmapImageRep, and image data access selectors
+// UIImage and image data access selectors
 static constexpr const char* kInitWithContentsOfFileSel         = "initWithContentsOfFile:";
 static constexpr const char* kRepresentationsSel                = "representations";
 static constexpr const char* kPixelsWideSel                     = "pixelsWide";
@@ -152,6 +152,7 @@ static constexpr const char* kBytesPerRowSel                    = "bytesPerRow";
 static constexpr const char* kHasAlphaSel                       = "hasAlpha";
 static constexpr const char* kBitmapDataSel                     = "bitmapData";
 static constexpr const char* kNSBitmapImageRepClass             = "NSBitmapImageRep";
+static constexpr const char* kCGImageSel                        = "CGImage";
 
 // OpenGL ES constants
 static constexpr int kEAGLRenderingAPIOpenGLES3                 = 3;
@@ -211,7 +212,6 @@ namespace ObjectiveCSEL {
     static SEL runSel                               = nullptr;
     static SEL setIdleTimerDisabledSel              = nullptr;
     static SEL setPausedSel                         = nullptr;
-
 
     // UIApplicationDelegate lifecycle methods
     static SEL applicationDidFinishLaunchingSel     = nullptr;
@@ -308,7 +308,7 @@ namespace ObjectiveCSEL {
     static SEL deviceOrientationDidChangeSel        = nullptr;
     static SEL beginGenDeviceOrientationNotifSel    = nullptr;
     
-    // NS Image
+    // UI Image
     static SEL initWithContentsOfFileSel            = nullptr;
     static SEL representationsSel                   = nullptr;
     static SEL pixelsWideSel                        = nullptr;
@@ -317,6 +317,7 @@ namespace ObjectiveCSEL {
     static SEL bytesPerRowSel                       = nullptr;
     static SEL hasAlphaSel                          = nullptr;
     static SEL bitmapDataSel                        = nullptr;
+    static SEL cgImageSel                           = nullptr;
 
     // NS Bundle selectors
     static SEL mainBundleSel                        = nullptr;
@@ -440,7 +441,7 @@ namespace ObjectiveCSEL {
         deviceOrientationDidChangeSel       = sel_registerName(kDeviceOrientationDidChangeSel);
         beginGenDeviceOrientationNotifSel   = sel_registerName(kBeginGenDeviceOrientationNotifSel);
         
-        // NS Image
+        // UI Image
         initWithContentsOfFileSel           = sel_registerName(kInitWithContentsOfFileSel);
         representationsSel                  = sel_registerName(kRepresentationsSel);
         pixelsWideSel                       = sel_registerName(kPixelsWideSel);
@@ -449,7 +450,7 @@ namespace ObjectiveCSEL {
         bytesPerRowSel                      = sel_registerName(kBytesPerRowSel);
         hasAlphaSel                         = sel_registerName(kHasAlphaSel);
         bitmapDataSel                       = sel_registerName(kBitmapDataSel);
-        
+        cgImageSel                          = sel_registerName(kCGImageSel);
         // NS Bundle selectors
         mainBundleSel                       = sel_registerName(kMainBundleSel);
         UTF8StringSel                       = sel_registerName(kUTF8StringSel);
@@ -570,7 +571,9 @@ struct Application {
     void (*activate)    (struct Application* self){nullptr};
     void (*run)         (struct Application* self){nullptr};
     void (*destroy)     (struct Application* self){nullptr};
+    
     std::string appPath = "";  // Application path
+    const char* (*getAppPath)  (struct Application* self);
     
     Application() = default;
     
@@ -679,8 +682,10 @@ struct ImageLoader {
     int bytesPerPixel           {kZeroBytes};          // Number of bytes per pixel (typically 4 for RGBA)
     int bytesPerRow             {kZeroRows};           // Number of bytes per row
     BOOL hasAlpha               {NO};                  // Whether image has alpha channel
+    std::string appPath         = "";  // Application path
 
     // Method function pointers with nullptr initialization
+    char (*getAppPath)                  (const struct ImageLoader* self){nullptr};
     BOOL (*loadFromFile)                (struct ImageLoader* self, const char* filePath){nullptr};
     void (*destroy)                     (struct ImageLoader* self){nullptr};
     unsigned char* (*getPixelData)      (const struct ImageLoader* self){nullptr};
@@ -841,10 +846,12 @@ struct Application* application_init(void) {
     app->activate   = application_activate;
     app->run        = application_run;
     app->destroy    = application_destroy;
+    app->getAppPath = application_getApplicationPath;
     
-
     return app;
 }
+
+
 
 
 char* get_application_path(void)
@@ -978,6 +985,13 @@ void application_destroy(struct Application* self) {
     }
     
     free(self);
+}
+
+const char* application_getApplicationPath(Application* self) {
+   (void)self;
+   
+    return get_application_path();
+    
 }
 
 // ============================================================================
@@ -1802,6 +1816,11 @@ void opengl_destroy(struct OpenGLRenderer* self) {
     free(self);
 }
 
+char* imageloader_getApplicationPath(struct ImageLoader* self)
+{
+    return get_application_path();
+}
+
 // Load image from file path using NSImage and NSBitmapImageRep
 BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
     // Clear any existing data
@@ -1810,16 +1829,15 @@ BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
         self->pixelData = NULL;
     }
 
-    self->width         = kZeroWidth;
-    self->height        = kZeroHeight;
-    self->bytesPerPixel = kZeroBytes;
-    self->bytesPerRow   = kZeroRows;
-    self->hasAlpha      = NO;
+    self->width             = kZeroWidth;
+    self->height            = kZeroHeight;
+    self->bytesPerPixel     = kZeroBytes;
+    self->bytesPerRow       = kZeroRows;
+    self->hasAlpha          = NO;
 
     // Get required classes and selectors
-    Class NSStringClass           = objc_getClass(kNSStringClass);
-    Class NSImageClass            = objc_getClass(kUIImageClass);
-    Class NSBitmapImageRepClass   = objc_getClass(kNSBitmapImageRepClass);
+    Class NSStringClass     = objc_getClass(kNSStringClass);
+    Class UIImageClass      = objc_getClass(kUIImageClass);
 
     // Create NSString from file path
     id pathString = ((id(*)(Class, SEL, const char*))objc_msgSend)(
@@ -1829,58 +1847,43 @@ BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
         return NO;
     }
     
-    // Create NSImage from file
+    // Create UIImage from file
     id image = ((id(*)(id, SEL, id))objc_msgSend)(
-                ((id(*)(Class, SEL))objc_msgSend)(NSImageClass, ObjectiveCSEL::allocSel),
+                ((id(*)(Class, SEL))objc_msgSend)(UIImageClass, ObjectiveCSEL::allocSel),
                ObjectiveCSEL::initWithContentsOfFileSel, pathString);
     
     if (!image) {
         return NO;
     }
     
-    // Get image representations
-    id representations = ((id(*)(id, SEL))objc_msgSend)(image, ObjectiveCSEL::representationsSel);
-    unsigned int repCount = ((unsigned int(*)(id, SEL))objc_msgSend)(representations, ObjectiveCSEL::countSel);
-    
-    if (repCount == 0) {
-        return NO;
-    }
-    
-    // Get first bitmap representation
-    id bitmapRep = ((id(*)(id, SEL, unsigned int))objc_msgSend)(representations, ObjectiveCSEL::objectAtIndexSel, 0);
-    
-    // Check if it's a bitmap representation
-    if (!((BOOL(*)(id, SEL, Class))objc_msgSend)(bitmapRep, ObjectiveCSEL::isKindOfClassSel, NSBitmapImageRepClass)) {
-        return NO;
-    }
-       
-    self->width          = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep,ObjectiveCSEL::pixelsWideSel);
-    self->height         = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::pixelsHighSel);
-    int bitsPerPixel     = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::bitsPerPixelSel);
-    self->bytesPerRow    = (int)((int(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::bytesPerRowSel);
-    self->hasAlpha       = (BOOL)((BOOL(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::hasAlphaSel);
+    CGImageRef cgImage = ((CGImageRef(*)(id, SEL))objc_msgSend)(image, ObjectiveCSEL::cgImageSel);
 
-    self->bytesPerPixel  = bitsPerPixel / kBitsPerByte;
+    if (!cgImage) {
+        return NO;
+    }
 
-    // Get raw bitmap data
-    unsigned char* sourceData = ((unsigned char*(*)(id, SEL))objc_msgSend)(bitmapRep, ObjectiveCSEL::bitmapDataSel);
-    
-    if (!sourceData || self->width <= kMinValidDimension || self->height <= kMinValidDimension) {
-        return NO;
+    self->width         = (int)CGImageGetWidth(cgImage);
+    self->height        = (int)CGImageGetHeight(cgImage);
+    self->bytesPerPixel = (int)CGImageGetBitsPerPixel(cgImage) / kBitsPerByte; // 4 for RGBA, 3 for RGB
+    self->bytesPerRow   = (int)CGImageGetBytesPerRow(cgImage); //  self->width * self->bytesPerPixel;
+    self->hasAlpha      = CGImageGetAlphaInfo(cgImage) != kCGImageAlphaNone;
+ 
+    // Get pixel data directly from CGImage without drawing
+    CGDataProviderRef dataProvider  = CGImageGetDataProvider(cgImage);
+    CFDataRef data                  = CGDataProviderCopyData(dataProvider);
+
+    if (data) {
+        const unsigned char* bytes  = CFDataGetBytePtr(data);
+        size_t dataLength           = CFDataGetLength(data);
+        self->pixelData             = (unsigned char*)malloc(dataLength);
+        
+        memcpy(self->pixelData, bytes, dataLength);
+        CFRelease(data);
+        return YES;
     }
     
-    // Allocate memory for pixel data
-    size_t totalBytes = self->height * self->bytesPerRow;
-    if(totalBytes == 0) {
-        return NO;
-    }
-    
-    self->pixelData = (unsigned char*)malloc(totalBytes);
-    
-    // Copy pixel data
-    memcpy(self->pixelData, sourceData, totalBytes);
-    
-    return YES;
+    return NO;
+
 }
 
 // Get raw pixel data pointer
