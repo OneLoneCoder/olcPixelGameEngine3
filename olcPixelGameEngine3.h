@@ -5952,6 +5952,7 @@ extern "C" {
     void application_run                        (struct Application* self);
     void application_destroy                    (struct Application* self);
     const char* application_getApplicationPath  (struct Application* self);
+    const char* application_getSystemLocale     (struct Application* self);
     
     
     // View Controller API - as implemented in api_.cpp
@@ -6263,6 +6264,12 @@ namespace olc {
                     }
                 }
                 
+                // Get the system locale as a string (e.g., "en_US", "fr_FR")
+                std::string getSystemLocale() const {
+                    const char* localeC = application_getSystemLocale(app_);
+                    return localeC ? std::string(localeC) : std::string("en_GB");
+                }
+                
                 std::string getApplicationPath()
                 {
                     if(app_) {
@@ -6291,6 +6298,7 @@ namespace olc {
                 // Get underlying C handle
                 struct ::Application* getCHandle() const noexcept { return app_; }
                 
+                               
                 // Set callback for application did finish launching event
                 void setDidFinishLaunchingCallback(std::function<void()> callback) {
                     setCallback(application_setDidFinishLaunchingCallback, std::move(callback));
@@ -13626,15 +13634,11 @@ namespace olc::host {
 
     bool Host_Apple_iOS::OnSystemThreadStart()
     {
-        // Hold back threading until application is fully initialized
-        //bSkipFrame = ExecutePendingMainThreadTasks();
         return pPrimaryPGE->OnContextStart();
     }
 
     bool Host_Apple_iOS::OnSystemTick()
     {
-        // Execute any pending main thread tasks
-        //SkipFrame = ExecutePendingMainThreadTasks();
         return pPrimaryPGE->OnContextTick();
     }
 
@@ -13653,26 +13657,26 @@ namespace olc::host {
         // Get system locale from MacOS Application
         // We need to wait until the application has launched to get the keyboard layout
         // Therefore this function is called again from setDidFinishLaunchingCallback event
-        //if (pMacApplication)
-        //{
-        //    std::string locale = pMacApplication->getSystemLocale();
-        //    if (locale == "en_GB")
-        //    {
-        //        return olc::KeyboardLayout::QWERTY_UK;
-        //    }
-        //    else if (locale == "en_US")
-        //    {
-        //        return olc::KeyboardLayout::QWERTY_US;
-        //    }
-        //    else if (locale == "fr_FR")
-        //    {
-        //        return olc::KeyboardLayout::AZERTY;
-        //    }
-        //    else if (locale == "de_DE")
-        //    {
-        //        return olc::KeyboardLayout::QWERTZ;
-        //   }
-        //}
+        if (pIOSApplication)
+        {
+            std::string locale = pIOSApplication->getSystemLocale();
+            if (locale == "en_GB")
+            {
+                return olc::KeyboardLayout::QWERTY_UK;
+            }
+            else if (locale == "en_US")
+            {
+                return olc::KeyboardLayout::QWERTY_US;
+            }
+            else if (locale == "fr_FR")
+            {
+                return olc::KeyboardLayout::AZERTY;
+            }
+            else if (locale == "de_DE")
+            {
+                return olc::KeyboardLayout::QWERTZ;
+            }
+        }
         // Default to QWERTY if unknown
         return olc::KeyboardLayout::QWERTY_UK;
     }
@@ -14093,8 +14097,13 @@ static constexpr const char* kMainBundleSel                     = "mainBundle";
 static constexpr const char* kUTF8StringSel                     = "UTF8String";
 static constexpr const char* kbundlePathSel                     = "bundlePath";
 
+// NSLocale class and method names
+static constexpr const char* kNSLocaleClass                     = "NSLocale";
+static constexpr const char* kCurrentLocaleSel                  = "currentLocale";
+static constexpr const char* kLocaleIdentifierSel               = "localeIdentifier";
+
 // Default values and configuration settings
-static constexpr const char* kWindowTitle                       = "C iOS OpenGL Framework";
+static constexpr const char* kWindowTitle                       = "C iOS OpenGLES Framework";
 static constexpr const char* kDefaultAppPath                    = "olcPGE3_iOS";
 static constexpr double kDefaultWindowWidth                     = 1280.0;    // TODO: Upgate to the default ios screen size I think it is 538X402
 static constexpr double kDefaultWindowHeight                    = 728.0;
@@ -14252,9 +14261,15 @@ namespace ObjectiveCSEL {
     static SEL UTF8StringSel                        = nullptr;
     static SEL bundlePathSel                        = nullptr;
 
+    // NSLocale selectors
+    static SEL currentLocaleSel                     = nullptr;
+    static SEL localeIdentifierSel                  = nullptr;
+
     // Notification classes and selectors
     static SEL defaultCenterSel                     = nullptr;
     static SEL addObserverSel                       = nullptr;
+
+
 
     void initializeSelectors() {
         if (allocSel) return; // Already initialized
@@ -14379,10 +14394,15 @@ namespace ObjectiveCSEL {
         hasAlphaSel                         = sel_registerName(kHasAlphaSel);
         bitmapDataSel                       = sel_registerName(kBitmapDataSel);
         cgImageSel                          = sel_registerName(kCGImageSel);
+        
         // NS Bundle selectors
         mainBundleSel                       = sel_registerName(kMainBundleSel);
         UTF8StringSel                       = sel_registerName(kUTF8StringSel);
         bundlePathSel                       = sel_registerName(kbundlePathSel);
+        
+        // NSLocale selectors
+        currentLocaleSel                   = sel_registerName(kCurrentLocaleSel);
+        localeIdentifierSel                = sel_registerName(kLocaleIdentifierSel);
         
         // Notification classes and selectors
         defaultCenterSel                    = sel_registerName(kDefaultCenterSel);
@@ -14917,9 +14937,26 @@ void application_destroy(struct Application* self) {
 
 const char* application_getApplicationPath(Application* self) {
    (void)self;
-   
     return get_application_path();
-    
+}
+
+// Get system locale identifier
+const char* application_getSystemLocale(Application* self) {
+   (void)self;
+   
+   // Get NSLocale class
+   Class NSLocaleClass = objc_getClass(kNSLocaleClass);
+   
+   // Get current locale
+   id currentLocale = ((id(*)(Class, SEL))objc_msgSend)(NSLocaleClass, ObjectiveCSEL::currentLocaleSel);
+   
+   // Get locale identifier
+   id localeIdentifierNS = ((id(*)(id, SEL))objc_msgSend)(currentLocale, ObjectiveCSEL::localeIdentifierSel);
+   
+   // Convert to C string (en-US, en-GB, en-IE etc)
+   const char* localeIdentifier = ((const char*(*)(id, SEL))objc_msgSend)(localeIdentifierNS, ObjectiveCSEL::UTF8StringSel);
+   
+   return localeIdentifier;
 }
 
 // ============================================================================

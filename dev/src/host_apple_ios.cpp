@@ -281,15 +281,11 @@ namespace olc::host {
 
     bool Host_Apple_iOS::OnSystemThreadStart()
     {
-        // Hold back threading until application is fully initialized
-        //bSkipFrame = ExecutePendingMainThreadTasks();
         return pPrimaryPGE->OnContextStart();
     }
 
     bool Host_Apple_iOS::OnSystemTick()
     {
-        // Execute any pending main thread tasks
-        //SkipFrame = ExecutePendingMainThreadTasks();
         return pPrimaryPGE->OnContextTick();
     }
 
@@ -308,26 +304,26 @@ namespace olc::host {
         // Get system locale from MacOS Application
         // We need to wait until the application has launched to get the keyboard layout
         // Therefore this function is called again from setDidFinishLaunchingCallback event
-        //if (pMacApplication)
-        //{
-        //    std::string locale = pMacApplication->getSystemLocale();
-        //    if (locale == "en_GB")
-        //    {
-        //        return olc::KeyboardLayout::QWERTY_UK;
-        //    }
-        //    else if (locale == "en_US")
-        //    {
-        //        return olc::KeyboardLayout::QWERTY_US;
-        //    }
-        //    else if (locale == "fr_FR")
-        //    {
-        //        return olc::KeyboardLayout::AZERTY;
-        //    }
-        //    else if (locale == "de_DE")
-        //    {
-        //        return olc::KeyboardLayout::QWERTZ;
-        //   }
-        //}
+        if (pIOSApplication)
+        {
+            std::string locale = pIOSApplication->getSystemLocale();
+            if (locale == "en_GB")
+            {
+                return olc::KeyboardLayout::QWERTY_UK;
+            }
+            else if (locale == "en_US")
+            {
+                return olc::KeyboardLayout::QWERTY_US;
+            }
+            else if (locale == "fr_FR")
+            {
+                return olc::KeyboardLayout::AZERTY;
+            }
+            else if (locale == "de_DE")
+            {
+                return olc::KeyboardLayout::QWERTZ;
+            }
+        }
         // Default to QWERTY if unknown
         return olc::KeyboardLayout::QWERTY_UK;
     }

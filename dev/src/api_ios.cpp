@@ -165,8 +165,13 @@ static constexpr const char* kMainBundleSel                     = "mainBundle";
 static constexpr const char* kUTF8StringSel                     = "UTF8String";
 static constexpr const char* kbundlePathSel                     = "bundlePath";
 
+// NSLocale class and method names
+static constexpr const char* kNSLocaleClass                     = "NSLocale";
+static constexpr const char* kCurrentLocaleSel                  = "currentLocale";
+static constexpr const char* kLocaleIdentifierSel               = "localeIdentifier";
+
 // Default values and configuration settings
-static constexpr const char* kWindowTitle                       = "C iOS OpenGL Framework";
+static constexpr const char* kWindowTitle                       = "C iOS OpenGLES Framework";
 static constexpr const char* kDefaultAppPath                    = "olcPGE3_iOS";
 static constexpr double kDefaultWindowWidth                     = 1280.0;    // TODO: Upgate to the default ios screen size I think it is 538X402
 static constexpr double kDefaultWindowHeight                    = 728.0;
@@ -324,9 +329,15 @@ namespace ObjectiveCSEL {
     static SEL UTF8StringSel                        = nullptr;
     static SEL bundlePathSel                        = nullptr;
 
+    // NSLocale selectors
+    static SEL currentLocaleSel                     = nullptr;
+    static SEL localeIdentifierSel                  = nullptr;
+
     // Notification classes and selectors
     static SEL defaultCenterSel                     = nullptr;
     static SEL addObserverSel                       = nullptr;
+
+
 
     void initializeSelectors() {
         if (allocSel) return; // Already initialized
@@ -451,10 +462,15 @@ namespace ObjectiveCSEL {
         hasAlphaSel                         = sel_registerName(kHasAlphaSel);
         bitmapDataSel                       = sel_registerName(kBitmapDataSel);
         cgImageSel                          = sel_registerName(kCGImageSel);
+        
         // NS Bundle selectors
         mainBundleSel                       = sel_registerName(kMainBundleSel);
         UTF8StringSel                       = sel_registerName(kUTF8StringSel);
         bundlePathSel                       = sel_registerName(kbundlePathSel);
+        
+        // NSLocale selectors
+        currentLocaleSel                   = sel_registerName(kCurrentLocaleSel);
+        localeIdentifierSel                = sel_registerName(kLocaleIdentifierSel);
         
         // Notification classes and selectors
         defaultCenterSel                    = sel_registerName(kDefaultCenterSel);
@@ -989,9 +1005,26 @@ void application_destroy(struct Application* self) {
 
 const char* application_getApplicationPath(Application* self) {
    (void)self;
-   
     return get_application_path();
-    
+}
+
+// Get system locale identifier
+const char* application_getSystemLocale(Application* self) {
+   (void)self;
+   
+   // Get NSLocale class
+   Class NSLocaleClass = objc_getClass(kNSLocaleClass);
+   
+   // Get current locale
+   id currentLocale = ((id(*)(Class, SEL))objc_msgSend)(NSLocaleClass, ObjectiveCSEL::currentLocaleSel);
+   
+   // Get locale identifier
+   id localeIdentifierNS = ((id(*)(id, SEL))objc_msgSend)(currentLocale, ObjectiveCSEL::localeIdentifierSel);
+   
+   // Convert to C string (en-US, en-GB, en-IE etc)
+   const char* localeIdentifier = ((const char*(*)(id, SEL))objc_msgSend)(localeIdentifierNS, ObjectiveCSEL::UTF8StringSel);
+   
+   return localeIdentifier;
 }
 
 // ============================================================================

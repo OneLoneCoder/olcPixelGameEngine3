@@ -44,6 +44,7 @@ extern "C" {
     void application_run                        (struct Application* self);
     void application_destroy                    (struct Application* self);
     const char* application_getApplicationPath  (struct Application* self);
+    const char* application_getSystemLocale     (struct Application* self);
     
     
     // View Controller API - as implemented in api_.cpp

@@ -177,6 +177,12 @@ namespace olc {
                     }
                 }
                 
+                // Get the system locale as a string (e.g., "en_US", "fr_FR")
+                std::string getSystemLocale() const {
+                    const char* localeC = application_getSystemLocale(app_);
+                    return localeC ? std::string(localeC) : std::string("en_GB");
+                }
+                
                 std::string getApplicationPath()
                 {
                     if(app_) {
@@ -205,6 +211,7 @@ namespace olc {
                 // Get underlying C handle
                 struct ::Application* getCHandle() const noexcept { return app_; }
                 
+                               
                 // Set callback for application did finish launching event
                 void setDidFinishLaunchingCallback(std::function<void()> callback) {
                     setCallback(application_setDidFinishLaunchingCallback, std::move(callback));
