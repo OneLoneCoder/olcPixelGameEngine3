@@ -10,25 +10,10 @@ namespace olc::host {
     
 
     // NSEventModifierFlags values
+    constexpr unsigned int NSEventModifierFlagCapsLock   = 1 << 16; // 0x10000
     constexpr unsigned int NSEventModifierFlagShift      = 1 << 17; // 0x20000
     constexpr unsigned int NSEventModifierFlagControl    = 1 << 18; // 0x40000
     constexpr unsigned int NSEventModifierFlagCommand    = 1 << 20; // 0x100000
-
-    // enum for window appearance and behavior bit flags
-    enum class NSWindowStyleMask : uint16_t {
-        Titled                   = (1 << 0),     // Window has a title bar
-        Closable                 = (1 << 1),     // Window can be closed
-        Miniaturizable           = (1 << 2),     // Window can be minimized
-        Resizable                = (1 << 3),     // Window can be resized
-        UtilityWindow            = (1 << 4),     // Utility window style
-        DocModalWindow           = (1 << 6),     // Document-modal window
-        NonactivatingPanel       = (1 << 7),     // Non-activating panel
-        TexturedBackground       = (1 << 8),     // Textured background
-        HUDWindow                = (1 << 13),    // Heads-up display window
-        UnifiedTitleAndToolbar   = (1 << 12),    // Unified title and toolbar
-        FullScreen               = (1 << 14),    // Full-screen window
-        FullSizeContentView      = (1 << 15)     // Full-size content view
-    };
 
     Host_Apple_iOS::Host_Apple_iOS()
     {
@@ -36,113 +21,117 @@ namespace olc::host {
         mapKeys[0x00] = Key::NONE;
 
         // Map macOS key codes to olc::Key codes
-        mapKeys[0]  = Key::A;
-        mapKeys[11] = Key::B;
-        mapKeys[8]  = Key::C;
-        mapKeys[2]  = Key::D;
-        mapKeys[14] = Key::E;
-        mapKeys[3]  = Key::F;
-        mapKeys[5]  = Key::G;
-        mapKeys[4]  = Key::H;
-        mapKeys[34] = Key::I;
-        mapKeys[38] = Key::J;
-        mapKeys[40] = Key::K;
-        mapKeys[37] = Key::L;
-        mapKeys[46] = Key::M;
-        mapKeys[45] = Key::N;
-        mapKeys[31] = Key::O;
-        mapKeys[35] = Key::P;
-        mapKeys[12] = Key::Q;
-        mapKeys[15] = Key::R;
-        mapKeys[1]  = Key::S;
-        mapKeys[17] = Key::T;
-        mapKeys[32] = Key::U;
-        mapKeys[9]  = Key::V;
-        mapKeys[13] = Key::W;
-        mapKeys[7]  = Key::X;
-        mapKeys[16] = Key::Y;
-        mapKeys[6]  = Key::Z;
+        mapKeys[4]  = Key::A;
+        mapKeys[5]  = Key::B;
+        mapKeys[6]  = Key::C;
+        mapKeys[7]  = Key::D;
+        mapKeys[8]  = Key::E;
+        mapKeys[9]  = Key::F;
+        mapKeys[10] = Key::G;
+        mapKeys[11] = Key::H;
+        mapKeys[12] = Key::I;
+        mapKeys[13] = Key::J;
+        mapKeys[14] = Key::K;
+        mapKeys[15] = Key::L;
+        mapKeys[16] = Key::M;
+        mapKeys[17] = Key::N;
+        mapKeys[18] = Key::O;
+        mapKeys[19] = Key::P;
+        mapKeys[20] = Key::Q;
+        mapKeys[21] = Key::R;
+        mapKeys[22] = Key::S;
+        mapKeys[23] = Key::T;
+        mapKeys[24] = Key::U;
+        mapKeys[25] = Key::V;
+        mapKeys[26] = Key::W;
+        mapKeys[27] = Key::X;
+        mapKeys[28] = Key::Y;
+        mapKeys[29] = Key::Z;
 
         // Numeric keys
-        mapKeys[29] = Key::K0;
-        mapKeys[18] = Key::K1;
-        mapKeys[19] = Key::K2;
-        mapKeys[20] = Key::K3;
-        mapKeys[21] = Key::K4;
-        mapKeys[23] = Key::K5;
-        mapKeys[22] = Key::K6;
-        mapKeys[26] = Key::K7;
-        mapKeys[28] = Key::K8;
-        mapKeys[25] = Key::K9;
+        mapKeys[30] = Key::K1;
+        mapKeys[31] = Key::K2;
+        mapKeys[32] = Key::K3;
+        mapKeys[33] = Key::K4;
+        mapKeys[34] = Key::K5;
+        mapKeys[35] = Key::K6;
+        mapKeys[36] = Key::K7;
+        mapKeys[37] = Key::K8;
+        mapKeys[38] = Key::K9;
+        mapKeys[39] = Key::K0;
+        
+        // Other Keys
+        mapKeys[40]  = Key::ENTER;      // Return
+        mapKeys[41]  = Key::ESCAPE;     // Escape
+        mapKeys[42]  = Key::BACK;       // Delete (Backspace)
+        mapKeys[43]  = Key::TAB;        // Tab
+        mapKeys[44]  = Key::SPACE;      // Space
+        mapKeys[45]  = Key::DEL;        // Forward Delete
+        mapKeys[57]  = Key::CAPS_LOCK;  // Caps Lock
+        mapKeys[114] = Key::INS;        // Help (Insert equivalent)
 
         // Function Keys
-        mapKeys[122] = Key::F1;
-        mapKeys[120] = Key::F2;
-        mapKeys[99]  = Key::F3;
-        mapKeys[118] = Key::F4;
-        mapKeys[96]  = Key::F5;
-        mapKeys[97]  = Key::F6;
-        mapKeys[98]  = Key::F7;
-        mapKeys[100] = Key::F8;
-        mapKeys[101] = Key::F9;
-        mapKeys[109] = Key::F10;
-        mapKeys[103] = Key::F11;
-        mapKeys[111] = Key::F12;
+        mapKeys[58] = Key::F1;
+        mapKeys[59] = Key::F2;
+        mapKeys[60] = Key::F3;
+        mapKeys[61] = Key::F4;
+        mapKeys[62] = Key::F5;
+        mapKeys[63] = Key::F6;
+        mapKeys[64] = Key::F7;
+        mapKeys[65] = Key::F8;
+        mapKeys[66] = Key::F9;
+        mapKeys[67] = Key::F10;
+        mapKeys[68] = Key::F11;
+        mapKeys[69] = Key::F12;
 
+        mapKeys[74] = Key::HOME;       // Home
+        mapKeys[75] = Key::PGUP;       // Page Up
+        mapKeys[77] = Key::END;        // End
+        mapKeys[78] = Key::PGDN;       // Page Down
+        
         // Arrow Keys
-        mapKeys[125] = Key::DOWN; 
-        mapKeys[123] = Key::LEFT;
-        mapKeys[124] = Key::RIGHT;
-        mapKeys[126] = Key::UP;
-
-        // Other Keys
-        mapKeys[51]  = Key::BACK;        // Delete (Backspace)
-        mapKeys[53]  = Key::ESCAPE;      // Escape
-        mapKeys[36]  = Key::ENTER;       // Return
-        mapKeys[113] = Key::PAUSE;      // F16 (often used as pause)
-        mapKeys[107] = Key::SCROLL;     // F14 (scroll lock equivalent)
-        mapKeys[48] = Key::TAB;         // Tab
-        mapKeys[117] = Key::DEL;        // Forward Delete
-        mapKeys[115] = Key::HOME;       // Home
-        mapKeys[119] = Key::END;        // End
-        mapKeys[116] = Key::PGUP;       // Page Up
-        mapKeys[121] = Key::PGDN;       // Page Down
-        mapKeys[114] = Key::INS;        // Help (Insert equivalent)
-        mapKeys[56] = Key::SHIFT;       // Left Shift
-        mapKeys[59] = Key::CTRL;        // Left Control
-        mapKeys[49] = Key::SPACE;       // Space
-        mapKeys[57] = Key::CAPS_LOCK;   // Caps Lock
-
-        // Numpad
-        mapKeys[82] = Key::NP0;
-        mapKeys[83] = Key::NP1;
-        mapKeys[84] = Key::NP2;
-        mapKeys[85] = Key::NP3;
-        mapKeys[86] = Key::NP4;
-        mapKeys[87] = Key::NP5;
-        mapKeys[88] = Key::NP6;
-        mapKeys[89] = Key::NP7;
-        mapKeys[91] = Key::NP8;
-        mapKeys[92] = Key::NP9;
-        mapKeys[67] = Key::NP_MUL;      // Numpad *
-        mapKeys[69] = Key::NP_ADD;      // Numpad +
-        mapKeys[75] = Key::NP_DIV;      // Numpad /
-        mapKeys[78] = Key::NP_SUB;      // Numpad -
-        mapKeys[65] = Key::NP_DECIMAL;  // Numpad .
-
+        mapKeys[79] = Key::RIGHT;
+        mapKeys[80] = Key::LEFT;
+        mapKeys[81] = Key::DOWN;
+        mapKeys[82] = Key::UP;
+        
+        // CHRL, SHIFT Keys
+        mapKeys[224]  = Key::CTRL;        // Left Control
+        mapKeys[225]  = Key::SHIFT;       // Left Shift
+        mapKeys[229]  = Key::SHIFT;       // Left Shift
+       
         // Symbol Keys (OEM equivalents)
-        mapKeys[41] = Key::OEM_1;       // On US and UK keyboards this is the ';:' key
-        mapKeys[44] = Key::OEM_2;       // On US and UK keyboards this is the '/?' key
-        mapKeys[50] = Key::OEM_3;       // On US and UK keyboards this is the '`~' key (Grave accent `)
-        mapKeys[33] = Key::OEM_4;       // On US and UK keyboards this is the '[{' key
-        mapKeys[42] = Key::OEM_5;       // On US keyboard this is '\|' key. 
-        mapKeys[30] = Key::OEM_6;       // On US and UK keyboards this is the ']}' key
-        mapKeys[39] = Key::OEM_7;       // On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
-        mapKeys[10] = Key::OEM_8;       // Section sign § (varies by keyboard)
+        mapKeys[51] = Key::OEM_1;       // On US and UK keyboards this is the ';:' key
+        mapKeys[56] = Key::OEM_2;       // On US and UK keyboards this is the '/?' key
+        mapKeys[53] = Key::OEM_3;       // On US and UK keyboards this is the '`~' key (Grave accent `)
+        mapKeys[47] = Key::OEM_4;       // On US and UK keyboards this is the '[{' key
+        mapKeys[49] = Key::OEM_5;       // On US keyboard this is '\|' key.
+        mapKeys[48] = Key::OEM_6;       // On US and UK keyboards this is the ']}' key
+        mapKeys[52] = Key::OEM_7;       // On US keyboard this is the single/double quote key. On UK, this is the single quote/@ symbol key
         mapKeys[24] = Key::EQUALS;      // Equal sign =
         mapKeys[43] = Key::COMMA;       // Comma ,
         mapKeys[27] = Key::MINUS;       // Minus -
         mapKeys[47] = Key::PERIOD;      // Period .
+        
+        // Unknown and may not be supported, but included for completeness will come back to this
+        mapKeys[900] = Key::NP0;
+        mapKeys[901] = Key::NP1;
+        mapKeys[902] = Key::NP2;
+        mapKeys[903] = Key::NP3;
+        mapKeys[904] = Key::NP4;
+        mapKeys[905] = Key::NP5;
+        mapKeys[906] = Key::NP6;
+        mapKeys[907] = Key::NP7;
+        mapKeys[908] = Key::NP8;
+        mapKeys[909] = Key::NP9;
+        mapKeys[910] = Key::NP_MUL;      // Numpad *
+        mapKeys[911] = Key::NP_ADD;      // Numpad +
+        mapKeys[912] = Key::NP_DIV;      // Numpad /
+        mapKeys[913] = Key::NP_SUB;      // Numpad -
+        mapKeys[914] = Key::NP_DECIMAL;  // Numpad .
+        mapKeys[915] = Key::PAUSE;       // F16 (often used as pause)
+        mapKeys[916] = Key::SCROLL;      // F14 (scroll lock equivalent)
+        mapKeys[917] = Key::OEM_8;       // Section sign # (varies by keyboard)
 
     }
 
@@ -165,7 +154,6 @@ namespace olc::host {
 
     bool Host_Apple_iOS::CloseWindowFrame(olc::Window* pWindow)
     {
-        // TODO: Gracefully close the view controller and clean up resources
         if (!pIOSViewController) return false;
         if (!pWindow) return false;
         pWindow->olc_OnWindowClose();
@@ -218,10 +206,6 @@ namespace olc::host {
     bool Host_Apple_iOS::SetFullScreen(olc::Window* pWindow, const bool bFullScreen)
     {
         olc_IgnoreUnused(pWindow);
-        // if we're already in the specified state, return early
-        //if(pMacOSWindow->isFullScreen() == bFullScreen)
-        //    return true;
-
         dispatch_async(dispatch_get_main_queue(), ^{
             //pMacOSWindow->toggleFullScreen();
         });
@@ -240,7 +224,6 @@ namespace olc::host {
         
         // Create iOS Application instance
         pIOSApplication = std::make_unique<olc::apis::ios::Application>();
-        pIOSApplication->setApplicationPath(sIOSApplicationPath);
         
         // Set up application delegate event handlers
         IOSApplicationEventsHandler();
@@ -254,28 +237,10 @@ namespace olc::host {
 
     bool Host_Apple_iOS::StopSystem()
     {
-        dispatch_sync(dispatch_get_main_queue(), ^{
-            // clean up and close application
-            /*
-            if (pMacOSOpenGLRenderer)
-            {
-                pMacOSOpenGLRenderer->destoryContext();
-                pMacOSOpenGLRenderer = nullptr;
-            }
-            if (pMacOSWindow)
-            {
-                pMacOSWindow->destoryWindow();
-                pMacOSWindow = nullptr;
-            }
-            if (pMacApplication)
-            {
-                pMacApplication->stop();
-            }
-             
-             */
-
-        });
-        //systemActive = false;
+        // Note: iOS applications typically don't have a "stop" method, but we can clean up resources here if needed
+        //dispatch_sync(dispatch_get_main_queue(), ^{
+            
+        //});
         return true;
     }
 
@@ -297,6 +262,15 @@ namespace olc::host {
     bool Host_Apple_iOS::OnApplicationEnd()
     {
         return true;
+    }
+
+    std::string Host_Apple_iOS::GetApplicationPath()
+    {
+        if(pIOSApplication)
+        {
+            return pIOSApplication->getApplicationPath();
+        }
+        return "ACCESS-DEINED";
     }
 
     olc::KeyboardLayout Host_Apple_iOS::GetKeyboardLayout() const
@@ -331,7 +305,6 @@ namespace olc::host {
 
     void Host_Apple_iOS::UpdateIOSViewFrameBounds(olc::apis::ios::DeviceOrientation orientation)
     {
-
         // NOTE: iOS handles rotation automatically, but we need to adjust the PGE window size accordingly
         // IMPORTANT: PortraitUpsideDown is not implemented, in short have a happy life and forget this exist ;)
         CurrentOrientation = orientation;
@@ -393,35 +366,42 @@ namespace olc::host {
             // Set up OpenGL renderer for visual feedback
             pIOSOpenGLRenderer->makeCurrentContext();
             
-            //vPendingMainThreadTasks.push_back(INTIALIZE_PGE_RENDERER);
-            //vPendingMainThreadTasks.push_back(RESIZE_WINDOW);
-            //AddPendingMainThreadTask(START_DRAWING);
-            //pPrimaryPGE->OnContextStart();
-            std::cout << "iOS Application did finish launching." << std::endl;
+            //std::cout << "iOS Application did finish launching." << std::endl;
         });
         
         pIOSApplication->setWillTerminateCallback([&]() {
             // TODO: Implement olc_OnApplicationTerminate in window.h/cpp
-            std::cout << "iOS Application will terminate." << std::endl;
+            //std::cout << "iOS Application will terminate." << std::endl;
         });
         
         pIOSApplication->setDidBecomeActiveCallback([&]() {
-            std::cout << "iOS Application did become active." << std::endl;
+            // TODO: manage thread resuming
+            
+            if(pPGEwindow)
+                pPGEwindow->olc_OnFocus(true);
+            ///std::cout << "iOS Application did become active." << std::endl;
         });
         
-        pIOSApplication->setWillResignActiveCallback([]() {
-            // App will become inactive (background)
-            std::cout << "iOS Application will resign active." << std::endl;
+        pIOSApplication->setWillResignActiveCallback([&]() {
+            
+            if(pPGEwindow)
+                pPGEwindow->olc_OnFocus(false);
+            // TODO: manage thread pausing
+            //std::cout << "iOS Application will resign active." << std::endl;
         });
         
-        pIOSApplication->setDidEnterBackgroundCallback([]() {
+        pIOSApplication->setDidEnterBackgroundCallback([&]() {
             // App entered background
+            if(pPGEwindow)
+                pPGEwindow->olc_OnFocus(false);
             std::cout << "iOS Application did enter background." << std::endl;
         });
         
-        pIOSApplication->setWillEnterForegroundCallback([]() {
+        pIOSApplication->setWillEnterForegroundCallback([&]() {
             // App will enter foreground
-            std::cout << "iOS Application will enter foreground." << std::endl;
+            if(pPGEwindow)
+                pPGEwindow->olc_OnFocus(true);
+            //std::cout << "iOS Application will enter foreground." << std::endl;
         });
     }
 
@@ -446,13 +426,13 @@ namespace olc::host {
             if(!test)
                 pIOSGLKView->setMultipleTouchEnabled(true);
             pIOSGLKView->debugTouchSetup();
-            std::cout << "iOS View Controller did load." << std::endl;
+            //std::cout << "iOS View Controller did load." << std::endl;
         });
 
         pIOSViewController->setViewWillAppearCallback([&]() {
             // View will appear
-            
-            std::cout << "iOS View Controller will appear." << std::endl;
+
+            //std::cout << "iOS View Controller will appear." << std::endl;
         });
 
         pIOSViewController->setViewDidAppearCallback([&]() {
@@ -462,20 +442,20 @@ namespace olc::host {
             {
                 pIOSViewController->setPaused(false); // Start drawing
             }
-            std::cout << "iOS View Controller did appear." << std::endl;
+            //std::cout << "iOS View Controller did appear." << std::endl;
         });
 
         pIOSViewController->setViewWillDisappearCallback([&]() {
             // View will disappear
             pPGEwindow->olc_OnWindowClose();
-            std::cout << "iOS View Controller will disappear." << std::endl;
+            //std::cout << "iOS View Controller will disappear." << std::endl;
         });
 
         pIOSViewController->setViewDidDisappearCallback([&]() {
             // View disappeared
                         
             pPGEwindow->olc_ShouldRemove();
-            std::cout << "iOS View Controller did disappear." << std::endl;
+            //std::cout << "iOS View Controller did disappear." << std::endl;
         });
         
         pIOSViewController->setViewDidLayoutSubviewsCallback([&]() {
@@ -495,88 +475,118 @@ namespace olc::host {
         
     }
 
-void Host_Apple_iOS::IOSGLKViewEventHandler()
-{
-    
-    // Set up drawing callback for GLKView
-    pIOSGLKView->setDrawCallback([&](double x, double y, double width, double height) {
-        
-        pIOSOpenGLRenderer->makeCurrentContext();
-        
-        if(!bPGEInitialized)
+    // handles both down and up strokes for every supported key that isn't a modifier
+    void Host_Apple_iOS::KeyboardEventHandler(uint16_t nKeyCode, uint nModifierFlags, bool isPressed){
+        // handle num clear/lock key only on the down stroke.
+        if(isPressed && nKeyCode == 71)
         {
-            pPrimaryPGE->OnContextStart();
-            bPGEInitialized = true;
+            bNumLockActive = !bNumLockActive;
+            return;
         }
-        else
-        {
-            //pPrimaryPGE->OnContextTick();
-        }
-        pPrimaryPGE->OnContextTick();
-    });
-    
-    // Set up touch event handlers (iOS primary input method)
-    pIOSGLKView->setTouchBeganCallback([&](const olc::apis::ios::TouchEvent& event) {
-        // Convert touch to mouse button press for compatibility
-        pPGEwindow->olc_OnMouseButton(0, true); // Left click equivalent
-         pPGEwindow->olc_OnTouch(event.touchID,
-                {static_cast<float>(event.x), static_cast<float>(event.y)},
-                true, false,
-                {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
-        std::cout << "ID: " << event.touchID << " Touch Began at (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
-    });
-
-    pIOSGLKView->setTouchMovedCallback([&](const olc::apis::ios::TouchEvent& event) {
-          pPGEwindow->olc_OnTouch(event.touchID,
-                {static_cast<float>(event.x), static_cast<float>(event.y)},
-                false, false,
-                {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
-        std::cout << "ID: " << event.touchID << " Touch Moved to (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
-    });
-
-    pIOSGLKView->setTouchEndedCallback([&](const olc::apis::ios::TouchEvent& event) {
-          pPGEwindow->olc_OnTouch(event.touchID,
-                {static_cast<float>(event.x), static_cast<float>(event.y)},
-                false, true,
-                {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
-        std::cout << "ID: " << event.touchID << " Touch Ended at (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
-    });
-
-    pIOSGLKView->setTouchCancelledCallback([&](const olc::apis::ios::TouchEvent& event) {
-         pPGEwindow->olc_OnTouch(event.touchID,
-                {static_cast<float>(event.x), static_cast<float>(event.y)},
-                false, true,  // treat cancel as release
-                {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
-        std::cout << "ID: " << event.touchID << " Touch Cancelled at (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
-    });
-
-    // Set up keyboard event handlers
-    pIOSGLKView->setKeyDownCallback([&](int keyCode, const std::string& characters) {
-        std::cout << "Key Down - Code: " << keyCode << ", Chars: '" << characters << "'" << std::endl;
         
-        // Handle special keys
-        switch (keyCode) {
-            case 53: // Escape
-                std::cout << "Escape key pressed!" << std::endl;
-                break;
-            case 36: // Return
-                std::cout << "Return key pressed!" << std::endl;
-                break;
-            case 49: // Space
-                std::cout << "Space key pressed!" << std::endl;
-                break;
-            default:
-                if (!characters.empty()) {
-                    std::cout << "Character key: '" << characters << "'" << std::endl;
-                }
-                break;
+        if(!bNumLockActive)
+        {
+            // 84 down, 86 left, 88 right, 91 up >>> 125 down, 123 left, 124 right, 126 up
+            switch(nKeyCode)
+            {
+                case 84: nKeyCode = 125; break;
+                case 86: nKeyCode = 123; break;
+                case 88: nKeyCode = 124; break;
+                case 91: nKeyCode = 126; break;
+                default: break;
+            }
         }
-    });
+        
+        // Check Modifier flags for Shift, Control, Caps, and Command keys
+        unsigned int changedFlags = nModifierFlags ^ prevFlags;
+        
+        // Check For Shift key
+        if (changedFlags & NSEventModifierFlagShift) {
+            bool isPressed = nModifierFlags & NSEventModifierFlagShift;
+            pPGEwindow->olc_OnKeyPress(Key::SHIFT, isPressed);
+        }
+        
+        // Check for Control key
+        if (changedFlags & NSEventModifierFlagControl) {
+            bool isPressed = nModifierFlags & NSEventModifierFlagControl;
+            pPGEwindow->olc_OnKeyPress(Key::CTRL, isPressed);
+        }
 
-    pIOSGLKView->setKeyUpCallback([&](int keyCode, const std::string& characters) {
-        std::cout << "Key Up - Code: " << keyCode << std::endl;
-    });
-}
+        // Check for Option / ALT key
+        if (changedFlags & NSEventModifierFlagCommand) {
+            bool isPressed = nModifierFlags & NSEventModifierFlagCommand;
+            if(isPressed)
+                std::cout << "PGE3 doesn't currently support ALT/Command keys but it should.\n";
+        }
+
+        prevFlags = nModifierFlags;
+        
+        pPGEwindow->olc_OnKeyPress(mapKeys[nKeyCode], isPressed);
+        
+   }
+
+    void Host_Apple_iOS::IOSGLKViewEventHandler()
+    {
+        
+        // Set up drawing callback for GLKView
+        pIOSGLKView->setDrawCallback([&](double x, double y, double width, double height) {
+            
+            pIOSOpenGLRenderer->makeCurrentContext();
+            
+            if(!bPGEInitialized)
+            {
+                pPrimaryPGE->OnContextStart();
+                bPGEInitialized = true;
+            }
+            pPrimaryPGE->OnContextTick();
+        });
+        
+        // Set up touch event handlers (iOS primary input method)
+        pIOSGLKView->setTouchBeganCallback([&](const olc::apis::ios::TouchEvent& event) {
+            // Convert touch to mouse button press for compatibility
+            pPGEwindow->olc_OnMouseButton(0, true); // Left click equivalent
+            pPGEwindow->olc_OnTouch(event.touchID,
+                    {static_cast<float>(event.x), static_cast<float>(event.y)},
+                    true, false,
+                    {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
+            //std::cout << "ID: " << event.touchID << " Touch Began at (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
+        });
+
+        pIOSGLKView->setTouchMovedCallback([&](const olc::apis::ios::TouchEvent& event) {
+              pPGEwindow->olc_OnTouch(event.touchID,
+                    {static_cast<float>(event.x), static_cast<float>(event.y)},
+                    false, false,
+                    {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
+            //std::cout << "ID: " << event.touchID << " Touch Moved to (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
+        });
+
+        pIOSGLKView->setTouchEndedCallback([&](const olc::apis::ios::TouchEvent& event) {
+              pPGEwindow->olc_OnTouch(event.touchID,
+                    {static_cast<float>(event.x), static_cast<float>(event.y)},
+                    false, true,
+                    {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
+            //std::cout << "ID: " << event.touchID << " Touch Ended at (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
+        });
+
+        pIOSGLKView->setTouchCancelledCallback([&](const olc::apis::ios::TouchEvent& event) {
+             pPGEwindow->olc_OnTouch(event.touchID,
+                    {static_cast<float>(event.x), static_cast<float>(event.y)},
+                    false, true,  // treat cancel as release
+                    {static_cast<float>(event.sizeX), static_cast<float>(event.sizeY)});
+            //std::cout << "ID: " << event.touchID << " Touch Cancelled at (" << event.x << ", " << event.y << ") with size (" << event.sizeX << ", " << event.sizeY << ")" << std::endl;
+        });
+
+        // Set up keyboard event handlers
+        pIOSGLKView->setKeyDownCallback([&](uint16_t keyCode, const std::string& characters, uint modifierFlags) {
+            //std::cout << "Key Down - Code: " << keyCode << ", Chars: '" << characters << "'" << std::endl;
+            KeyboardEventHandler(keyCode, modifierFlags, true);
+        });
+
+        pIOSGLKView->setKeyUpCallback([&](uint16_t keyCode, const std::string& characters, uint modifierFlags) {
+            //std::cout << "Key Up - Code: " << keyCode << std::endl;
+            KeyboardEventHandler(keyCode, modifierFlags, false);
+        });
+    }
 }
 
 //! END IMPLEMENTATION
