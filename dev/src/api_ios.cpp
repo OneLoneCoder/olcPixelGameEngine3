@@ -92,14 +92,17 @@ static constexpr const char* kDrawRectSel                       = "drawRect:";
 // Keyboard event methods selectors (for hardware keyboards)
 static constexpr const char* kPressesBeganSel                   = "pressesBegan:withEvent:";
 static constexpr const char* kPressesEndedSel                   = "pressesEnded:withEvent:";
+static constexpr const char* kKeySel                            = "key";
+static constexpr const char* kKeyCodeSel                        = "keyCode";
+static constexpr const char* kCharactersSel                     = "characters";
+static constexpr const char* kModifierFlagsSel                  = "modifierFlags";
 
 // Touch and press event property selectors
 static constexpr const char* kLocationInViewSel                 = "locationInView:";
 static constexpr const char* kAllTouchesSel                     = "allTouches";
 static constexpr const char* kCountSel                          = "count";
 static constexpr const char* kObjectAtIndexSel                  = "objectAtIndex:";
-static constexpr const char* kKeySel                            = "key";
-static constexpr const char* kCharactersSel                     = "characters";
+
 
 // EAGL and OpenGL ES management selectors
 static constexpr const char* kInitWithAPISel                    = "initWithAPI:";
@@ -283,7 +286,9 @@ namespace ObjectiveCSEL {
     static SEL countSel                             = nullptr;
     static SEL objectAtIndexSel                     = nullptr;
     static SEL keySel                               = nullptr;
+    static SEL keyCodeSel                           = nullptr;
     static SEL charactersSel                        = nullptr;
+    static SEL modifierFlagsSel                     = nullptr;
 
     // EAGL and OpenGL ES management selectors
     static SEL initWithAPISel                       = nullptr;
@@ -413,6 +418,10 @@ namespace ObjectiveCSEL {
         // Keyboard event methods selectors (for hardware keyboards)
         pressesBeganSel                     = sel_registerName(kPressesBeganSel);
         pressesEndedSel                     = sel_registerName(kPressesEndedSel);
+        keySel                              = sel_registerName(kKeySel);
+        keyCodeSel                          = sel_registerName(kKeyCodeSel);
+        charactersSel                       = sel_registerName(kCharactersSel);
+        modifierFlagsSel                    = sel_registerName(kModifierFlagsSel);
         
         // Touch and press event property selectors
         locationInViewSel                   = sel_registerName(kLocationInViewSel);
@@ -661,8 +670,8 @@ struct GLKView {
     void* touchCancelledUserData {nullptr};               // User data for touch cancelled callback
 
     // Event callback function pointers with nullptr initialization
-    std::function<void(unsigned short, const char*, void*)>  keyDownCallback{nullptr};
-    std::function<void(unsigned short, const char*, void*)>  keyUpCallback{nullptr};
+    std::function<void(uint16_t, const char*, uint, void*)>  keyDownCallback{nullptr};
+    std::function<void(uint16_t, const char*, uint, void*)>  keyUpCallback{nullptr};
     
     void* keyDownUserData{nullptr};      // User data for key down callback
     void* keyUpUserData  {nullptr};      // User data for key up callback
@@ -1156,41 +1165,72 @@ void touchesCancelled(id self, SEL _cmd, id touches, id event) {
     updateiOSTouchData(touches, gptrGLKViewEvents->touchCancelledCallback, gptrGLKViewEvents->touchCancelledUserData, true);
 }
 
+// Structure to hold common key event data
+struct KeyEventData {
+    uint16_t keyCode = 0;
+    const char* characters = nullptr;
+    uint modifierFlags = 0;
+};
+
+// Extract common key event data from NSEvent and press
+KeyEventData extractKeyEventData(id event, id press) {
+    KeyEventData data;
+    id key = ((id(*)(id, SEL))objc_msgSend)(press, ObjectiveCSEL::keySel);
+    data.keyCode = ((unsigned short(*)(id, SEL))objc_msgSend)(key, ObjectiveCSEL::keyCodeSel);
+    id characters = ((id(*)(id, SEL))objc_msgSend)(key, ObjectiveCSEL::charactersSel);
+    data.characters = ((const char*(*)(id, SEL))objc_msgSend)(characters, ObjectiveCSEL::UTF8StringSel);
+    data.modifierFlags = ((unsigned int(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::modifierFlagsSel);
+    // printf("Key Event: keyCode=%u, characters=%s, modifierFlags=%u\n", data.keyCode, data.characters ? data.characters : "null", data.modifierFlags);
+    return data;
+}
+
 // Keyboard event handlers
 void pressesBegan(id self, SEL _cmd, id presses, id event) {
     (void)self; (void)_cmd; (void)event;
+                
+    if (!gptrGLKViewEvents || !presses) return; // edge case with presses been null when bluetooth keyboard is disconnected
     
-    if (!gptrGLKViewEvents) return;
+    // Get an NS array of all presses from the NSSet
+    id pressesArray = ((id(*)(id, SEL))objc_msgSend)(presses, ObjectiveCSEL::allObjectsSel);
     
-    // Get first press (for simplicity)
     NSUInteger pressCount = ((NSUInteger(*)(id, SEL))objc_msgSend)(presses, ObjectiveCSEL::countSel);
     if (pressCount == 0) return;
     
-    id press = ((id(*)(id, SEL, NSUInteger))objc_msgSend)(presses, ObjectiveCSEL::objectAtIndexSel, 0);
-    id key = ((id(*)(id, SEL))objc_msgSend)(press, ObjectiveCSEL::keySel);
-    id characters = ((id(*)(id, SEL))objc_msgSend)(key, ObjectiveCSEL::charactersSel);
-    const char* keyString = ((const char*(*)(id, SEL))objc_msgSend)(characters, ObjectiveCSEL::UTF8StringSel);
-    
-    if (gptrGLKViewEvents->keyDownCallback && keyString && strlen(keyString) > 0) {
-        gptrGLKViewEvents->keyDownCallback((unsigned short)keyString[0], keyString, gptrGLKViewEvents->keyDownUserData);
+    for(NSUInteger i = 0; i < pressCount; i++)
+    {
+        id press = ((id(*)(id, SEL, NSUInteger))objc_msgSend)(pressesArray, ObjectiveCSEL::objectAtIndexSel, i);
+        
+        KeyEventData data = extractKeyEventData(event, press);
+        
+        if (gptrGLKViewEvents->keyDownCallback) {
+            gptrGLKViewEvents->keyDownCallback(data.keyCode, data.characters, data.modifierFlags, gptrGLKViewEvents->keyDownUserData);
+        }
     }
+
 }
 
 void pressesEnded(id self, SEL _cmd, id presses, id event) {
     (void)self; (void)_cmd; (void)event;
     
-    if (!gptrGLKViewEvents) return;
+    if (!gptrGLKViewEvents || !presses) return; // edge case with presses been null when bluetooth keyboard is disconnected
+    
+    // Get an NS array of all presses from the NSSet that have ended
+    id pressesArray = ((id(*)(id, SEL))objc_msgSend)(presses, ObjectiveCSEL::allObjectsSel);
     
     NSUInteger pressCount = ((NSUInteger(*)(id, SEL))objc_msgSend)(presses, ObjectiveCSEL::countSel);
     if (pressCount == 0) return;
     
-    id press = ((id(*)(id, SEL, NSUInteger))objc_msgSend)(presses, ObjectiveCSEL::objectAtIndexSel, 0);
-    id key = ((id(*)(id, SEL))objc_msgSend)(press, ObjectiveCSEL::keySel);
-    id characters = ((id(*)(id, SEL))objc_msgSend)(key, ObjectiveCSEL::charactersSel);
-    const char* keyString = ((const char*(*)(id, SEL))objc_msgSend)(characters, ObjectiveCSEL::UTF8StringSel);
-    
-    if (gptrGLKViewEvents->keyUpCallback && keyString && strlen(keyString) > 0) {
-        gptrGLKViewEvents->keyUpCallback((unsigned short)keyString[0], keyString, gptrGLKViewEvents->keyUpUserData);
+    for(NSUInteger i = 0; i < pressCount; i++)
+    {
+        id press = ((id(*)(id, SEL, NSUInteger))objc_msgSend)(pressesArray, ObjectiveCSEL::objectAtIndexSel, i);
+        
+        KeyEventData data = extractKeyEventData(event, press);
+        
+        if (gptrGLKViewEvents->keyUpCallback) {
+            gptrGLKViewEvents->keyUpCallback(data.keyCode, data.characters, data.modifierFlags, gptrGLKViewEvents->keyUpUserData);
+            
+        }
+        
     }
 }
 
@@ -1339,7 +1379,7 @@ id createCustomViewController(void) {
         // Add keyboard event methods
         class_addMethod(CustomViewControllerClass, ObjectiveCSEL::pressesBeganSel,               (IMP)pressesBegan,          kTouchEventMethodTypeEncoding);
         class_addMethod(CustomViewControllerClass, ObjectiveCSEL::pressesEndedSel,               (IMP)pressesEnded,          kTouchEventMethodTypeEncoding);
-        
+
         // Add lifecycle methods
         class_addMethod(CustomViewControllerClass, ObjectiveCSEL::updateView,                    (IMP)updateView,             kVoidMethodTypeEncoding);
         class_addMethod(CustomViewControllerClass, ObjectiveCSEL::loadViewSel,                   (IMP)loadView,               kVoidMethodTypeEncoding);

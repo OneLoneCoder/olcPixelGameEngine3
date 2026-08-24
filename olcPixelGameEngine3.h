@@ -13419,8 +13419,10 @@ namespace olc::host {
 
         mapKeys[74] = Key::HOME;       // Home
         mapKeys[75] = Key::PGUP;       // Page Up
+        mapKeys[76] = Key::DEL;        // Delete (Forward Delete)
         mapKeys[77] = Key::END;        // End
         mapKeys[78] = Key::PGDN;       // Page Down
+       
         
         // Arrow Keys
         mapKeys[79] = Key::RIGHT;
@@ -13428,7 +13430,8 @@ namespace olc::host {
         mapKeys[81] = Key::DOWN;
         mapKeys[82] = Key::UP;
         
-        // CHRL, SHIFT Keys
+        // CHRL, SHIFT, Instert (Help) Keys
+        mapKeys[117] = Key::INS;          // Insert (Help key on Mac)
         mapKeys[224]  = Key::CTRL;        // Left Control
         mapKeys[225]  = Key::SHIFT;       // Left Shift
         mapKeys[229]  = Key::SHIFT;       // Left Shift
@@ -13447,25 +13450,25 @@ namespace olc::host {
         mapKeys[47] = Key::PERIOD;      // Period .
         
         // Unknown and may not be supported, but included for completeness will come back to this
-        mapKeys[900] = Key::NP0;
-        mapKeys[901] = Key::NP1;
-        mapKeys[902] = Key::NP2;
-        mapKeys[903] = Key::NP3;
-        mapKeys[904] = Key::NP4;
-        mapKeys[905] = Key::NP5;
-        mapKeys[906] = Key::NP6;
-        mapKeys[907] = Key::NP7;
-        mapKeys[908] = Key::NP8;
-        mapKeys[909] = Key::NP9;
-        mapKeys[910] = Key::NP_MUL;      // Numpad *
-        mapKeys[911] = Key::NP_ADD;      // Numpad +
-        mapKeys[912] = Key::NP_DIV;      // Numpad /
-        mapKeys[913] = Key::NP_SUB;      // Numpad -
-        mapKeys[914] = Key::NP_DECIMAL;  // Numpad .
-        mapKeys[915] = Key::PAUSE;       // F16 (often used as pause)
-        mapKeys[916] = Key::SCROLL;      // F14 (scroll lock equivalent)
-        mapKeys[917] = Key::OEM_8;       // Section sign # (varies by keyboard)
-
+        mapKeys[84] = Key::NP_DIV;      // Numpad /
+        mapKeys[85] = Key::NP_MUL;      // Numpad *
+        mapKeys[86] = Key::NP_SUB;      // Numpad -
+        mapKeys[87] = Key::NP_ADD;      // Numpad +
+        mapKeys[88] = Key::RETURN;      // Numpad Enter
+        mapKeys[89] = Key::NP1;
+        mapKeys[90] = Key::NP2;
+        mapKeys[91] = Key::NP3;
+        mapKeys[92] = Key::NP4;
+        mapKeys[93] = Key::NP5;
+        mapKeys[94] = Key::NP6;
+        mapKeys[95] = Key::NP7;
+        mapKeys[96] = Key::NP8;
+        mapKeys[97] = Key::NP9;
+        mapKeys[98] = Key::NP0;
+        mapKeys[99] = Key::NP_DECIMAL;  // Numpad .
+        mapKeys[915] = Key::PAUSE;      // Not Supported, F16 (often used as pause)
+        mapKeys[916] = Key::SCROLL;     // Not Supported, F14 (scroll lock equivalent)
+        mapKeys[917] = Key::OEM_8;      // Section sign § (varies by keyboard)
     }
 
     bool Host_Apple_iOS::AddWindowFrame(olc::Window* pWindow, const olc::vi2d& vWindowPos, const olc::vi2d& vWindowSize, const bool bFullScreen)
@@ -13811,7 +13814,7 @@ namespace olc::host {
     // handles both down and up strokes for every supported key that isn't a modifier
     void Host_Apple_iOS::KeyboardEventHandler(uint16_t nKeyCode, uint nModifierFlags, bool isPressed){
         // handle num clear/lock key only on the down stroke.
-        if(isPressed && nKeyCode == 71)
+        if(isPressed && nKeyCode == 83)
         {
             bNumLockActive = !bNumLockActive;
             return;
@@ -13819,13 +13822,13 @@ namespace olc::host {
         
         if(!bNumLockActive)
         {
-            // 84 down, 86 left, 88 right, 91 up >>> 125 down, 123 left, 124 right, 126 up
+            // 94 right,  92 left,  90 down, 96 up >>> 79 RIGHT, 80 LEFT, 81 DOWN, 82 UP
             switch(nKeyCode)
             {
-                case 84: nKeyCode = 125; break;
-                case 86: nKeyCode = 123; break;
-                case 88: nKeyCode = 124; break;
-                case 91: nKeyCode = 126; break;
+                case 94: nKeyCode = 79; break;
+                case 92: nKeyCode = 80; break;
+                case 90: nKeyCode = 81; break;
+                case 96: nKeyCode = 82; break;
                 default: break;
             }
         }
@@ -15102,7 +15105,7 @@ KeyEventData extractKeyEventData(id event, id press) {
     id characters = ((id(*)(id, SEL))objc_msgSend)(key, ObjectiveCSEL::charactersSel);
     data.characters = ((const char*(*)(id, SEL))objc_msgSend)(characters, ObjectiveCSEL::UTF8StringSel);
     data.modifierFlags = ((unsigned int(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::modifierFlagsSel);
-    printf("Key Event: keyCode=%u, characters=%s, modifierFlags=%u\n", data.keyCode, data.characters ? data.characters : "null", data.modifierFlags);
+    // printf("Key Event: keyCode=%u, characters=%s, modifierFlags=%u\n", data.keyCode, data.characters ? data.characters : "null", data.modifierFlags);
     return data;
 }
 
