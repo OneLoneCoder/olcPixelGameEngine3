@@ -455,8 +455,8 @@ namespace olc {
                 std::function<void(const TouchEvent&)>  touchEndedHandler_;
                 std::function<void(const TouchEvent&)>  touchCancelledHandler_;
 
-                std::function<void(int, const std::string&)> keyDownHandler;
-                std::function<void(int, const std::string&)> keyUpHandler;
+                std::function<void(uint, const std::string&, uint)> keyDownHandler;
+                std::function<void(uint, const std::string&, uint)> keyUpHandler;
                 std::function<void(double, double, double, double)> drawHandler;
                 
                 // Store callback pointers for cleanup  
@@ -505,19 +505,19 @@ namespace olc {
                     }
                     
                     if (keyDownHandler) {
-                        glkview_setKeyDownCallback(glkView_, [](unsigned short keyCode, const char* characters, void* userData) {
+                        glkview_setKeyDownCallback(glkView_, [](uint16_t keyCode, const char* characters, uint modifierFlags, void* userData) {
                             GLKView* handler = static_cast<GLKView*>(userData);
                             if (handler->keyDownHandler) {
-                                handler->keyDownHandler(keyCode, std::string(characters ? characters : ""));
+                                handler->keyDownHandler(keyCode, std::string(characters ? characters : ""), modifierFlags);
                             }
                         }, this);
                     }
                     
                     if (keyUpHandler) {
-                        glkview_setKeyUpCallback(glkView_, [](unsigned short keyCode, const char* characters, void* userData) {
+                        glkview_setKeyUpCallback(glkView_, [](unsigned short keyCode, const char* characters, uint modifierFlags, void* userData) {
                             GLKView* handler = static_cast<GLKView*>(userData);
                             if (handler->keyUpHandler) {
-                                handler->keyUpHandler(keyCode, std::string(characters ? characters : ""));
+                                handler->keyUpHandler(keyCode, std::string(characters ? characters : ""), modifierFlags);
                             }
                         }, this);
                     }
@@ -667,25 +667,25 @@ namespace olc {
                 }
 
                 // Keyboard event setters
-                void setKeyDownCallback(std::function<void(int, const std::string&)> callback) {
+                void setKeyDownCallback(std::function<void(uint16_t, const std::string&, uint)> callback) {
                     keyDownHandler = callback;
                     if (glkView_) {
-                        glkview_setKeyDownCallback(glkView_, [](unsigned short keyCode, const char* characters, void* userData) {
+                        glkview_setKeyDownCallback(glkView_, [](uint16_t keyCode, const char* characters, uint modifierFlags, void* userData) {
                             GLKView* handler = static_cast<GLKView*>(userData);
                             if (handler->keyDownHandler) {
-                                handler->keyDownHandler(keyCode, std::string(characters ? characters : ""));
+                                handler->keyDownHandler(keyCode, std::string(characters ? characters : ""), modifierFlags);
                             }
                         }, this);
                     }
                 }
 
-                void setKeyUpCallback(std::function<void(int, const std::string&)> callback) {
+                void setKeyUpCallback(std::function<void(uint16_t, const std::string&, uint modifierFlags)> callback) {
                     keyUpHandler = callback;
                     if (glkView_) {
-                        glkview_setKeyUpCallback(glkView_, [](unsigned short keyCode, const char* characters, void* userData) {
+                        glkview_setKeyUpCallback(glkView_, [](uint16_t keyCode, const char* characters, uint modifierFlags, void* userData) {
                             GLKView* handler = static_cast<GLKView*>(userData);
                             if (handler->keyUpHandler) {
-                                handler->keyUpHandler(keyCode, std::string(characters ? characters : ""));
+                                handler->keyUpHandler(keyCode, std::string(characters ? characters : ""), modifierFlags);
                             }
                         }, this);
                     }

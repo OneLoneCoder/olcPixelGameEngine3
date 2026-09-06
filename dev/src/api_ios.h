@@ -104,7 +104,7 @@ extern "C" {
     // ===========================================================================
     
     // Touch event callback function types
-    typedef void (*KeyEventCallback)        (unsigned short keyCode, const char* characters, void* userData);
+    typedef void (*KeyEventCallback)        (unsigned short keyCode, const char* characters, uint modifierFlags, void* userData);
     typedef void (*TouchEventCallback)      (uint32_t touchID, double x, double y, double sizeX, double sizeY, void* userData);
     typedef void (*DrawCallback)            (double x, double y, double width, double height, void* userData);
     typedef void (*UpdateCallback)          (void* userData);

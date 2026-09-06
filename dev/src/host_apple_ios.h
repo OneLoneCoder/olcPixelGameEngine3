@@ -42,8 +42,6 @@ namespace olc
         public:
             // Default constructor
             Host_Apple_iOS();
-            // Constructor with application path
-            Host_Apple_iOS(std::string appPath) : sIOSApplicationPath(appPath) {};
             virtual ~Host_Apple_iOS() {};
             
         public:
@@ -94,10 +92,14 @@ namespace olc
         public:
             // Internal iOS functions
             // iOS Application and View Controller pointers
-            std::unique_ptr<olc::apis::ios::Application> pIOSApplication = nullptr;
-            std::unique_ptr<olc::apis::ios::ViewController> pIOSViewController = nullptr;
-            std::unique_ptr<olc::apis::ios::GLKView> pIOSGLKView = nullptr;
-            std::shared_ptr<olc::apis::ios::OpenGLRenderer> pIOSOpenGLRenderer = nullptr;
+            std::unique_ptr<olc::apis::ios::Application>    pIOSApplication    = nullptr;   // Smart Pointer to iOS Application instance
+            std::unique_ptr<olc::apis::ios::ViewController> pIOSViewController = nullptr;   // Smart Pointer to iOS View Controller instance
+            std::unique_ptr<olc::apis::ios::GLKView>        pIOSGLKView        = nullptr;   // Smart Pointer to iOS GLKView instance
+            std::shared_ptr<olc::apis::ios::OpenGLRenderer> pIOSOpenGLRenderer = nullptr;   // Smart Pointer to iOS OpenGL Renderer instance
+            
+            // Returns the full path to the application bundle on iOS or "ACCESS-DEINED"
+            std::string GetApplicationPath();
+        
 
             void* pIOSGLContextObj = nullptr;
             std::once_flag initialAppFlag;
@@ -105,42 +107,14 @@ namespace olc
             // Map of system keycodes to olc::Keycodes
             std::unordered_map<int32_t, olc::Key> mapKeys;
             
-            // IOS Application path
-            std::string sIOSApplicationPath;
+            
             
             void (*pPGEEngineFunc)(void*);
             void (*pPGECoreUpdateFunc)(void*);
             void* pPGEUserData;
             
-            bool iosAppIsActive = false; // Flag indicating if the iOS app is active (foreground)
-
-            
         private:
             
-            enum MAINTASKS{
-                NONE,
-                INTIALIZE_PGE_RENDERER,
-                RESIZE_WINDOW,
-                MAIN_THREAD_DRAW,
-                START_DRAWING,
-                STOP_DRAWING
-            };
-            
-            
-            // Internal Mac OS functions
-            bool ExecutePendingMainThreadTasks(void);       // Execute pending tasks on main thread
-            bool MainThreadTasks(void);                     // Handle main thread tasks
-            bool AddPendingMainThreadTask(MAINTASKS task);  // Add a pending task to main thread. Note: You should ever add tasks that require main thread execution only from the PGE thread
-            // Thread synchronization for PGE Thread V Main thread
-            mutable std::mutex      mainThreadPendingTasksMutex;    // Mutex for main thread pending tasks
-            std::condition_variable mainThreadResetCondition;       // Condition variable for main thread reset
-            std::atomic<bool>       isMainThreadResetting{false};   // Atomic flag for resetting main thread
-            std::vector<MAINTASKS> vPendingMainThreadTasks;         // Vector of pending main thread tasks
-            
-            mutable std::mutex      pgeThreadPendingTasksMutex;    // Mutex for PGE thread pending tasks
-            std::condition_variable pgeThreadResetCondition;       // Condition variable for PGE thread reset
-            std::atomic<bool>       isPGEThreadResetting{true};    // Atomic flag for resetting PGE thread
-
             std::vector<void*> vIOSWindowDescriptors;     // Vector to hold view descriptors
             bool enableVSync = false;                     // VSync enabled flag
             
@@ -158,11 +132,17 @@ namespace olc
             olc::apis::ios::DeviceOrientation CurrentOrientation = olc::apis::ios::DeviceOrientation::Unknown;
             void UpdateIOSViewFrameBounds(olc::apis::ios::DeviceOrientation orientation);
 
-            // TODO: Should these be private?
+            // Keyboard stuff
+            bool bNumLockActive = false;        // Track Num Lock state
+            unsigned int prevFlags = 0;  // Track previous modifier flags for keyboard events
+            void KeyboardEventHandler(uint16_t nKeyCode, uint nModifierFlags, bool isPressed);
+            
             void IOSApplicationEventsHandler();
             void IOSViewControllerEventsHandler();
             void IOSGLKViewEventHandler();
             void IOSOpenGLContextEventsHandler();
+            
+            
         };
     }
 }

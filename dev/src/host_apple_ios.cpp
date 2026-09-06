@@ -547,7 +547,6 @@ namespace olc::host {
         // Set up touch event handlers (iOS primary input method)
         pIOSGLKView->setTouchBeganCallback([&](const olc::apis::ios::TouchEvent& event) {
             // Convert touch to mouse button press for compatibility
-            pPGEwindow->olc_OnMouseButton(0, true); // Left click equivalent
             pPGEwindow->olc_OnTouch(event.touchID,
                     {static_cast<float>(event.x), static_cast<float>(event.y)},
                     true, false,
