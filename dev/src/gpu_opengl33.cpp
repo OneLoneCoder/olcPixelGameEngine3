@@ -6,7 +6,7 @@ namespace olc::gpu
 
 	// === PIXEL SHADER PGE DEFAULTS ===
 	std::string Shader::static_PS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 R"(#version 330 core
 )"
 #else
@@ -45,7 +45,7 @@ void main()
 	
 	// === VERTEX SHADER PGE DEFAULTS ===
 	std::string Shader::static_VS_DefaultHeader =
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 R"(#version 330 core
 )"
 #else
@@ -319,6 +319,17 @@ void main()
 
 #endif
 
+#if OLC_HOST == OLC_HOST_IOS
+        
+		// os_win_id[0] is the OLC EAGL OpenGL Device Context
+		glRenderContext = (olc::apis::opengl::glRenderContext_t)os_win_id[0];
+		if (!glRenderContext) {
+			lastError = RendererError::FailedToCreateRenderContext;
+			return false;
+		}
+
+#endif
+
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_LINUX_WAYLAND || OLC_HOST == OLC_HOST_ANDROID
 #if OLC_HOST == OLC_HOST_EMSCRIPTEN || OLC_HOST == OLC_HOST_ANDROID
     #if OLC_HOST == OLC_HOST_ANDROID
@@ -469,7 +480,7 @@ void main()
 		gl.glEnableVertexAttribArray(5);
 
 		// Buffers are configured, unbind for now
-		gl.glBindBuffer(gl.GL_ARRAY_BUFFER_X, 0);
+		gl.glBindBuffer(gl.GL_ARRAY_BUFFER_X, nScreenFBO);  // Updated to better support iOS GLKit, and other Platforms FBOs which are not 0
 		gl.glBindVertexArray(0);
 
 
@@ -524,7 +535,7 @@ void main()
 		// PGE Specific requirements
 
 		// Texturing Enabled
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		gl.glEnable(GL_TEXTURE_2D); // Turn on texturing
 		gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #endif
@@ -555,6 +566,10 @@ void main()
 #if OLC_HOST == OLC_HOST_MACOS
 		CGLSetCurrentContext(NULL);
 		CGLDestroyContext((CGLContextObj)glRenderContext);
+#endif
+#if OLC_HOST == OLC_HOST_IOS
+		// GLKit manages the OpenGL context on iOS, so we don't need to destroy it manually.
+		// Left in for completeness and future-proofing, but should not be called on iOS.
 #endif
 #if OLC_HOST == OLC_HOST_LINUX_X11
 		auto* display = X11::XOpenDisplay(nullptr);
@@ -590,6 +605,14 @@ void main()
         auto glDeviceContext = (olc::apis::opengl::glRenderContext_t)os_win_id[0];
 		if (CGLSetCurrentContext((CGLContextObj)glDeviceContext) != kCGLNoError) {
 			lastError = RendererError::FailedToSwitchRenderContext;
+			return false;
+		}
+#endif
+#if OLC_HOST == OLC_HOST_IOS
+		// params[0] is the OLC EAGL OpenGL Device Context
+		glRenderContext = (olc::apis::opengl::glRenderContext_t)os_win_id[0];
+		if (!glRenderContext) {
+			lastError = RendererError::FailedToCreateRenderContext;
 			return false;
 		}
 #endif
@@ -648,6 +671,14 @@ void main()
 			return false;
 		}
 
+#endif
+#if OLC_HOST == OLC_HOST_IOS
+        // params[0] is the OLC EAGL OpenGL Device Context
+        glRenderContext = (olc::apis::opengl::glRenderContext_t)os_win_id[0];
+        if (!glRenderContext) {
+            lastError = RendererError::FailedToCreateRenderContext;
+            return false;
+        }
 #endif
 		return true;
 	}
@@ -708,7 +739,7 @@ void main()
 			mapTextureToRenderbuffer[id] = rboId;
 		}
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_MACOS && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 #endif
 
@@ -744,7 +775,7 @@ void main()
 			);
 
 			// Unbind renderbuffer
-			gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, 0);
+			gl.glBindRenderbuffer(gl.GL_RENDERBUFFER_X, nScreenFBO);  // Updated to better support iOS GLKit, and other Platforms FBOs which are not 0
 		}
 
 		// Update size tracking
@@ -764,7 +795,7 @@ void main()
 		// which has been blitted to via ResolveMSAA if its an MSAA texture
 		gl.glBindTexture(GL_TEXTURE_2D, image.GetGPUID());
 
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		gl.glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.Data());
 #else		
 		gl.glReadPixels(0, 0, image.Size().x, image.Size().y, GL_RGBA, GL_UNSIGNED_BYTE, image.Data());
@@ -1307,6 +1338,10 @@ void main()
 		CGLContextObj cglContext = static_cast<CGLContextObj>(os_win_id[0]);
 		CGLFlushDrawable(cglContext);
        
+#endif
+
+#if OLC_HOST == OLC_HOST_IOS
+        olc_IgnoreUnused(bVerticalSyncNow);
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11

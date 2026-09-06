@@ -16,9 +16,13 @@
 #include "host_win_winapi.h"
 #endif
 
-// Johnnyg63: Added define for MACOS
+// Johnnyg63: Added define for MACOS/iOS
 #if OLC_HOST == OLC_HOST_MACOS
 #include "host_apple_macos.h"
+#endif
+
+#if OLC_HOST == OLC_HOST_IOS
+#include "host_apple_ios.h"
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
@@ -43,6 +47,10 @@
 
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_MACOS
 #include "imload_macos.h"
+#endif
+
+#if OLC_IMAGELOADER == OLC_IMAGELOADER_IOS
+#include "imload_ios.h"
 #endif
 
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG

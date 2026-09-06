@@ -42,6 +42,18 @@ set(HOST_MACOS_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_apple_macos.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_apple_macos.h
 )
+
+set(IOS_API_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/api_ios.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/api_ios.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/api_ios_wrapper.hpp
+)
+
+set(HOST_IOS_SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_apple_ios.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_apple_ios.h
+)
+
 set(HOST_LINUX_WAYLAND_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_lin_wayland.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_lin_wayland.h
@@ -70,6 +82,10 @@ set(IMAGELOADER_MACOS_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_macos.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_macos.h
 )
+set(IMAGELOADER_IOS_SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_ios.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_ios.h
+)
 set(IMAGELOADER_STB_IMAGE_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_stb_image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_stb_image.h
@@ -96,6 +112,8 @@ list(
     ${HOST_ANDROID_SOURCE_FILES}
     ${MACOS_API_FILES}
     ${HOST_MACOS_SOURCE_FILES}
+    ${IOS_API_FILES}
+    ${HOST_IOS_SOURCE_FILES}
     ${HOST_LINUX_WAYLAND_SOURCE_FILES}
     ${HOST_LINUX_X11_SOURCE_FILES}
     ${HOST_WEB_EMSCRIPTEN_SOURCE_FILES}
@@ -120,14 +138,18 @@ else()
 
     if(APPLE)
         if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-            # TODO: Building for iOS
+            if(NOT USE_HEADLESS)
+                set(HOST_SOURCE_FILES ${HOST_IOS_SOURCE_FILES} ${IOS_API_FILES})
+            else()
+                set(HOST_SOURCE_FILES ${HOST_IOS_SOURCE_FILES})
+            endif() # iOS
         else()
             if(NOT USE_HEADLESS)
                 set(HOST_SOURCE_FILES ${HOST_MACOS_SOURCE_FILES} ${MACOS_API_FILES})
             else()
                 set(HOST_SOURCE_FILES ${HOST_MACOS_SOURCE_FILES})
-            endif()
-        endif() # MacOS
+            endif() # MacOS
+        endif() 
     endif() # Apple
 
     if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
@@ -157,13 +179,17 @@ else()
 
     if(APPLE)
         if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-            # TODO: Building for iOS
+            if(USE_HEADLESS)
+                set(IMAGELOADER_SOURCE_FILES ${IMAGELOADER_IOS_SOURCE_FILES} ${IOS_API_FILES})
+            else()
+                set(IMAGELOADER_SOURCE_FILES ${IMAGELOADER_IOS_SOURCE_FILES})
+            endif() # iOS
         else()
             if(USE_HEADLESS)
                 set(IMAGELOADER_SOURCE_FILES ${IMAGELOADER_MACOS_SOURCE_FILES} ${MACOS_API_FILES})
             else()
                 set(IMAGELOADER_SOURCE_FILES ${IMAGELOADER_MACOS_SOURCE_FILES})
-            endif()
+            endif() # MacOS
         endif()
     endif()
 
@@ -198,7 +224,14 @@ endif()
 
 if(APPLE)
     if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-        # TODO: Building for iOS
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework AppKit")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework GLKit")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework UIKit")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework Metal")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework MetalKit")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework QuartzCore")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework OpenGLES")
+        target_link_libraries(${EXE_NAME} PRIVATE "-framework Foundation")
     else()
         target_link_libraries(${EXE_NAME} PRIVATE "-framework Metal")
         target_link_libraries(${EXE_NAME} PRIVATE "-framework MetalKit")
