@@ -85,6 +85,7 @@ extern "C" {
     // Image Loader API - as implemented in api_.cpp
     struct ImageLoader* imageloader_init        (void);
     BOOL imageloader_loadFromFile               (struct ImageLoader* self, const char* filePath);
+    BOOL imageloader_loadFromMemory             (struct ImageLoader* self, const unsigned char* data, size_t length);
     void imageloader_destroy                    (struct ImageLoader* self);
     unsigned char* imageloader_getPixelData     (const struct ImageLoader* self);
     void imageloader_getImageInfo               (const struct ImageLoader* self, int* width, int* height, int* bytesPerPixel);

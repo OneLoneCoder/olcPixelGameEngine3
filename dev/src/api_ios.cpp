@@ -156,6 +156,10 @@ static constexpr const char* kHasAlphaSel                       = "hasAlpha";
 static constexpr const char* kBitmapDataSel                     = "bitmapData";
 static constexpr const char* kNSBitmapImageRepClass             = "NSBitmapImageRep";
 static constexpr const char* kCGImageSel                        = "CGImage";
+static constexpr const char* kNSDataClass                       = "NSData";  // Class for handling binary data, used for image loading
+static constexpr const char* kdataWithBytesLengthSel            = "dataWithBytes:length:"; // Selector for creating NSData from raw bytes
+static constexpr const char* kImageWithDataSel                  = "imageWithData:";
+
 
 // OpenGL ES constants
 static constexpr int kEAGLRenderingAPIOpenGLES3                 = 3;
@@ -328,6 +332,8 @@ namespace ObjectiveCSEL {
     static SEL hasAlphaSel                          = nullptr;
     static SEL bitmapDataSel                        = nullptr;
     static SEL cgImageSel                           = nullptr;
+    static SEL dataWithBytesLengthSel               = nullptr;
+    static SEL imageWithDataSel                     = nullptr;
 
     // NS Bundle selectors
     static SEL mainBundleSel                        = nullptr;
@@ -471,6 +477,8 @@ namespace ObjectiveCSEL {
         hasAlphaSel                         = sel_registerName(kHasAlphaSel);
         bitmapDataSel                       = sel_registerName(kBitmapDataSel);
         cgImageSel                          = sel_registerName(kCGImageSel);
+        dataWithBytesLengthSel              = sel_registerName(kdataWithBytesLengthSel);
+        imageWithDataSel                    = sel_registerName(kImageWithDataSel);
         
         // NS Bundle selectors
         mainBundleSel                       = sel_registerName(kMainBundleSel);
@@ -731,6 +739,7 @@ static Class safe_objc_getClass(const char* name) {
     return cls;
 }
 
+// TODO: Remove Unused
 static SEL safe_sel_registerName(const char* name) {
     SEL sel = sel_registerName(name);
     if (!sel) {
@@ -1958,6 +1967,68 @@ BOOL imageloader_loadFromFile(struct ImageLoader* self, const char* filePath) {
     return NO;
 
 }
+
+BOOL imageloader_loadFromMemory(struct ImageLoader* self, const unsigned char* data, size_t length) {
+    // Clear any existing data
+    if (self->pixelData) {
+        free(self->pixelData);
+        self->pixelData = NULL;
+    }
+    
+    self->width             = kZeroWidth;
+    self->height            = kZeroHeight;
+    self->bytesPerPixel     = kZeroBytes;
+    self->bytesPerRow       = kZeroRows;
+    self->hasAlpha          = NO;
+    
+    // Create NSData from memory
+    Class NSDataClass = objc_getClass(kNSDataClass);
+    id nsData = ((id(*)(Class, SEL, const void*, size_t))objc_msgSend)( NSDataClass, ObjectiveCSEL::dataWithBytesLengthSel, data, length);
+    
+    if (!nsData) {
+        return NO;
+    }
+    
+    // Create a UIImage from NSData
+    Class UIImageClass = objc_getClass(kUIImageClass);
+    id image = ((id(*)(Class, SEL, id))objc_msgSend)(UIImageClass, ObjectiveCSEL::imageWithDataSel, nsData);
+    
+    if (!image) {
+        return NO;
+    }
+
+    CGImageRef cgImage = ((CGImageRef(*)(id, SEL))objc_msgSend)(image, ObjectiveCSEL::cgImageSel);
+
+    if (!cgImage) {
+        return NO;
+    }
+
+    self->width         = (int)CGImageGetWidth(cgImage);
+    self->height        = (int)CGImageGetHeight(cgImage);
+    self->bytesPerPixel = (int)CGImageGetBitsPerPixel(cgImage) / kBitsPerByte; // 4 for RGBA, 3 for RGB
+    self->bytesPerRow   = (int)CGImageGetBytesPerRow(cgImage); //  self->width * self->bytesPerPixel;
+    self->hasAlpha      = CGImageGetAlphaInfo(cgImage) != kCGImageAlphaNone;
+ 
+    // Get pixel data directly from CGImage without drawing
+    CGDataProviderRef dataProvider  = CGImageGetDataProvider(cgImage);
+    CFDataRef dataRef               = CGDataProviderCopyData(dataProvider);
+
+    if (dataRef) {
+        const unsigned char* bytes  = CFDataGetBytePtr(dataRef);
+        size_t dataLength           = CFDataGetLength(dataRef);
+        self->pixelData             = (unsigned char*)malloc(dataLength);
+        
+        memcpy(self->pixelData, bytes, dataLength);
+        CFRelease(dataRef);
+        return YES;
+    }
+    
+    return NO;
+}
+
+
+
+
 
 // Get raw pixel data pointer
 unsigned char* imageloader_getPixelData(const struct ImageLoader* self) {

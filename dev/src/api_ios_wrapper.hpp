@@ -859,6 +859,15 @@ namespace olc {
                     return false;
                 }
                 
+                bool loadFromMemory(const uint8_t* data, size_t bytes) {
+                    if (loader_) {
+                        BOOL result = imageloader_loadFromMemory(loader_, data, bytes);
+                        loaded_ = (result != 0);
+                        return loaded_;
+                    }
+                    return false;
+                }
+                
                 bool isLoaded() const noexcept {
                     return loaded_ && loader_ && imageloader_isLoaded(loader_);
                 }

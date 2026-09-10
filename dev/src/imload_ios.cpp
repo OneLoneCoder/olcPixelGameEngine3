@@ -112,26 +112,59 @@ namespace olc::imload
 
     bool ImageLoader_iOS::CreateImageFromMemory(olc::Image& image, const uint8_t* data, const size_t bytes)
     {
-        // TODO: Implement memory-based image loading for iOS
+        if(!data) return false;
+
+        // Create macOS API wrapper image loader
+        olc::apis::ios::ImageLoader loader;
         
-        return false;
+        if (!loader.loadFromMemory(data, bytes) || !loader.isLoaded()) {
+            return false; // Failed to load file
+        }
+        
+        // Get image dimensions and info
+        int width, height, bytesPerPixel;
+        loader.getImageInfo(width, height, bytesPerPixel);
+        
+        if (width <= 0 || height <= 0) {
+            return false; // Invalid dimensions
+        }
+        
+        // Get raw pixel data from the loader
+        unsigned char* pixelData = imageloader_getPixelData(loader.getCHandle());
+        if (!pixelData) {
+            return false; // Failed to get pixel data
+        }
+        
+        // Create our olc::Image
+        if (!image.CreateNoGPU({width, height})) {
+            return false; // Failed to create image
+        }
+        
+        // Clear and resize the pixel vector
+        image.GetPixels().clear();
+        image.GetPixels().resize(width * height);
+        
+        // The api_macos will provide RGBA format with 4 bytes per pixel
+        std::memcpy(image.GetPixels().data(), pixelData, width * height * 4);
+        
+        return true;
+
     }
 
     bool ImageLoader_iOS::CreateImageFromMemory(olc::Image& image, const std::vector<uint8_t>& data)
     {
-        // TODO: Implement memory-based image loading for iOS
-        return false;
+        return CreateImageFromMemory(image, data.data(), data.size());
     }
 
     bool ImageLoader_iOS::WriteImageToFile(const olc::Image& image, const std::string& sFileName)
     {
-        // TODO: Implement image writing for iOS
+        olc_IgnoreUnused(image, sFileName);
         return false;
     }
 
     bool ImageLoader_iOS::WriteImageToMemoryFile(olc::Image& image, const std::vector<uint8_t>& data)
     {
-        // TODO: Implement image memory writing for iOS
+        olc_IgnoreUnused(image, data);
         return false;
     }
 }
