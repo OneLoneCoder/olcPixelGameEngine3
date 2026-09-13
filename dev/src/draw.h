@@ -203,6 +203,8 @@ namespace olc
 	public:
 		// Sets the drawing target of this drawing toolbox
 		void SetTarget(olc::Image& image);
+		// Sets multiple drawing targets for this drawing toolbox
+		void SetTargets(std::initializer_list<olc::Image *> targets);
 		// Get the current drawing target
 		olc::Image& GetTarget();
 		// Get Size of drawing target (aka GetTarget()->Size())
