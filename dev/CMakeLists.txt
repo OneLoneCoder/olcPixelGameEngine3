@@ -67,6 +67,10 @@ if(BUILD_EXTENSIONS)
     add_subdirectory(${REPO_ROOT_DIR}/extensions extensions)
 endif()
 
+if(BUILD_EXTENSIONS)
+    add_subdirectory(extensions)
+endif()
+
 if(BUILD_TEST)
     add_subdirectory(tests)
 endif()
