@@ -58,6 +58,10 @@ set(HOST_WIN_WINAPI_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_win_winapi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_win_winapi.h
 )
+set(HOST_WXWIDGETS_SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_wxwidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/host_wdwidgets.h
+)
 set(IMAGELOADER_ANDROID_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/imload_android.h
@@ -100,6 +104,7 @@ list(
     ${HOST_LINUX_X11_SOURCE_FILES}
     ${HOST_WEB_EMSCRIPTEN_SOURCE_FILES}
     ${HOST_WIN_WINAPI_SOURCE_FILES}
+    ${HOST_WXWIDGETS_SOURCE_FILES}
     ${IMAGELOADER_ANDROID_SOURCE_FILES}
     ${IMAGELOADER_MACOS_SOURCE_FILES}
     ${IMAGELOADER_LIBPNG_SOURCE_FILES}
@@ -180,161 +185,15 @@ else()
     endif()
 endif()
 
-if(EMSCRIPTEN)
-    # build Cache: libpng, zlib
-    execute_process(COMMAND "${EMSCRIPTEN_ROOT_PATH}/embuilder${EMCC_SUFFIX}" build libpng zlib)
-    set(CMAKE_EXECUTABLE_SUFFIX .html)
-endif()
+# Instruct our helper that we want to use the multi-header
+set(MULTI_HEADER true)
 
-set(EXE_NAME test_mh)
+# See: cmake/Helpers.cmake
+add_example(test_mh test_mh.cpp ${HOST_SOURCE_FILES} ${GPU_SOURCE_FILES} ${IMAGELOADER_SOURCE_FILES} ${SOURCES})
 
-add_executable(${EXE_NAME} test_mh.cpp ${HOST_SOURCE_FILES} ${GPU_SOURCE_FILES} ${IMAGELOADER_SOURCE_FILES} ${SOURCES})
+# Include the example assets, for convenient usage in our test
+# See: cmake/Helpers.cmake
+handle_assets(test_mh ${CMAKE_SOURCE_DIR}/examples/assets)
 
-target_include_directories(${EXE_NAME} PRIVATE ../src)
-
-if(USE_HEADLESS)
-    target_compile_definitions(${EXE_NAME} PRIVATE OLC_USE_HEADLESS=1)
-endif()
-
-if(APPLE)
-    if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-        # TODO: Building for iOS
-    else()
-        target_link_libraries(${EXE_NAME} PRIVATE "-framework Metal")
-        target_link_libraries(${EXE_NAME} PRIVATE "-framework MetalKit")
-        target_link_libraries(${EXE_NAME} PRIVATE "-framework AppKit")
-        target_link_libraries(${EXE_NAME} PRIVATE "-framework QuartzCore")
-        target_link_libraries(${EXE_NAME} PRIVATE "-framework OpenGL")
-        target_link_libraries(${EXE_NAME} PRIVATE "-framework Foundation")
-    endif()
-endif() # APPLE
-    
-if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
-    if(BUILD_WAYLAND)
-        find_package(PkgConfig REQUIRED)
-        pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
-        pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
-        pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
-        pkg_check_modules(EGL REQUIRED egl)
-
-        find_package(OpenGL REQUIRED)
-        find_package(PNG REQUIRED)
-        find_package(Threads REQUIRED)
-
-        if(NOT BUILD_EXAMPLES)
-            # Find wayland-scanner
-            find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
-
-            # Check for wayland protocols
-            set(XDG_SHELL_PROTOCOL "/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml")
-            set(XDG_DECORATION_PROTOCOL "/usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml")
-
-            if(NOT EXISTS ${XDG_SHELL_PROTOCOL})
-                message(FATAL_ERROR "xdg-shell protocol not found. You may need to install wayland-protocols via your package manager")
-            endif()
-
-            if(NOT EXISTS ${XDG_DECORATION_PROTOCOL})
-                message(FATAL_ERROR "xdg-decoration protocol not found. You may need to install wayland-protocols via your package manager")
-            endif()
-
-            # Generate wayland protocol files
-            set(XDG_SHELL_C ${CMAKE_CURRENT_BINARY_DIR}/xdg-shell.c)
-            set(XDG_SHELL_H ${CMAKE_CURRENT_BINARY_DIR}/xdg-shell.h)
-            set(XDG_DECORATION_C ${CMAKE_CURRENT_BINARY_DIR}/xdg-decoration.c)
-            set(XDG_DECORATION_H ${CMAKE_CURRENT_BINARY_DIR}/xdg-decoration.h)
-
-            add_custom_command(
-                OUTPUT ${XDG_SHELL_C}
-                COMMAND ${WAYLAND_SCANNER} private-code ${XDG_SHELL_PROTOCOL} ${XDG_SHELL_C}
-                DEPENDS ${XDG_SHELL_PROTOCOL}
-                VERBATIM
-            )
-
-            add_custom_command(
-                OUTPUT ${XDG_SHELL_H}
-                COMMAND ${WAYLAND_SCANNER} client-header ${XDG_SHELL_PROTOCOL} ${XDG_SHELL_H}
-                DEPENDS ${XDG_SHELL_PROTOCOL}
-                VERBATIM
-            )
-
-            add_custom_command(
-                OUTPUT ${XDG_DECORATION_C}
-                COMMAND ${WAYLAND_SCANNER} private-code ${XDG_DECORATION_PROTOCOL} ${XDG_DECORATION_C}
-                DEPENDS ${XDG_DECORATION_PROTOCOL}
-                VERBATIM
-            )
-
-            add_custom_command(
-                OUTPUT ${XDG_DECORATION_H}
-                COMMAND ${WAYLAND_SCANNER} client-header ${XDG_DECORATION_PROTOCOL} ${XDG_DECORATION_H}
-                DEPENDS ${XDG_DECORATION_PROTOCOL}
-                VERBATIM
-            )
-
-            # Create a library for the wayland protocol files
-            add_library(wayland_protocols STATIC
-                ${XDG_SHELL_C}
-                ${XDG_SHELL_H}
-                ${XDG_DECORATION_C}
-                ${XDG_DECORATION_H}
-            )
-
-            target_include_directories(wayland_protocols PUBLIC
-                ${CMAKE_CURRENT_BINARY_DIR}
-            )
-        endif() # if not build_examples
-        
-        target_compile_definitions(${EXE_NAME} PRIVATE OLC_HOST=3)
-
-        target_link_libraries(${EXE_NAME} PRIVATE
-            wayland_protocols
-            ${XKBCOMMON_LIBRARIES}
-            ${WAYLAND_CLIENT_LIBRARIES}
-            ${WAYLAND_EGL_LIBRARIES}
-            ${EGL_LIBRARIES}
-            OpenGL::GL
-            PNG::PNG
-            Threads::Threads
-        )            
-
-    else() # x11
-        target_link_libraries(${EXE_NAME} PRIVATE png)
-        target_link_libraries(${EXE_NAME} PRIVATE GL)
-        target_link_libraries(${EXE_NAME} PRIVATE pthread)
-        target_link_libraries(${EXE_NAME} PRIVATE X11)
-    endif()
-endif()
-
-if(WIN32 AND NOT MSVC AND NOT EMSCRIPTEN)
-    target_link_libraries(${EXE_NAME} PRIVATE user32)
-    target_link_libraries(${EXE_NAME} PRIVATE gdi32)
-    target_link_libraries(${EXE_NAME} PRIVATE dwmapi)
-    target_link_libraries(${EXE_NAME} PRIVATE gdiplus)
-    target_link_libraries(${EXE_NAME} PRIVATE shlwapi)
-    target_link_libraries(${EXE_NAME} PRIVATE opengl32)
-endif()
-    
-if(EMSCRIPTEN)
-    target_link_options(${EXE_NAME} PRIVATE -sASYNCIFY)
-    target_link_options(${EXE_NAME} PRIVATE -sALLOW_MEMORY_GROWTH=1)
-    target_link_options(${EXE_NAME} PRIVATE -sSTACK_SIZE=1048576)
-    target_link_options(${EXE_NAME} PRIVATE -sEXPORTED_RUNTIME_METHODS=HEAPF32)
-    target_link_options(${EXE_NAME} PRIVATE -sMAX_WEBGL_VERSION=2)
-    target_link_options(${EXE_NAME} PRIVATE -sMIN_WEBGL_VERSION=2)
-    target_link_options(${EXE_NAME} PRIVATE -sUSE_LIBPNG=1)
-    target_link_options(${EXE_NAME} PRIVATE -sLLD_REPORT_UNDEFINED)
-    target_link_options(${EXE_NAME} PRIVATE --preload-file ${CMAKE_SOURCE_DIR}/examples/assets@assets)
-endif()
-
-if(NOT EMSCRIPTEN)
-    # Copy assets when not Web platform
-    add_custom_command(
-        TARGET ${EXE_NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy_directory ${CMAKE_SOURCE_DIR}/examples/assets ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/assets
-    )        
-endif()
-
-
+target_include_directories(test_mh PRIVATE ../src)
 

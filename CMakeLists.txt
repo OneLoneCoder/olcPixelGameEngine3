@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.19)
 project(olcPixelGameEngine VERSION 3.0.0)
 
 option(BUILD_EXAMPLES "Build example programs" OFF)
+option(BUILD_EXTENSIONS "Build extension example programs" OFF)
+option(BUILD_TEST "Build development test program" OFF)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+include(${CMAKE_SOURCE_DIR}/cmake/Helpers.cmake)
 
 # Make sure we have the header tool
 include(FetchContent)
@@ -49,8 +49,17 @@ add_custom_target(CopyHeader
 add_library(olcPixelGameEngine3 INTERFACE olcPixelGameEngine3.h)
 add_dependencies(olcPixelGameEngine3 CopyHeader)
 
+if(BUILD_EXAMPLES OR BUILD_TEST OR BUILD_EXTENSIONS)
+    # see: cmake/Helpers.cmake
+    prepare_platforms()
+endif()
+
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if(BUILD_EXTENSIONS)
+    add_subdirectory(extensions)
 endif()
 
 if(BUILD_TEST)
