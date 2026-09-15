@@ -3,11 +3,18 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		460496082E362F190047E223 /* test_mh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495FB2E300E0F0047E223 /* test_mh.cpp */; };
+		4610525930593E6D00C2BC3A /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF82E39135B00B74FA3 /* OpenGL.framework */; };
+		4610525A30593E6D00C2BC3A /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5942E40F8B0009734EC /* MetalKit.framework */; };
+		4610525B30593E6D00C2BC3A /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B1E5922E40F8A6009734EC /* AppKit.framework */; };
+		4610525C30593E6D00C2BC3A /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DFC2E39137100B74FA3 /* Metal.framework */; };
+		4610525D30593E6D00C2BC3A /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DFA2E39136800B74FA3 /* QuartzCore.framework */; };
+		4610525E30593E6D00C2BC3A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF62E39135300B74FA3 /* Foundation.framework */; };
+		4610526630593EE400C2BC3A /* assets in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4610526530593EE400C2BC3A /* assets */; };
 		46152BD72FE2DD1E00DCAC34 /* hw_touch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46152BD62FE2DD1E00DCAC34 /* hw_touch.cpp */; };
 		462680A42E69D03800799C36 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 460495EC2E300E000047E223 /* image.cpp */; };
 		462680A52E69D15C00799C36 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46E85DF82E39135B00B74FA3 /* OpenGL.framework */; };
@@ -32,6 +39,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		4610525F30593E6D00C2BC3A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				4610526630593EE400C2BC3A /* assets in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8998CE1E2E057F4E007DDD96 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -67,6 +84,9 @@
 		460495F12E300E000047E223 /* window.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = window.h; sourceTree = "<group>"; };
 		460495F22E300E000047E223 /* window.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window.cpp; sourceTree = "<group>"; };
 		460495FB2E300E0F0047E223 /* test_mh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_mh.cpp; sourceTree = "<group>"; };
+		4610522030593E6300C2BC3A /* olcPixelGameEngine3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = olcPixelGameEngine3.h; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/olcPixelGameEngine3.h; sourceTree = "<absolute>"; };
+		4610526330593E6D00C2BC3A /* olcPGE3_SH */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = olcPGE3_SH; sourceTree = BUILT_PRODUCTS_DIR; };
+		4610526530593EE400C2BC3A /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../examples/assets; sourceTree = "<group>"; };
 		46152BD52FE2DD1E00DCAC34 /* hw_touch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hw_touch.h; sourceTree = "<group>"; };
 		46152BD62FE2DD1E00DCAC34 /* hw_touch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hw_touch.cpp; sourceTree = "<group>"; };
 		462680D02E6C3C4500799C36 /* gpu_iface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gpu_iface.cpp; sourceTree = "<group>"; };
@@ -103,7 +123,64 @@
 		8998CE372E057F92007DDD96 /* transform2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = transform2d.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4610526430593E6D00C2BC3A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				olcPGE3_AntiAliasing.cpp,
+				olcPGE3_BatchesOfFills.cpp,
+				olcPGE3_BatchesOfLines.cpp,
+				olcPGE3_BlendingModes.cpp,
+				olcPGE3_Camera2D_Tiles.cpp,
+				olcPGE3_CirclesEllipses.cpp,
+				olcPGE3_Extensions.cpp,
+				olcPGE3_Fish.cpp,
+				olcPGE3_FrameGraph.cpp,
+				"olcPGE3_ImageQuads-FromMemory.cpp",
+				olcPGE3_ImageQuads.cpp,
+				olcPGE3_ImageRect.cpp,
+				olcPGE3_ImageRegion.cpp,
+				olcPGE3_ImageScaleRotate.cpp,
+				olcPGE3_ImageTiling.cpp,
+				olcPGE3_Keyboard.cpp,
+				olcPGE3_Lines.cpp,
+				olcPGE3_LocalTransforms.cpp,
+				olcPGE3_Mouse.cpp,
+				olcPGE3_Pixels.cpp,
+				olcPGE3_PixelShaders.cpp,
+				olcPGE3_Polygons.cpp,
+				olcPGE3_Rectangles.cpp,
+				olcPGE3_Shockwave.cpp,
+				olcPGE3_SimplePixelShaders.cpp,
+				olcPGE3_TextBasics.cpp,
+				olcPGE3_TextFontMap.cpp,
+				olcPGE3_Touch.cpp,
+				olcPGE3_WorldTransform.cpp,
+			);
+			target = 4610524630593E6D00C2BC3A /* olcPGE3_SH */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		4610521930593E6300C2BC3A /* examples */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4610526430593E6D00C2BC3A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = examples; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/examples; sourceTree = "<absolute>"; };
+		4610521F30593E6300C2BC3A /* extensions */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = extensions; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/extensions; sourceTree = "<absolute>"; };
+		4610522730593E6300C2BC3A /* utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = utilities; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/utilities; sourceTree = "<absolute>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		4610525830593E6D00C2BC3A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4610525930593E6D00C2BC3A /* OpenGL.framework in Frameworks */,
+				4610525A30593E6D00C2BC3A /* MetalKit.framework in Frameworks */,
+				4610525B30593E6D00C2BC3A /* AppKit.framework in Frameworks */,
+				4610525C30593E6D00C2BC3A /* Metal.framework in Frameworks */,
+				4610525D30593E6D00C2BC3A /* QuartzCore.framework in Frameworks */,
+				4610525E30593E6D00C2BC3A /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8998CE1D2E057F4E007DDD96 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -136,6 +213,11 @@
 		8998CE172E057F4E007DDD96 = {
 			isa = PBXGroup;
 			children = (
+				4610526530593EE400C2BC3A /* assets */,
+				4610521930593E6300C2BC3A /* examples */,
+				4610521F30593E6300C2BC3A /* extensions */,
+				4610522030593E6300C2BC3A /* olcPixelGameEngine3.h */,
+				4610522730593E6300C2BC3A /* utilities */,
 				8998CE322E057F92007DDD96 /* src */,
 				8998CE2A2E057F85007DDD96 /* tests */,
 				46E85DF52E39135300B74FA3 /* Frameworks */,
@@ -147,6 +229,7 @@
 			isa = PBXGroup;
 			children = (
 				8998CE202E057F4E007DDD96 /* olcPGE3 */,
+				4610526330593E6D00C2BC3A /* olcPGE3_SH */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -220,6 +303,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4610524630593E6D00C2BC3A /* olcPGE3_SH */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4610526030593E6D00C2BC3A /* Build configuration list for PBXNativeTarget "olcPGE3_SH" */;
+			buildPhases = (
+				4610524730593E6D00C2BC3A /* Sources */,
+				4610525830593E6D00C2BC3A /* Frameworks */,
+				4610525F30593E6D00C2BC3A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4610521930593E6300C2BC3A /* examples */,
+				4610521F30593E6300C2BC3A /* extensions */,
+				4610522730593E6300C2BC3A /* utilities */,
+			);
+			name = olcPGE3_SH;
+			productName = olcPGE3;
+			productReference = 4610526330593E6D00C2BC3A /* olcPGE3_SH */;
+			productType = "com.apple.product-type.tool";
+		};
 		8998CE1F2E057F4E007DDD96 /* olcPGE3 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8998CE272E057F4E007DDD96 /* Build configuration list for PBXNativeTarget "olcPGE3" */;
@@ -231,6 +336,11 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4610521930593E6300C2BC3A /* examples */,
+				4610521F30593E6300C2BC3A /* extensions */,
+				4610522730593E6300C2BC3A /* utilities */,
 			);
 			name = olcPGE3;
 			productName = olcPGE3;
@@ -265,11 +375,19 @@
 			projectRoot = "";
 			targets = (
 				8998CE1F2E057F4E007DDD96 /* olcPGE3 */,
+				4610524630593E6D00C2BC3A /* olcPGE3_SH */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4610524730593E6D00C2BC3A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8998CE1C2E057F4E007DDD96 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -296,6 +414,29 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		4610526130593E6D00C2BC3A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4610526230593E6D00C2BC3A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				HEADER_SEARCH_PATHS = "$[PROJECT_DIR]/";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		8998CE252E057F4E007DDD96 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -430,6 +571,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4610526030593E6D00C2BC3A /* Build configuration list for PBXNativeTarget "olcPGE3_SH" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4610526130593E6D00C2BC3A /* Debug */,
+				4610526230593E6D00C2BC3A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		8998CE1B2E057F4E007DDD96 /* Build configuration list for PBXProject "olcPGE3" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
