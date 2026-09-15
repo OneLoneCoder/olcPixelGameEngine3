@@ -193,7 +193,7 @@ add_example(test_mh test_mh.cpp ${HOST_SOURCE_FILES} ${GPU_SOURCE_FILES} ${IMAGE
 
 # Include the example assets, for convenient usage in our test
 # See: cmake/Helpers.cmake
-handle_assets(test_mh ${CMAKE_SOURCE_DIR}/examples/assets)
+handle_assets(test_mh ${REPO_ROOT_DIR}/examples/assets)
 
 target_include_directories(test_mh PRIVATE ../src)
 

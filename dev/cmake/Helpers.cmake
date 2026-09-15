@@ -90,7 +90,7 @@ function(add_example EXAMPLE_NAME)
     
     if(NOT MULTI_HEADER)
         target_link_libraries(${EXAMPLE_NAME} PRIVATE olcPixelGameEngine3)
-        target_include_directories(${EXAMPLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
+        target_include_directories(${EXAMPLE_NAME} PRIVATE ${REPO_ROOT_DIR})
     endif()
     
     if(USE_STB)

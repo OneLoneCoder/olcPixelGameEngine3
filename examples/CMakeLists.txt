@@ -9,5 +9,5 @@ foreach(source ${SOURCES})
     add_example(${EXE_NAME} ${source})
     
     # Add assets to this example, see: cmake/Helpers.cmake
-    handle_assets(${EXE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+    handle_assets(${EXE_NAME} ${REPO_ROOT_DIR}/examples/assets)
 endforeach()

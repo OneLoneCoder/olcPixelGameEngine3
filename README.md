@@ -112,7 +112,7 @@ By far the easiest way to use olcPixelGameEngine3 is to simply include the heade
 
 Configure with:
 ```bash
-cmake -S . -B build
+cmake -S dev -B build
 ```
 
 **Note**: If using emscripten prepend the configuration command with ``emcmake``
