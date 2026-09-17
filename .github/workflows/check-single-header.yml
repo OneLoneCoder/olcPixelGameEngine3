@@ -24,7 +24,7 @@ jobs:
 
     - name: Build and run single header amalgamation tool (olcGimmeHead)
       run: |
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        cmake -S dev -B build -DCMAKE_BUILD_TYPE=Release
         cmake --build build --config=Release
 
     - name: Check that both headers are identical
