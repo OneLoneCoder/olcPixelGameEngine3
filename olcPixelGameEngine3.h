@@ -2736,6 +2736,8 @@ namespace olc
 			virtual bool AssignTextureSource(const uint32_t slot, const uint32_t texid) = 0;
 			// Makes active the given texture resource (for subsequent rendering operations)
 			virtual bool AssignTextureTarget(const uint32_t slot, const uint32_t texid) = 0;
+			// Detaches any texture from the specified render target slot
+			virtual bool DetachTextureTarget(const uint32_t slot) = 0;
 			// Resolves an MSAA texture into a normal texture
 			virtual bool ResolveMSAA(const uint32_t msaaTexId) = 0;
 
@@ -2812,6 +2814,8 @@ namespace olc
 	public:
 		// Sets the drawing target of this drawing toolbox
 		void SetTarget(olc::Image& image);
+		// Sets multiple drawing targets for this drawing toolbox
+		void SetTargets(std::initializer_list<olc::Image *> targets);
 		// Get the current drawing target
 		olc::Image& GetTarget();
 		// Get Size of drawing target (aka GetTarget()->Size())
@@ -7157,6 +7161,8 @@ namespace olc
 			void glSwapInterval(GLsizei n);
 
 			// Constants
+			static constexpr GLenum GL_NONE_X = 0x0000;
+			static constexpr GLenum GL_TEXTURE_2D_X = 0x0DE1;
 			static constexpr GLenum GL_FRAMEBUFFER_COMPLETE_X = 0x8CD5;
 			static constexpr GLenum GL_TEXTURE_2D_MULTISAMPLE_X = 0x9100;
 			static constexpr GLenum GL_COLOR_ATTACHMENT0_X = 0x8CE0;
@@ -7224,6 +7230,8 @@ namespace olc
 			bool AssignTextureSource(const uint32_t slot, const uint32_t texid) override;
 			// Makes active the given texture resource (for subsequent rendering operations)
 			bool AssignTextureTarget(const uint32_t slot, const uint32_t texid) override;
+			// Detaches any texture from the specified render target slot
+			bool DetachTextureTarget(const uint32_t slot) override;
 			// Resolves an MSAA texture into a normal texture
 			virtual bool ResolveMSAA(const uint32_t msaaTexId) override;
 
@@ -7285,6 +7293,8 @@ namespace olc
 			uint32_t nDepthRBO = 0;              // Shared depth renderbuffer
 			olc::vi2d vCurrentDepthSize = {0, 0}; // Track current depth buffer size
 			int32_t nCurrentDepthSamples = 0;     // Track current MSAA sample count
+			uint8_t nActiveAttachmentMask = 0x01; // Bitmask of active color attachment slots
+			int RebuildDrawBuffers();
 
 #if OLC_HOST == OLC_HOST_ANDROID
 			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
@@ -17394,6 +17404,7 @@ void main()
 		if (texid == 0)
 		{
 			// Unbind the FBO (bind default framebuffer)
+			nActiveAttachmentMask = 0x01;
 			gl.glBindFramebuffer(gl.GL_FRAMEBUFFER_X, nScreenFBO);
 			return true;
 		}	
@@ -17455,21 +17466,10 @@ void main()
 			);
 		}
 
-		// Allocate target buffers - pick the single attachment corresponding to 'slot'
-		std::array<GLenum, 8> attachments =
-		{ { 
-			gl.GL_COLOR_ATTACHMENT0_X + 0, 
-			gl.GL_COLOR_ATTACHMENT0_X + 1,
-			gl.GL_COLOR_ATTACHMENT0_X + 2, 
-			gl.GL_COLOR_ATTACHMENT0_X + 3,
-			gl.GL_COLOR_ATTACHMENT0_X + 4, 
-			gl.GL_COLOR_ATTACHMENT0_X + 5,
-			gl.GL_COLOR_ATTACHMENT0_X + 6, 
-			gl.GL_COLOR_ATTACHMENT0_X + 7
-		} };
-		GLenum draw = attachments[slot];
-		gl.glDrawBuffers(1, &draw);
-		
+		// Update active attachment bitmask and rebuild draw buffers
+		nActiveAttachmentMask |= (1 << slot);
+		RebuildDrawBuffers();
+
 		// If target texture is MSAA, enable multisampling
 		if (mapTextureToRenderbuffer.contains(texid))
 		{
@@ -17505,6 +17505,61 @@ void main()
 
 	nCurrentTextureTarget = texid;		
 	return true;
+	}
+
+	bool Renderer_OGL33::DetachTextureTarget(const uint32_t slot)
+	{
+		// No-op if slot is not active
+		if (!(nActiveAttachmentMask & (1 << slot)))
+			return true;
+
+		auto &gl = olc::apis::opengl::gl::Get();
+
+		// Detach texture from this attachment slot
+		gl.glFramebufferTexture2D(
+			gl.GL_FRAMEBUFFER_X,
+			gl.GL_COLOR_ATTACHMENT0_X + slot,
+			gl.GL_TEXTURE_2D_X,
+			0,
+			0);
+
+		// Also detach any renderbuffer (MSAA case)
+		gl.glFramebufferRenderbuffer(
+			gl.GL_FRAMEBUFFER_X,
+			gl.GL_COLOR_ATTACHMENT0_X + slot,
+			gl.GL_RENDERBUFFER_X,
+			0);
+
+		// Clear the bit and rebuild draw buffers
+		nActiveAttachmentMask &= ~(1 << slot);
+		RebuildDrawBuffers();
+
+		return true;
+	}
+
+	int Renderer_OGL33::RebuildDrawBuffers()
+	{
+		auto& gl = olc::apis::opengl::gl::Get();
+
+		// GL_NONE is required for inactive slots so that the fragment shader
+		// `layout(location = N)` outputs are mapped correctly
+		std::array<GLenum, 8> drawBuffers;
+		int maxSlot = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			if (nActiveAttachmentMask & (1 << i))
+			{
+				drawBuffers[i] = gl.GL_COLOR_ATTACHMENT0_X + i;
+				maxSlot = i + 1;
+			}
+			else
+			{
+				drawBuffers[i] = gl.GL_NONE_X;
+			}
+		}
+		if (maxSlot > 0)
+			gl.glDrawBuffers(maxSlot, drawBuffers.data());
+		return maxSlot;
 	}
 
 	bool Renderer_OGL33::ResolveMSAA(const uint32_t texid)
@@ -17960,6 +18015,49 @@ void Draw::SetTarget(olc::Image& image)
 	// Configure default render target
 	pRenderer->AssignTextureTarget(0, uint32_t(pTarget->GetGPUID()));
 	pRenderer->SetViewport({ 0,0 }, pTarget->Size());
+
+	// Detach any MRT attachments from a previous SetTargets call
+	for (uint32_t i = 1; i < 8; i++)
+		pRenderer->DetachTextureTarget(i);
+}
+
+void Draw::SetTargets(std::initializer_list<olc::Image *> targets)
+{
+	if (targets.size() == 0) return;
+
+	// Perform any outstanding tasks for current target
+	ProcessGPUTasks();
+
+	// MSAA resolve for previous target if needed
+	if (pTarget && pTarget->GetConfig().MSAA)
+		pRenderer->ResolveMSAA(uint32_t(pTarget->GetGPUID()));
+
+	// Attach each image to its corresponding slot
+	olc::vi2d size = (*targets.begin())->Size();
+	uint32_t slot = 0;
+	for (auto *img : targets)
+	{
+		PrepareImageForHW(*img);
+#if defined(OLC_GPU_ERRORCHECK) && OLC_GPU_ERRORCHECK == 1
+		if (img->Size() != size)
+			std::cout << "Warning MRT: Target at slot " << slot << " has mismatched size ("
+				<< img->Size().x << "x" << img->Size().y << " vs "
+				<< size.x << "x" << size.y << ")\n";
+		if (img->GetConfig().MSAA != (*targets.begin())->GetConfig().MSAA)
+			std::cout << "Warning MRT: Target at slot " << slot << " has mismatched MSAA config\n";
+#endif
+		pRenderer->AssignTextureTarget(slot, uint32_t(img->GetGPUID()));
+		slot++;
+	}
+
+	// Detach any previously-used higher slots
+	for (uint32_t i = slot; i < 8; i++)
+		pRenderer->DetachTextureTarget(i);
+
+	// Track slot 0 as the "primary" target
+	pTarget = *targets.begin();
+	WorldReset();
+	pRenderer->SetViewport({0, 0}, size);
 }
 
 olc::Image& olc::Draw::GetTarget()

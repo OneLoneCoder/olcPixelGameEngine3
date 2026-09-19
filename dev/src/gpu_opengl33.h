@@ -46,6 +46,8 @@ namespace olc
 			bool AssignTextureSource(const uint32_t slot, const uint32_t texid) override;
 			// Makes active the given texture resource (for subsequent rendering operations)
 			bool AssignTextureTarget(const uint32_t slot, const uint32_t texid) override;
+			// Detaches any texture from the specified render target slot
+			bool DetachTextureTarget(const uint32_t slot) override;
 			// Resolves an MSAA texture into a normal texture
 			virtual bool ResolveMSAA(const uint32_t msaaTexId) override;
 
@@ -107,6 +109,8 @@ namespace olc
 			uint32_t nDepthRBO = 0;              // Shared depth renderbuffer
 			olc::vi2d vCurrentDepthSize = {0, 0}; // Track current depth buffer size
 			int32_t nCurrentDepthSamples = 0;     // Track current MSAA sample count
+			uint8_t nActiveAttachmentMask = 0x01; // Bitmask of active color attachment slots
+			int RebuildDrawBuffers();
 
 #if OLC_HOST == OLC_HOST_ANDROID
 			EGLConfig FindBestConfig(EGLDisplay display, int desiredMultisamples = OLC_MSAA_SAMPLES);
