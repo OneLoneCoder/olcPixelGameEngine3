@@ -212,16 +212,15 @@ namespace olc::host {
     bool Host_Apple_MacOS::SetMousePosition(olc::Window* pWindow, const olc::vi2d& vPos)
     {
         olc_IgnoreUnused(pWindow);
-        dispatch_sync(dispatch_get_main_queue(), ^{
-            pMacOSWindow->setCursorPosition(vPos.x, vPos.y);
-        });
+        vPositionMouse = vPos;
+        this->vPendingMainThreadTasks.push_back(SET_MOUSE_POSITION);
         return false;
     }
 
     bool Host_Apple_MacOS::SetMouseVisible(olc::Window* pWindow, const bool bVisible)
     {
         olc_IgnoreUnused(pWindow);
-        dispatch_sync(dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
             pMacOSWindow->setCursorVisibility(bVisible);
         });
         return true;
@@ -553,6 +552,13 @@ namespace olc::host {
                 case RESIGN_ACTIVE:
                 {
                     pPGEwindow->olc_OnFocus(false);
+                    break;
+                }
+                case SET_MOUSE_POSITION:
+                {
+                    // Set mouse position on main thread
+                    pMacOSWindow->setCursorPosition(vPositionMouse.x, vPositionMouse.y);
+                    res = false; // No need to skip frame
                     break;
                 }
                 case NONE:
