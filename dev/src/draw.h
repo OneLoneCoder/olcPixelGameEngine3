@@ -233,16 +233,29 @@ namespace olc
 			const olc::Pixel col = olc::Colour::WHITE,
 			const olc::Pixel tint = olc::Colour::WHITE);
 
+		// Lower-Level Pixel Manipulation
+
 		// Read a pixel from an image (guarantees fresh)
 		olc::Pixel GetPixel(
 			olc::Image& image, 
 			const olc::vf2d& pos,
 			const olc::Pixel failcol = olc::Colour::BLACK);
 
+		// Write a pixel to an image
+		void SetPixel(
+			olc::Image& image,
+			const olc::vf2d& pos,
+			const olc::Pixel col = olc::Colour::WHITE);
+
 		// Read a pixel from target image (guarantees fresh)
 		olc::Pixel GetPixel(			
 			const olc::vf2d& pos,
 			const olc::Pixel failcol = olc::Colour::BLACK);
+
+		// Write a pixel to target image 
+		void SetPixel(
+			const olc::vf2d& pos,
+			const olc::Pixel col = olc::Colour::WHITE);
 
 		// Read an untransformed pixel from an image (guarantees fresh)
 		olc::Pixel GetRawPixel(
@@ -250,19 +263,41 @@ namespace olc
 			const olc::vi2d& pos,
 			const olc::Pixel failcol = olc::Colour::BLACK);
 
+		// Write an untransformed pixel to an image
+		void SetRawPixel(
+			olc::Image& image,
+			const olc::vi2d& pos,
+			const olc::Pixel col = olc::Colour::WHITE);
+
 		// Read an untransformed pixel from target image (guarantees fresh)
 		olc::Pixel GetRawPixel(
 			const olc::vi2d& pos,
 			const olc::Pixel failcol = olc::Colour::BLACK);
+
+		// Write an untransformed pixel to target image
+		void SetRawPixel(
+			const olc::vi2d& pos,
+			const olc::Pixel col = olc::Colour::WHITE);
 
 		// Read an untransformed pixel from a target image with no bounds checking (gurantees fresh)
 		olc::Pixel GetUnsafeRawPixel(
 			olc::Image& image,
 			const olc::vi2d& pos);
 
+		// Write an untransformed pixel to a target image with no bounds checking
+		void SetUnsafeRawPixel(
+			olc::Image& image,
+			const olc::vi2d& pos,
+			const olc::Pixel col = olc::Colour::WHITE);
+
 		// Read an untransformed pixel from target image with no bounds checking (gurantees fresh)
 		olc::Pixel GetUnsafeRawPixel(
 			const olc::vi2d& pos);
+
+		// Write an untransformed pixel to target image with no bounds checking
+		void SetUnsafeRawPixel(
+			const olc::vi2d& pos,
+			const olc::Pixel col = olc::Colour::WHITE);
 
 		// Clear entire draw target to specific colour
 		void Clear(const olc::Pixel& col);

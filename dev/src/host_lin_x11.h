@@ -16,6 +16,7 @@
 
 //! START DECLARATION
 #include <GL/gl.h>
+#include <poll.h>
 namespace X11
 {
 #include <X11/X.h>

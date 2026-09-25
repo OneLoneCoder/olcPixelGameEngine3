@@ -195,6 +195,26 @@ namespace olc
 		{
 			return { static_cast<F>(this->x), static_cast<F>(this->y) };
 		}
+
+		template<size_t N>
+		auto& get() & {
+			return std::get<N>(xy);
+		}
+
+		template<size_t N>
+		const auto& get() const & {
+			return std::get<N>(xy);
+		}
+
+		template<size_t N>
+		auto&& get() && {
+			return std::get<N>(xy);
+		}
+
+		template<size_t N>
+		const auto& get() const && {
+			return std::get<N>(xy);
+		}
 	};
 
 	// Multiplication operator overloads between vectors and scalars, and vectors and vectors
@@ -356,6 +376,16 @@ namespace olc
 	typedef v_2d<float> vf2d;
 	typedef v_2d<double> vd2d;
 }
+
+namespace std {
+	template<typename T>
+	struct tuple_size<olc::v_2d<T>> : std::integral_constant<std::size_t, 2> {};
+
+	
+	template<typename T, size_t N>
+	struct tuple_element<N, olc::v_2d<T>> : tuple_element<N, tuple<T, T>> {};
+}
+
 #define PGE_VECTOR2D_DECLARED 1
 #endif
 //! END DECLARATION

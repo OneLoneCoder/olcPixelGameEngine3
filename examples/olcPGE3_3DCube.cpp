@@ -1,7 +1,7 @@
 /*
 	olc::PixelGameEngine3 Example - olc::SanityCube!!!
 
-	Draws teh infamous olc::SanityCube using the hardware 3D rendering capabilities. 
+	Draws the infamous olc::SanityCube using the hardware 3D rendering capabilities. 
 	
 	Licenced under the OLC-3 License
 */
@@ -11,6 +11,8 @@
 // the Pixel Game Engine as part of this translation unit
 #define OLC_PGE3_APPLICATION
 #include "../olcPixelGameEngine3.h"
+
+#include <format>
 
 // Example application demonstrating basic 3D rendering. This class
 // overrides the olc::PixelGameEngine base class by implementing
@@ -123,7 +125,11 @@ public:
 		draw.Line({ 0,0,0 }, { 0, 1, 0 }, olc::Colour::GREEN);
 		draw.Line({ 0,0,0 }, { 0, 0, 1 }, olc::Colour::BLUE);
 
-		draw.StringProp({ 4, 4 }, "+X: Right\n-X: Left\n+Y: Up\n-Y: Down\n+Z: Q\n-Z: A\nSPIN: Space", olc::Colour::BLACK);
+		// Decompose the quaternion to demonstrate the structured binding support
+		const auto [x, y, z, w] = vViewTranslate;
+		draw.String({ 4, 4 }, std::format("X:{: 4.1f}  Y:{: 4.1f}  Z:{: 4.1f}  W:{: 4.1f}", x, y, z, w), olc::Colour::BLACK);
+		draw.StringProp({ 4, 14 }, "+X: Right\n-X: Left\n+Y: Up\n-Y: Down\n+Z: Q\n-Z: A\nSPIN: Space", olc::Colour::BLACK);
+
 
 		// Successful frame
 		return true;

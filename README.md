@@ -125,7 +125,8 @@ Header file should now be located at `build/olcPixelGameEngine3.h`.
 
 ### Available CMake Configuration Flags
 
-* ``-DBUILD_EXAMPLES=ON`` - builds examples, will be located at `build/examples`
+* ``-DBUILD_EXAMPLES=ON``   - builds examples, will be located at `build/dev/examples`
+* ``-DBUILD_EXTENSIONS=ON`` - builds examples, will be located at `build/dev/extensions`
 * ``-DBUILD_WAYLAND=ON``  - if examples are built, build them using wayland. Linux ONLY!
 * ``-DUSE_STB=ON``        - build using stb_image for the image loader (See section on STB Image)
 
@@ -138,13 +139,13 @@ cd examples
 ### Using GCC
 
 ```bash
-g++ -ggdb olcPGE3_ImageQuads.cpp -o olcPGE3_ImageQuads -std=c++20 -lpng -lGL -lX11 -lpthread
+g++ -ggdb olcPGE3_ImageQuads.cpp -o olcPGE3_ImageQuads -std=c++20 -lpng -lGL -lX11 -lXi -lpthread
 ```
 
 ### Using Clang
 
 ```bash
-clang++ -ggdb olcPGE3_ImageQuads.cpp -o olcPGE3_ImageQuads -std=c++20 -lpng -lGL -lX11 -lpthread
+clang++ -ggdb olcPGE3_ImageQuads.cpp -o olcPGE3_ImageQuads -std=c++20 -lpng -lGL -lX11 -lXi -lpthread
 ```
 
 ### Using Emscripten

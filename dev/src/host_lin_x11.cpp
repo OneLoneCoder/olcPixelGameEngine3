@@ -131,6 +131,10 @@ namespace olc::host
             return nullptr;
         };
 
+        // Create a pollfd that we will use later to wait for events to appear on the queue
+        // preventing the event loop from becoming a busy loop
+        pollfd x11_connection_fd {.fd = ConnectionNumber(olc_Display), .events = POLLIN};
+
         X11::XEvent xev;
         while(systemActive){
             while (XPending(olc_Display))
@@ -297,6 +301,9 @@ namespace olc::host
                     }
                 }
             }
+
+            // Wait until an event appears on the x11 event queue file descriptor
+            poll(&x11_connection_fd, 1, -1);
         }
 
         systemActive = false;

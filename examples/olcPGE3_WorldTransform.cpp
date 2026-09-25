@@ -132,6 +132,12 @@ public:
 		// Get Mouse in "transformed world" space
 		olc::vf2d vMouseWorld = draw.ScreenToWorld(vMouseScreen);
 
+		// Unpack the mouse coordinate to x and y just for fun and to serve as a compilation test for unpacking v_2d objects
+		const auto& [x1, y1] = vMouseWorld;
+		auto& [x2, y2] = vMouseWorld;
+		auto [x3, y3] = vMouseWorld;
+		auto&& [x4, y4] = vMouseWorld;
+
 		// Draw Status
 		draw.WorldReset();
 		draw.StringProp({ 8, 300 }, "Offset: Arrow Keys, Scale: Shift & Arrow Keys, Rotate: Q/A, SPACE: Reset");		

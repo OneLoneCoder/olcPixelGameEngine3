@@ -254,9 +254,25 @@ olc::Pixel olc::Draw::GetPixel(olc::Image& image, const olc::vf2d& pos,	const ol
 		return failcol;
 }
 
+void olc::Draw::SetPixel(olc::Image& image, const olc::vf2d& pos, const olc::Pixel col)
+{
+	// Check if in bounds
+	olc::vf2d tpos = transformAffine.forwardRound(pos);
+	if (tpos.x >= 0 && tpos.y >= 0 && tpos.x < float(pTarget->Size().x) && tpos.y < float(pTarget->Size().y))
+	{
+		PrepareImageForSW(image);
+		pTarget->Pixel(tpos) = col;
+	}
+}
+
 olc::Pixel olc::Draw::GetPixel(const olc::vf2d& pos, const olc::Pixel failcol)
 {	
 	return GetPixel(GetTarget(), pos, failcol);
+}
+
+void olc::Draw::SetPixel(const olc::vf2d& pos, const olc::Pixel col)
+{
+	SetPixel(GetTarget(), pos, col);
 }
 
 olc::Pixel olc::Draw::GetRawPixel(olc::Image& image, const olc::vi2d& pos, const olc::Pixel failcol)
@@ -270,9 +286,23 @@ olc::Pixel olc::Draw::GetRawPixel(olc::Image& image, const olc::vi2d& pos, const
 		return failcol;
 }
 
+void olc::Draw::SetRawPixel(olc::Image& image, const olc::vi2d& pos, const olc::Pixel col)
+{
+	if (pos.x >= 0 && pos.y >= 0 && pos.x < float(image.Size().x) && pos.y < float(image.Size().y))
+	{
+		PrepareImageForSW(image);
+		image.Pixel(pos) = col;
+	}
+}
+
 olc::Pixel olc::Draw::GetRawPixel(const olc::vi2d& pos, const olc::Pixel failcol)
 {
 	return GetRawPixel(GetTarget(), pos, failcol);
+}
+
+void olc::Draw::SetRawPixel(const olc::vi2d& pos, const olc::Pixel col)
+{
+	SetRawPixel(GetTarget(), pos, col);
 }
 
 olc::Pixel olc::Draw::GetUnsafeRawPixel(olc::Image& image, const olc::vi2d& pos)
@@ -281,9 +311,20 @@ olc::Pixel olc::Draw::GetUnsafeRawPixel(olc::Image& image, const olc::vi2d& pos)
 	return image.Pixel(pos);
 }
 
+void olc::Draw::SetUnsafeRawPixel(olc::Image& image, const olc::vi2d& pos, const olc::Pixel col)
+{
+	PrepareImageForSW(image);
+	image.Pixel(pos) = col;
+}
+
 olc::Pixel olc::Draw::GetUnsafeRawPixel(const olc::vi2d& pos)
 {
 	return GetUnsafeRawPixel(GetTarget(), pos);
+}
+
+void olc::Draw::SetUnsafeRawPixel(const olc::vi2d& pos, const olc::Pixel col)
+{
+	SetUnsafeRawPixel(GetTarget(), pos, col);
 }
 
 void olc::Draw::Clear(const olc::Pixel& col)

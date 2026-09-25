@@ -176,6 +176,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\extensions\miniaudio\olcPGEX3_Miniaudio.h" />
     <ClInclude Include="..\..\utilities\olcUTIL3_Animate2D.h" />
     <ClInclude Include="..\..\utilities\olcUTIL3_Camera2D.h" />
     <ClInclude Include="..\..\utilities\olcUTIL3_GameMode.h" />
@@ -276,6 +277,7 @@
     <ClInclude Include="..\src\window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\extensions\miniaudio\demo_Miniaudio.cpp" />
     <ClCompile Include="..\src\api_macos.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>

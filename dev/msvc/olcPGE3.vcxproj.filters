@@ -198,6 +198,9 @@
     <ClInclude Include="..\src\host_wxwidgets.h">
       <Filter>Hosts\wxWidgets Specific</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\extensions\miniaudio\olcPGEX3_Miniaudio.h">
+      <Filter>Extensions\MiniAudio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core.cpp">
@@ -277,6 +280,9 @@
     </ClCompile>
     <ClCompile Include="..\src\host_wxwidgets.cpp">
       <Filter>Hosts\wxWidgets Specific</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\extensions\miniaudio\demo_Miniaudio.cpp">
+      <Filter>Extensions\MiniAudio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

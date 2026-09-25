@@ -45,7 +45,8 @@ else()
 endif()
 
 add_custom_target(CopyHeader
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/olcPixelGameEngine3.h ${REPO_ROOT_DIR}/olcPixelGameEngine3.h
+    BYPRODUCTS ${REPO_ROOT_DIR}/olcPixelGameEngine3.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/olcPixelGameEngine3.h ${REPO_ROOT_DIR}/olcPixelGameEngine3.h
     DEPENDS olcPixelGameEngine3.h
 )
 

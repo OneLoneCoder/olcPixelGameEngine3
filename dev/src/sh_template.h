@@ -165,7 +165,11 @@
 
 
 
+#if OLC_HOST == OLC_HOST_MACOS
+//! GRAB api_macos.h DECLARATION
 
+//! GRAB api_macos_wrapper.hpp DECLARATION
+#endif
 
 #if !defined(OLC_USE_WXWIDGETS)
 
@@ -182,10 +186,6 @@
 #endif
 
 #if OLC_HOST == OLC_HOST_MACOS
-//! GRAB api_macos.h DECLARATION
-
-//! GRAB api_macos_wrapper.hpp DECLARATION
-
 //! GRAB host_apple_macos.h MACOS_CONFIG
 
 //! GRAB host_apple_macos.h DECLARATION
@@ -260,6 +260,10 @@
 
 #if defined(OLC_PGE3_APPLICATION) && !defined(PGE_HOST_IMPLEMENTED)
 
+#if OLC_HOST == OLC_HOST_MACOS
+//! GRAB api_macos.cpp IMPLEMENTATION
+#endif
+
 #if !defined(OLC_USE_WXWIDGETS)
 
 #if OLC_HOST == OLC_HOST_NONE
@@ -272,8 +276,6 @@
 
 #if OLC_HOST == OLC_HOST_MACOS
 //! GRAB host_apple_macos.cpp IMPLEMENTATION
-
-//! GRAB api_macos.cpp IMPLEMENTATION
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11

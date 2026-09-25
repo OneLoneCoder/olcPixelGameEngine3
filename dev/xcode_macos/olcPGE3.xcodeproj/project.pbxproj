@@ -84,7 +84,6 @@
 		460495F12E300E000047E223 /* window.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = window.h; sourceTree = "<group>"; };
 		460495F22E300E000047E223 /* window.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window.cpp; sourceTree = "<group>"; };
 		460495FB2E300E0F0047E223 /* test_mh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_mh.cpp; sourceTree = "<group>"; };
-		4610522030593E6300C2BC3A /* olcPixelGameEngine3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = olcPixelGameEngine3.h; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/olcPixelGameEngine3.h; sourceTree = "<absolute>"; };
 		4610526330593E6D00C2BC3A /* olcPGE3_SH */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = olcPGE3_SH; sourceTree = BUILT_PRODUCTS_DIR; };
 		4610526530593EE400C2BC3A /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../examples/assets; sourceTree = "<group>"; };
 		46152BD52FE2DD1E00DCAC34 /* hw_touch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hw_touch.h; sourceTree = "<group>"; };
@@ -110,6 +109,7 @@
 		46B1E5942E40F8B0009734EC /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		46C8F5B72E7DA67900C11019 /* imload_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imload_macos.h; sourceTree = "<group>"; };
 		46C8F5B82E7DA67900C11019 /* imload_macos.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imload_macos.cpp; sourceTree = "<group>"; };
+		46E03AD8305C0D3A003BFA1D /* olcPixelGameEngine3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = olcPixelGameEngine3.h; path = ../../olcPixelGameEngine3.h; sourceTree = "<group>"; };
 		46E85DF62E39135300B74FA3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		46E85DF82E39135B00B74FA3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		46E85DFA2E39136800B74FA3 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
@@ -124,7 +124,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4610526430593E6D00C2BC3A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		46E03B94305C0DC1003BFA1D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				olcPGE3_AntiAliasing.cpp,
@@ -162,9 +162,9 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4610521930593E6300C2BC3A /* examples */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4610526430593E6D00C2BC3A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = examples; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/examples; sourceTree = "<absolute>"; };
-		4610521F30593E6300C2BC3A /* extensions */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = extensions; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/extensions; sourceTree = "<absolute>"; };
-		4610522730593E6300C2BC3A /* utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = utilities; path = /Users/mickymacm4/Documents/olcPixelGameEngine3_Issue293/utilities; sourceTree = "<absolute>"; };
+		46E03B67305C0D9A003BFA1D /* examples */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (46E03B94305C0DC1003BFA1D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = examples; path = ../../examples; sourceTree = "<group>"; };
+		46E03B6E305C0D9A003BFA1D /* extensions */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = extensions; path = ../../extensions; sourceTree = "<group>"; };
+		46E03B75305C0D9A003BFA1D /* utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = utilities; path = ../../utilities; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -213,11 +213,11 @@
 		8998CE172E057F4E007DDD96 = {
 			isa = PBXGroup;
 			children = (
+				46E03B67305C0D9A003BFA1D /* examples */,
+				46E03B6E305C0D9A003BFA1D /* extensions */,
+				46E03B75305C0D9A003BFA1D /* utilities */,
+				46E03AD8305C0D3A003BFA1D /* olcPixelGameEngine3.h */,
 				4610526530593EE400C2BC3A /* assets */,
-				4610521930593E6300C2BC3A /* examples */,
-				4610521F30593E6300C2BC3A /* extensions */,
-				4610522030593E6300C2BC3A /* olcPixelGameEngine3.h */,
-				4610522730593E6300C2BC3A /* utilities */,
 				8998CE322E057F92007DDD96 /* src */,
 				8998CE2A2E057F85007DDD96 /* tests */,
 				46E85DF52E39135300B74FA3 /* Frameworks */,
@@ -316,9 +316,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4610521930593E6300C2BC3A /* examples */,
-				4610521F30593E6300C2BC3A /* extensions */,
-				4610522730593E6300C2BC3A /* utilities */,
+				46E03B67305C0D9A003BFA1D /* examples */,
+				46E03B6E305C0D9A003BFA1D /* extensions */,
+				46E03B75305C0D9A003BFA1D /* utilities */,
 			);
 			name = olcPGE3_SH;
 			productName = olcPGE3;
@@ -336,11 +336,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				4610521930593E6300C2BC3A /* examples */,
-				4610521F30593E6300C2BC3A /* extensions */,
-				4610522730593E6300C2BC3A /* utilities */,
 			);
 			name = olcPGE3;
 			productName = olcPGE3;

@@ -29,6 +29,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <cstring>
+#include <poll.h>
 
 #include "libdecor.h"
 
