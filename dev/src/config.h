@@ -47,8 +47,16 @@
 	#endif
 
 	#if defined(__APPLE__)
+		// Note: Normally we dont include headers in config files but this is an exception
+		// as __APPLE__ is defined for both MacOS and iOS builds. we need to differentiate here.
+		#include <TargetConditionals.h>
+		#if TARGET_OS_IOS || TARGET_IPHONE_SIMULATOR
+		#define GLES_SILENCE_DEPRECATION
+		#define OLC_HOST OLC_HOST_IOS
+		#else
 		#define GL_SILENCE_DEPRECATION	
 		#define OLC_HOST OLC_HOST_MACOS
+		#endif
 	#endif
 	
 	#if defined(__EMSCRIPTEN__)
@@ -93,6 +101,7 @@
 #define OLC_IMAGELOADER_LIB_PNG 4
 #define OLC_IMAGELOADER_NDK_IMAGEDECODER 5
 #define OLC_IMAGELOADER_STB_IMAGE 6
+#define OLC_IMAGELOADER_IOS 7
 
 #if defined(OLC_USE_STB_IMAGE)
 	#define OLC_IMAGELOADER OLC_IMAGELOADER_STB_IMAGE
@@ -108,6 +117,11 @@
 	#if OLC_HOST == OLC_HOST_MACOS
 		#define OLC_IMAGELOADER OLC_IMAGELOADER_MACOS
 		#define OLC_IMAGELOADER_CLASS ImageLoader_MacOS
+	#endif
+
+	#if OLC_HOST == OLC_HOST_IOS
+		#define OLC_IMAGELOADER OLC_IMAGELOADER_IOS
+		#define OLC_IMAGELOADER_CLASS ImageLoader_iOS
 	#endif
 
 	#if OLC_HOST == OLC_HOST_LINUX_X11 || OLC_HOST == OLC_HOST_LINUX_WAYLAND
@@ -156,7 +170,7 @@
 
 #define LICENCE_DEFAULT "OneLoneCoder.com - Pixel Game Engine 3 - "
 
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
 // De-Noise in clang (C++20) MacOS
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas" 	  // Allow unknown pragmas for compatibility with different compilers
@@ -201,5 +215,8 @@ inline constexpr void olc_IgnoreUnused(Args&&...) noexcept {}
 #define OLC_FRIENDLY_HOST Host_Android
 #endif
 
+#if OLC_HOST == OLC_HOST_IOS
+#define OLC_FRIENDLY_HOST Host_Apple_iOS
+#endif
 
 //! END CONFIGURATION

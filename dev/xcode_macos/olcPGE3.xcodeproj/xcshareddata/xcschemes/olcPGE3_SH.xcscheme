@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4610524630593E6D00C2BC3A"
+               BlueprintIdentifier = "46ABFEAB302CC20600C95998"
                BuildableName = "olcPGE3_SH"
                BlueprintName = "olcPGE3_SH"
                ReferencedContainer = "container:olcPGE3.xcodeproj">
@@ -45,7 +45,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4610524630593E6D00C2BC3A"
+            BlueprintIdentifier = "46ABFEAB302CC20600C95998"
             BuildableName = "olcPGE3_SH"
             BlueprintName = "olcPGE3_SH"
             ReferencedContainer = "container:olcPGE3.xcodeproj">
@@ -62,7 +62,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4610524630593E6D00C2BC3A"
+            BlueprintIdentifier = "46ABFEAB302CC20600C95998"
             BuildableName = "olcPGE3_SH"
             BlueprintName = "olcPGE3_SH"
             ReferencedContainer = "container:olcPGE3.xcodeproj">

@@ -103,7 +103,15 @@ function(add_example EXAMPLE_NAME)
 
     if(APPLE)
         if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-            # TODO: Building for iOS
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework UIKit")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework Foundation")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework CoreGraphics")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework QuartzCore")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework Metal")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework MetalKit")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework OpenGLES")
+            target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework GLKit")
+            
         else()
             target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework Metal")
             target_link_libraries(${EXAMPLE_NAME} PRIVATE "-framework MetalKit")
