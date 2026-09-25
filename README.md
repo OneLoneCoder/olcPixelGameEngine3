@@ -43,6 +43,7 @@ Tested On Platforms
  * Windows
  * Linux X11/Wayland
  * MacOS
+ * iOS
  * Emscripten
  * Android
 
