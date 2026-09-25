@@ -109,7 +109,8 @@ namespace olc
                 BECOME_ACTIVE,
                 RESIGN_ACTIVE,
                 MINIMIZE_WINDOW,
-                DEMINIMIZE_WINDOW
+                DEMINIMIZE_WINDOW,
+                SET_MOUSE_POSITION
             };
             
             // Internal Mac OS functions
@@ -149,6 +150,8 @@ namespace olc
             void KeyboardEventHandler(const olc::apis::macos::KeyEvent& event, bool isPressed);
             bool bNumLockActive = true;         // Num Lock state, we assume it's active at start
             uint16_t ConvertPGE2WindowStyle();
+
+            olc::vi2d vPositionMouse = {0, 0}; // Stores the desired mouse position for SET_MOUSE_POSITION task
             
             
         };
