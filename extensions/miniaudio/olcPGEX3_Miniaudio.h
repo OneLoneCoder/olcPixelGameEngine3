@@ -82,6 +82,10 @@ namespace olc::ext::Miniaudio
 	public:
 		Sound() = default;
 		~Sound();
+		Sound(const Sound&) = delete;
+		Sound& operator=(const Sound&) = delete;
+		Sound(Sound&& other) noexcept;
+		Sound& operator=(Sound&& other) noexcept;
 
 	public: // Loaders
 		// Create an image resource based on an image file asset on disk
@@ -334,7 +338,52 @@ namespace olc::ext::Miniaudio
 #pragma region Sound
 
 	uint32_t Sound::m_id_tracker = 0;
+	Sound::Sound(Sound&& other) noexcept
+		:	m_pgex(other.m_pgex),
+			m_buffer(std::move(other.m_buffer)),
+			m_base_sound(other.m_base_sound),
+			m_voices(std::move(other.m_voices)),
+			m_id(other.m_id),
+			m_virtual_path(std::move(other.m_virtual_path)),
+			m_is_loaded(other.m_is_loaded),
+			m_is_paused(other.m_is_paused),
+			m_num_voices(other.m_num_voices),
+			m_current_voice(other.m_current_voice),
+			m_length_in_pcm_frames(other.m_length_in_pcm_frames),
+			m_length_in_seconds(other.m_length_in_seconds)
+	{
+		other.m_pgex = nullptr;
+		other.m_base_sound = {0};
+		other.m_is_loaded = false;
+		other.m_id = 0;
+	};
 	
+	Sound& Sound::operator=(Sound&& other) noexcept
+	{
+		if(this != &other)
+		{
+			DestroySound();
+			m_pgex = other.m_pgex;
+			m_buffer = std::move(other.m_buffer);
+			m_base_sound = other.m_base_sound;
+			m_voices = std::move(other.m_voices);
+			m_id = other.m_id;
+			m_virtual_path = std::move(other.m_virtual_path);
+			m_is_loaded = other.m_is_loaded;
+			m_is_paused = other.m_is_paused;
+			m_num_voices = other.m_num_voices;
+			m_current_voice = other.m_current_voice;
+			m_length_in_pcm_frames = other.m_length_in_pcm_frames;
+			m_length_in_seconds = other.m_length_in_seconds;
+			
+			other.m_pgex = nullptr;
+			other.m_base_sound = {0};
+			other.m_is_loaded = false;
+			other.m_id = 0;
+		}
+		return *this;
+	}
+
 	Sound::~Sound()
 	{
 		DestroySound();
