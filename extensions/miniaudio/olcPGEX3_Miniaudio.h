@@ -59,8 +59,9 @@
 
 #ifdef OLC_PGEX3_MINIAUDIO
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
 #endif
+
+#include "miniaudio.h"
 
 #include <cstring>
 #include <fstream>
