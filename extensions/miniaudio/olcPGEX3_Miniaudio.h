@@ -835,9 +835,6 @@ namespace olc::ext::Miniaudio
         if(ma == nullptr)
             throw std::runtime_error{"unable to access miniaudio pgex instance from data_callback"};
 
-        if(!ma->m_cfg.BackgroundPlay && !ma->m_pge->IsFocused())
-			return;
-
 		// with great power comes...
 		if(ma->m_data_callback)
 		{
@@ -845,8 +842,10 @@ namespace olc::ext::Miniaudio
 			return;
 		}
 
+		const bool audioShouldPlay = !(!ma->m_cfg.BackgroundPlay && !ma->m_pge->IsFocused());
+		
 		std::span<float> engineBuffer((float*)pOutput, frameCount * ma->GetDeviceChannels());
-        ma_engine_read_pcm_frames(&ma->m_engine, engineBuffer.data(), frameCount, NULL);
+		ma_engine_read_pcm_frames(&ma->m_engine, engineBuffer.data(), frameCount, NULL);
 		
 		// resize, if required. frameCount is not guaranteed not to change.
         if(ma->m_waveform_buffer.size() != (frameCount * ma->GetDeviceChannels()))
@@ -860,8 +859,11 @@ namespace olc::ext::Miniaudio
 			if (!waveform->IsPlaying())
 				continue;
 
-
 			ma_waveform_read_pcm_frames(&waveform->m_waveform, ma->m_waveform_buffer.data(), frameCount, NULL);
+
+			// if audio shouldn't play, move on here.
+			if(!audioShouldPlay)
+				continue;
 
 			for(int frame = 0; frame < frameCount; ++frame)
 			{
@@ -886,9 +888,11 @@ namespace olc::ext::Miniaudio
             {
                 float left, right;
                 ma->m_synth_callback(left, right, 1.0f / ma->GetDeviceSampleRate());
-
-                engineBuffer[(i * ma->GetDeviceChannels())]     += left;
-                engineBuffer[(i * ma->GetDeviceChannels()) + 1] += right;
+				if(audioShouldPlay)
+				{
+					engineBuffer[(i * ma->GetDeviceChannels())]     += left;
+					engineBuffer[(i * ma->GetDeviceChannels()) + 1] += right;
+				}
             }
 		}
 
@@ -897,6 +901,12 @@ namespace olc::ext::Miniaudio
 		
 		for(int i = 0; i < engineBuffer.size(); i++)
 		{
+			if(!audioShouldPlay)
+			{
+				engineBuffer[i] = 0.0f;
+				continue;
+			}
+
 			float peak = fabsf(engineBuffer[i]);
 			
 			if (peak > 1.0f)
