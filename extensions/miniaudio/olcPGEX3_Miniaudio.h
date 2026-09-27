@@ -103,8 +103,8 @@ namespace olc::ext::Miniaudio
 
 	
     public: // playback routines
-        // plays a sound, can be set to loop
-        void Play(const bool looping = false, const float volume = 1.0f, const float pan = 0.0f, const float pitch = 1.0f);
+        // plays a sound, can set looping, volume, pan, or pitch (note: default values are out of range deliberately)
+        void Play(const bool looping = false, const float volume = 2.0f, const float pan = 2.0f, const float pitch = 2.0f);
         // stops a sound, rewinds to beginning
         void Stop();
         // pauses a sound, does not change position
@@ -534,9 +534,15 @@ namespace olc::ext::Miniaudio
 		if(!m_is_paused)
 			m_current_voice = (m_current_voice + 1) % m_num_voices;
 		
-		ma_sound_set_volume(&m_voices[m_current_voice], std::clamp(volume, 0.0f, 1.0f));
-		ma_sound_set_pan(&m_voices[m_current_voice], std::clamp(pan, -1.0f, 1.0f));
-		ma_sound_set_pitch(&m_voices[m_current_voice], std::max({0.0f, pitch}));
+		if(volume != 2.0f)
+			ma_sound_set_volume(&m_voices[m_current_voice], std::clamp(volume, 0.0f, 1.0f));
+		
+		if(pan != 2.0f)
+			ma_sound_set_pan(&m_voices[m_current_voice], std::clamp(pan, -1.0f, 1.0f));
+		
+		if(pitch != 2.0f)
+			ma_sound_set_pitch(&m_voices[m_current_voice], std::max({0.0f, pitch}));
+		
 		ma_sound_set_looping(&m_voices[m_current_voice], looping);
 		ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], 0);
 		ma_sound_start(&m_voices[m_current_voice]);
