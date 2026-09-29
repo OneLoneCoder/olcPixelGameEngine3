@@ -125,7 +125,7 @@ function(add_example EXAMPLE_NAME)
                 ${WAYLAND_EGL_LIBRARIES}
                 ${WAYLAND_CURSOR_LIBRARIES}
                 ${EGL_LIBRARIES}
-                OpenGL::GL
+                OpenGL::OpenGL
                 PNG::PNG
                 Threads::Threads
             )
