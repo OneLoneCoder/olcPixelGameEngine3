@@ -133,6 +133,8 @@ mySound.Play();
 mySound.Play(true);  // Loops continuously
 ```
 
+> **Note For Advanced Users:** the `olc::ext::Miniaudio::Sound` has a pool of voices, the `Play` function has several optional arguments to allow you to set the **volume**, **pan**, and **pitch** of an individual voice at the moment playback begins.
+
 #### Stop
 ```cpp
 // Stop and rewind to beginning

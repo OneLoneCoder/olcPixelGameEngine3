@@ -59,8 +59,9 @@
 
 #ifdef OLC_PGEX3_MINIAUDIO
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
 #endif
+
+#include "miniaudio.h"
 
 #include <cstring>
 #include <fstream>
@@ -81,6 +82,10 @@ namespace olc::ext::Miniaudio
 	public:
 		Sound() = default;
 		~Sound();
+		Sound(const Sound&) = delete;
+		Sound& operator=(const Sound&) = delete;
+		Sound(Sound&& other) noexcept;
+		Sound& operator=(Sound&& other) noexcept;
 
 	public: // Loaders
 		// Create an image resource based on an image file asset on disk
@@ -98,8 +103,8 @@ namespace olc::ext::Miniaudio
 
 	
     public: // playback routines
-        // plays a sound, can be set to loop
-        void Play(const bool looping = false);
+        // plays a sound, can set looping, volume, pan, or pitch (note: default values are out of range deliberately)
+        void Play(const bool looping = false, const float volume = 2.0f, const float pan = 2.0f, const float pitch = 2.0f);
         // stops a sound, rewinds to beginning
         void Stop();
         // pauses a sound, does not change position
@@ -333,7 +338,52 @@ namespace olc::ext::Miniaudio
 #pragma region Sound
 
 	uint32_t Sound::m_id_tracker = 0;
+	Sound::Sound(Sound&& other) noexcept
+		:	m_pgex(other.m_pgex),
+			m_buffer(std::move(other.m_buffer)),
+			m_base_sound(other.m_base_sound),
+			m_voices(std::move(other.m_voices)),
+			m_id(other.m_id),
+			m_virtual_path(std::move(other.m_virtual_path)),
+			m_is_loaded(other.m_is_loaded),
+			m_is_paused(other.m_is_paused),
+			m_num_voices(other.m_num_voices),
+			m_current_voice(other.m_current_voice),
+			m_length_in_pcm_frames(other.m_length_in_pcm_frames),
+			m_length_in_seconds(other.m_length_in_seconds)
+	{
+		other.m_pgex = nullptr;
+		other.m_base_sound = {0};
+		other.m_is_loaded = false;
+		other.m_id = 0;
+	};
 	
+	Sound& Sound::operator=(Sound&& other) noexcept
+	{
+		if(this != &other)
+		{
+			DestroySound();
+			m_pgex = other.m_pgex;
+			m_buffer = std::move(other.m_buffer);
+			m_base_sound = other.m_base_sound;
+			m_voices = std::move(other.m_voices);
+			m_id = other.m_id;
+			m_virtual_path = std::move(other.m_virtual_path);
+			m_is_loaded = other.m_is_loaded;
+			m_is_paused = other.m_is_paused;
+			m_num_voices = other.m_num_voices;
+			m_current_voice = other.m_current_voice;
+			m_length_in_pcm_frames = other.m_length_in_pcm_frames;
+			m_length_in_seconds = other.m_length_in_seconds;
+			
+			other.m_pgex = nullptr;
+			other.m_base_sound = {0};
+			other.m_is_loaded = false;
+			other.m_id = 0;
+		}
+		return *this;
+	}
+
 	Sound::~Sound()
 	{
 		DestroySound();
@@ -371,13 +421,18 @@ namespace olc::ext::Miniaudio
 
 	bool Sound::CreateSoundFromMemory(const uint8_t* data, const size_t bytes, AudioEngine* pgex, uint32_t nNumVoices)
 	{
-		if(!data) return false;
-		if(bytes <= 0) return false;
+		if(!data || bytes <= 0) return false;
 
-		m_buffer.resize(bytes);
-		uint8_t* result = reinterpret_cast<uint8_t*>(std::memcpy(m_buffer.data(), data, m_buffer.size()));
-		if(result == m_buffer.data())
+		// Thanks Linh
+		try
+		{
+			m_buffer.assign(data, data + bytes);
+		}
+		catch (const std::exception&)
+		{
+			m_buffer.clear();
 			return false;
+		}
 
 		m_pgex = pgex;
 		m_num_voices = nNumVoices;
@@ -479,10 +534,19 @@ namespace olc::ext::Miniaudio
 	}
 
 	// plays a sound, can be set to loop
-	void Sound::Play(const bool looping)
+	void Sound::Play(const bool looping, const float volume, const float pan, const float pitch)
 	{
 		if(!m_is_paused)
 			m_current_voice = (m_current_voice + 1) % m_num_voices;
+		
+		if(volume != 2.0f)
+			ma_sound_set_volume(&m_voices[m_current_voice], std::clamp(volume, 0.0f, 1.0f));
+		
+		if(pan != 2.0f)
+			ma_sound_set_pan(&m_voices[m_current_voice], std::clamp(pan, -1.0f, 1.0f));
+		
+		if(pitch != 2.0f)
+			ma_sound_set_pitch(&m_voices[m_current_voice], std::max({0.0f, pitch}));
 		
 		ma_sound_set_looping(&m_voices[m_current_voice], looping);
 		ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], 0);
@@ -782,9 +846,6 @@ namespace olc::ext::Miniaudio
         if(ma == nullptr)
             throw std::runtime_error{"unable to access miniaudio pgex instance from data_callback"};
 
-        if(!ma->m_cfg.BackgroundPlay && !ma->m_pge->IsFocused())
-			return;
-
 		// with great power comes...
 		if(ma->m_data_callback)
 		{
@@ -792,8 +853,10 @@ namespace olc::ext::Miniaudio
 			return;
 		}
 
+		const bool audioShouldPlay = !(!ma->m_cfg.BackgroundPlay && !ma->m_pge->IsFocused());
+		
 		std::span<float> engineBuffer((float*)pOutput, frameCount * ma->GetDeviceChannels());
-        ma_engine_read_pcm_frames(&ma->m_engine, engineBuffer.data(), frameCount, NULL);
+		ma_engine_read_pcm_frames(&ma->m_engine, engineBuffer.data(), frameCount, NULL);
 		
 		// resize, if required. frameCount is not guaranteed not to change.
         if(ma->m_waveform_buffer.size() != (frameCount * ma->GetDeviceChannels()))
@@ -807,8 +870,11 @@ namespace olc::ext::Miniaudio
 			if (!waveform->IsPlaying())
 				continue;
 
-
 			ma_waveform_read_pcm_frames(&waveform->m_waveform, ma->m_waveform_buffer.data(), frameCount, NULL);
+
+			// if audio shouldn't play, move on here.
+			if(!audioShouldPlay)
+				continue;
 
 			for(int frame = 0; frame < frameCount; ++frame)
 			{
@@ -833,9 +899,11 @@ namespace olc::ext::Miniaudio
             {
                 float left, right;
                 ma->m_synth_callback(left, right, 1.0f / ma->GetDeviceSampleRate());
-
-                engineBuffer[(i * ma->GetDeviceChannels())]     += left;
-                engineBuffer[(i * ma->GetDeviceChannels()) + 1] += right;
+				if(audioShouldPlay)
+				{
+					engineBuffer[(i * ma->GetDeviceChannels())]     += left;
+					engineBuffer[(i * ma->GetDeviceChannels()) + 1] += right;
+				}
             }
 		}
 
@@ -844,6 +912,12 @@ namespace olc::ext::Miniaudio
 		
 		for(int i = 0; i < engineBuffer.size(); i++)
 		{
+			if(!audioShouldPlay)
+			{
+				engineBuffer[i] = 0.0f;
+				continue;
+			}
+
 			float peak = fabsf(engineBuffer[i]);
 			
 			if (peak > 1.0f)
