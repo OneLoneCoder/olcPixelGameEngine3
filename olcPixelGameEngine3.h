@@ -11822,7 +11822,8 @@ namespace olc::host {
             if (!this->OnSystemThreadStart())
             {
                 // PGE->OnContextStart() failed, or user aborted OnUserCreate()
-                return;
+                StopSystem();
+
             }
 
             // Main system loop
@@ -11858,6 +11859,9 @@ namespace olc::host {
 
     bool Host_Apple_MacOS::StopSystem()
     {
+        // Clear any pending tasks/messages on the main thread
+        bSkipFrame = ExecutePendingMainThreadTasks();
+        
         dispatch_sync(dispatch_get_main_queue(), ^{
             // clean up and close application
             if (pMacOSOpenGLRenderer)
