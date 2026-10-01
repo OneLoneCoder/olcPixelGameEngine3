@@ -421,13 +421,18 @@ namespace olc::ext::Miniaudio
 
 	bool Sound::CreateSoundFromMemory(const uint8_t* data, const size_t bytes, AudioEngine* pgex, uint32_t nNumVoices)
 	{
-		if(!data) return false;
-		if(bytes <= 0) return false;
+		if(!data || bytes <= 0) return false;
 
-		m_buffer.resize(bytes);
-		uint8_t* result = reinterpret_cast<uint8_t*>(std::memcpy(m_buffer.data(), data, m_buffer.size()));
-		if(result == m_buffer.data())
+		// Thanks Linh
+		try
+		{
+			m_buffer.assign(data, data + bytes);
+		}
+		catch (const std::exception&)
+		{
+			m_buffer.clear();
 			return false;
+		}
 
 		m_pgex = pgex;
 		m_num_voices = nNumVoices;
