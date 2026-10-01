@@ -101,6 +101,7 @@ namespace olc::host
 				// Notify start of system thread
 				if (!this->OnSystemThreadStart())
 				{
+                    systemActive = false;
 					// PGE->OnContextStart() failed, or user aborted OnUserCreate()
 					return;
 				}
@@ -303,7 +304,7 @@ namespace olc::host
             }
 
             // Wait until an event appears on the x11 event queue file descriptor
-            poll(&x11_connection_fd, 1, -1);
+            poll(&x11_connection_fd, 1, 10);
         }
 
         systemActive = false;

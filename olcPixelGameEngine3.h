@@ -12427,6 +12427,7 @@ namespace olc::host
 				// Notify start of system thread
 				if (!this->OnSystemThreadStart())
 				{
+                    systemActive = false;
 					// PGE->OnContextStart() failed, or user aborted OnUserCreate()
 					return;
 				}
@@ -12629,7 +12630,7 @@ namespace olc::host
             }
 
             // Wait until an event appears on the x11 event queue file descriptor
-            poll(&x11_connection_fd, 1, -1);
+            poll(&x11_connection_fd, 1, 10);
         }
 
         systemActive = false;
@@ -13201,6 +13202,7 @@ namespace olc::host
 				if (!this->OnSystemThreadStart())
 				{
 					// PGE->OnContextStart() failed, or user aborted OnUserCreate()
+                    systemActive = false;
 					return;
 				}
 
@@ -13227,7 +13229,7 @@ namespace olc::host
         bool keep_running = true;
         while(systemActive && keep_running) {
             if(decor_context) {
-                poll(&decor_wl_fd, 1, -1);
+                poll(&decor_wl_fd, 1, 10);
                 {
                     std::lock_guard<std::mutex> l{decor_mutex};
                     keep_running = libdecor_dispatch(decor_context, 0) >= 0;
