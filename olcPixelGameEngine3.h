@@ -4401,6 +4401,7 @@ namespace olc
 		// Input devices are handled by a regular olc::Window, but for convenience...
 		olc::hw::Mouse& GetMouse();
 		olc::hw::Keyboard& GetKeyboard();
+		olc::hw::Touch& GetTouch();
 		
 		// Returns the current size of the "screen" in pixels
 		const olc::vi2d& ScreenSize();
@@ -20192,6 +20193,10 @@ namespace olc
 	olc::hw::Keyboard& PGEWindow::GetKeyboard()
 	{
 		return keyboard;
+	}
+
+	olc::hw::Touch& PGEWindow::GetTouch() {
+		return touch;
 	}
 
 	const olc::vi2d& PGEWindow::ScreenSize()

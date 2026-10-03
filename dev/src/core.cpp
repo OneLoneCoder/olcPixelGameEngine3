@@ -338,6 +338,10 @@ namespace olc
 		return keyboard;
 	}
 
+	olc::hw::Touch& PGEWindow::GetTouch() {
+		return touch;
+	}
+
 	const olc::vi2d& PGEWindow::ScreenSize()
 	{
 		return GetScreen().Size();
