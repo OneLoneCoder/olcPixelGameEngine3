@@ -109,6 +109,7 @@ namespace olc::ext::Miniaudio
 		friend class AudioEngine;
 	private:
 		internal::SoundInstance* sound{nullptr};
+		AudioEngine* pgex{nullptr};
 	};
 
 	class Waveform
@@ -124,6 +125,7 @@ namespace olc::ext::Miniaudio
 		};
 	private:
 		internal::WaveformInstance* waveform{nullptr};
+		AudioEngine* pgex{nullptr};
 	};
 
 	class AudioEngine : public olc::PGESystemExtension
@@ -226,10 +228,9 @@ namespace olc::ext::Miniaudio
 		void ClearDataCallback();
 
 	public: // getters
-		// 
-		ma_device& GetDevice();
-		ma_engine& GetEngine();
-		ma_resource_manager& GetResourceManager();
+		ma_device* GetDevice();
+		ma_engine* GetEngine();
+		ma_resource_manager* GetResourceManager();
 
 		int GetDeviceChannels() const;
 		ma_format GetDeviceFormat() const;
@@ -239,7 +240,6 @@ namespace olc::ext::Miniaudio
 	public:
 		AudioEngine();
 		~AudioEngine();
-
 
 		virtual bool OnInstall([[maybe_unused]] olc::PixelGameEngine* pge);
 		virtual bool OnBeforeUserCreate([[maybe_unused]] olc::PixelGameEngine* pge);
@@ -463,6 +463,7 @@ namespace olc::ext::Miniaudio
 		f.close();
 #endif
 		sound.sound->num_voices = nNumVoices;
+		sound.pgex = this;
 		return _internalSoundLoader(sound);
 	}
 	
@@ -483,6 +484,7 @@ namespace olc::ext::Miniaudio
 		}
 
 		sound.sound->num_voices = nNumVoices;
+		sound.pgex = this;
 		return _internalSoundLoader(sound);
 	}
 	
@@ -492,6 +494,7 @@ namespace olc::ext::Miniaudio
 		if(data.size() <= 0) return false;
 		sound.sound->buffer = data;
 		sound.sound->num_voices = nNumVoices;
+		sound.pgex = this;
 		return _internalSoundLoader(sound);
 	}
 	
@@ -782,6 +785,7 @@ namespace olc::ext::Miniaudio
 		}
 		
 		waveform.waveform->is_loaded = true;
+		waveform.pgex = this;
 		m_waveforms.push_back(waveform.waveform);
 		return true;
 	}
@@ -868,19 +872,19 @@ namespace olc::ext::Miniaudio
 		m_data_callback = {};
 	}
 	
-	ma_device& AudioEngine::GetDevice()
+	ma_device* AudioEngine::GetDevice()
 	{
-		return m_device;
+		return &m_device;
 	}
 
-	ma_engine& AudioEngine::GetEngine()
+	ma_engine* AudioEngine::GetEngine()
 	{
-		return m_engine;
+		return &m_engine;
 	}
 
-	ma_resource_manager& AudioEngine::GetResourceManager()
+	ma_resource_manager* AudioEngine::GetResourceManager()
 	{
-		return m_resource_manager;
+		return &m_resource_manager;
 	}
 
 	int AudioEngine::GetDeviceChannels() const
