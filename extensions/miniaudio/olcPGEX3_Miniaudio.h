@@ -523,7 +523,7 @@ namespace olc::ext::Miniaudio
 		}
 
 		result = ma_sound_init_from_file(
-			&GetEngine(),
+			GetEngine(),
 			sound.sound->virtual_path.c_str(),
 			MA_SOUND_FLAG_DECODE,
 			nullptr,
@@ -540,7 +540,7 @@ namespace olc::ext::Miniaudio
 		sound.sound->voices.resize(sound.sound->num_voices);
 		for(int i = 0; i < sound.sound->num_voices; ++i)
 		{
-			result = ma_sound_init_copy(&GetEngine(), &sound.sound->base_sound, 0, nullptr, &sound.sound->voices[i]);
+			result = ma_sound_init_copy(GetEngine(), &sound.sound->base_sound, 0, nullptr, &sound.sound->voices[i]);
 			if(result != MA_SUCCESS)
 				break;
 		}

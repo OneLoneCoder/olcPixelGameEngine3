@@ -152,7 +152,7 @@ public:
 		// this is here to demosntrate how the adventurous can exploit other
 		// features of miniaudio that haven't been abstracted by the PGEX.
         distance = std::clamp(distance, 0.0f, 100.0f);
-        ma_engine_listener_set_position(&audio.GetEngine(), 0, 0.0f, distance, 0.0f);
+        ma_engine_listener_set_position(audio.GetEngine(), 0, 0.0f, distance, 0.0f);
 
 		// // get float cursor. 0.0f to 1.0f
  		cursorFloat  = audio.GetCursorFloat(song1);
