@@ -1,426 +1,305 @@
-# olcPGEX3_Miniaudio - Usage Documentation
+# olcPGEX3_Miniaudio
 
-## Overview
+An audio extension for the [OneLoneCoder Pixel Game Engine 3](https://github.com/OneLoneCoder) built on top of the [miniaudio](https://miniaud.io) library. It gives you simple, high-level loading and playback of sound files, real-time waveform generation, and hooks for custom synthesis, while still letting you reach down into miniaudio for anything the extension doesn't wrap.
 
-**olcPGEX3_Miniaudio** is an olcPixelGameEngine3 extension that provides a simple, abstracted interface to the powerful **miniaudio** library. It enables easy loading and playback of WAV and MP3 audio files with support for various audio effects and controls.
+Because it sits on miniaudio, it needs next to no extra build configuration to work cross-platform.
 
-### Key Features
-- Load and play WAV and MP3 files
-- Generate procedural waveforms (Sine, Square, Triangle, Sawtooth)
-- Full playback control (play, pause, stop, toggle)
-- Audio effects: volume, pan, pitch adjustment
-- Audio seeking and cursor position tracking
-- Multiple voice support for simultaneous playback
-- Synthesizer callbacks for procedural audio generation
-- Cross-platform support (including Emscripten)
-- Custom audio data callbacks for advanced users
-- Exposure to underlying miniaudio library, for advanced users
----
+## Features
 
-## Installation & Setup
+- **Sound loading** from disk or from memory (WAV and MP3, plus anything your miniaudio build can decode)
+- **Polyphonic playback**: each sound has a pool of voices (default 8), so rapid-fire sound effects overlap instead of cutting each other off
+- **Per-sound controls**: volume, pan, pitch, looping, seek, forward, rewind, pause, toggle
+- **Playback position** queries in milliseconds or as a normalised float (handy for progress bars)
+- **Waveform generators**: sine, square, triangle and sawtooth, with adjustable amplitude, frequency and type, and a short fade in/out to avoid clicks
+- **Synth callback**: generate or process audio sample by sample
+- **Raw data callback**: take over the audio device output completely
+- **Built-in limiter** to prevent clipping when many sources play at once
+- **Background playback control**: audio mutes when the window loses focus, unless you enable background playback
+- **Escape hatches** to the underlying `ma_engine`, `ma_device`, `ma_resource_manager`, `ma_sound` and `ma_waveform` objects
+- **Platform support** for desktop, Emscripten (web) and Android asset loading
 
-### 1. Acquire miniaudio
+## Requirements
 
-Visit the [miniaudio website](https://miniaud.io/) to download the header file. Simply add it to your project with the rest of your source/header files.
+- Pixel Game Engine 3 (`olcPixelGameEngine3.h`, or `olcpge3.h` if you define `OLC_MULTIHEADER`)
+- `miniaudio.h` on your include path
+- A **C++20** compiler (the extension uses `std::span`)
 
-### 2. Include the Header after PGE3
+## Installation
+
+1. Copy `olcPGEX3_Miniaudio.h` next to your project (or anywhere on your include path).
+2. Make sure `miniaudio.h` is available.
+3. In **exactly one** translation unit, define `OLC_PGEX3_MINIAUDIO` before including the extension. This pulls in both the extension's implementation and miniaudio's implementation.
+
 ```cpp
+#define OLC_PGE3_APPLICATION
+#include "olcPixelGameEngine3.h"
+
 #define OLC_PGEX3_MINIAUDIO
 #include "olcPGEX3_Miniaudio.h"
 ```
 
-### 3. Install the Extension in Your PGE Application
+In any other file that needs the audio types, include the header **without** the define.
+
+## Quick start
+
+Make the `AudioEngine` a member of your application class, and install it as a system extension in the constructor:
+
 ```cpp
 class MyGame : public olc::PixelGameEngine
 {
 public:
     MyGame()
     {
-        sAppName = "My Audio Game";
+        sAppName = "My Game";
+
         if(!InstallSystemExtension(&audio))
-            throw std::runtime_error("Failed to install olcPGEX3_miniaudio");
+            throw std::runtime_error("Failed to install olcPGEX3_Miniaudio");
     }
 
-private:
-    olc::ext::Miniaudio::AudioEngine audio;
-};
-```
-
-See [olcPGE3_Miniaudio.cpp](olcPGE3_Miniaudio.cpp) for practical example usage!
-
----
-## Core Components
-
-### olc::ext::Miniaudio::AudioEngine
-
-The main interface to the audio system. Manages all sounds, waveforms, and the underlying audio device.
-
-#### Configuration
-
-Configure the audio engine before creation in your constructor:
-
-```cpp
-olc::ext::Miniaudio::AudioEngine::Config config;
-config.DeviceChannels = 2;              // Mono (1) or Stereo (2)
-config.DeviceSampleRate = 48000;        // Sample rate in Hz
-config.DeviceFormat = ma_format_f32;    // Audio format (32-bit float)
-config.BackgroundPlay = true;           // Play when window unfocused
-config.Verbose = false;                 // Enable verbose logging
-
-audio.Configure(config);
-```
-
-#### Background Playback
-
-Control whether audio plays when the window loses focus:
-
-```cpp
-audio.EnableBackgroundPlayback();   // Continue playing in background
-audio.DisableBackgroundPlayback();  // Stop when window loses focus
-```
-
-#### Accessing Low-Level Objects
-
-For advanced users who need direct access to miniaudio objects:
-
-```cpp
-ma_engine& engine = audio.GetEngine();
-ma_device& device = audio.GetDevice();
-ma_resource_manager& rm = audio.GetResourceManager();
-
-int channels = audio.GetDeviceChannels();
-int sampleRate = audio.GetDeviceSampleRate();
-ma_format format = audio.GetDeviceFormat();
-```
-
-> **Note:** In the example above `audio` is the instance of `olc::ext::Miniaudio::AudioEngine`
-
----
-
-## olc::ext::Miniaudio::Sound
-
-Represents a playable audio resource that can be loaded from file or memory.
-
-### Loading Sounds
-
-#### From File
-```cpp
-olc::ext::Miniaudio::Sound mySound;
-
-// Load from disk
-audio.CreateSoundFromFile(mySound, "path/to/sound.mp3"); // could also be .wav
-```
-
-#### From Memory
-```cpp
-// Load from memory buffer
-std::vector<uint8_t> audioData = /* ... load file data ... */;
-audio.CreateSoundFromMemory(mySound, audioData.data(), audioData.size());
-
-// Or pass vector directly
-audio.CreateSoundFromMemory(mySound, audioData);
-```
-> **Note:** In the example above `audio` is the instance of `olc::ext::Miniaudio::AudioEngine`
-
-### Playback Control
-
-#### Play
-```cpp
-// Play once
-mySound.Play();
-
-// Play with looping
-mySound.Play(true);  // Loops continuously
-```
-
-> **Note For Advanced Users:** the `olc::ext::Miniaudio::Sound` has a pool of voices, the `Play` function has several optional arguments to allow you to set the **volume**, **pan**, and **pitch** of an individual voice at the moment playback begins.
-
-#### Stop
-```cpp
-// Stop and rewind to beginning
-mySound.Stop();
-```
-
-#### Pause
-```cpp
-// Pause without changing position
-mySound.Pause();
-```
-
-#### Toggle
-```cpp
-// Play if paused, pause if playing
-mySound.Toggle();
-```
-
-### Seeking (Cursor Control)
-
-#### Seek to Position
-```cpp
-// Seek to specific time (milliseconds)
-mySound.Seek(5000);  // Go to 5 seconds
-
-// Seek to position (0.0 = start, 1.0 = end)
-mySound.Seek(0.5f);  // Go to middle of sound
-```
-
-#### Forward/Rewind
-```cpp
-// Move forward by 2 seconds
-mySound.Forward(2000);
-
-// Move backward by 1 second
-mySound.Rewind(1000);
-```
-
-### Audio Effects
-
-#### Volume Control
-```cpp
-// Set volume (0.0 = mute, 1.0 = full volume)
-mySound.SetVolume(0.5f);  // 50% volume
-mySound.SetVolume(0.0f);  // Muted
-mySound.SetVolume(1.0f);  // Full volume
-```
-
-#### Panning
-```cpp
-// Set pan (-1.0 = left, 0.0 = center, 1.0 = right)
-mySound.SetPan(-1.0f);   // Full left
-mySound.SetPan(0.0f);    // Center
-mySound.SetPan(1.0f);    // Full right
-mySound.SetPan(-0.5f);   // 50% left
-```
-
-#### Pitch
-```cpp
-// Set pitch (1.0 = normal, 0.5 = half speed, 2.0 = double speed)
-mySound.SetPitch(1.0f);   // Normal speed
-mySound.SetPitch(0.5f);   // Half speed (lower pitch)
-mySound.SetPitch(2.0f);   // Double speed (higher pitch)
-mySound.SetPitch(1.5f);   // 1.5x speed
-```
-
-### Information Queries
-
-#### Playback Status
-```cpp
-// Check if currently playing
-if(mySound.IsPlaying())
-{
-    // Sound is playing
-}
-
-// Check if loaded successfully
-if(mySound.IsLoaded())
-{
-    // Sound was loaded successfully
-}
-```
-
-#### Cursor Position
-```cpp
-// Get cursor position in milliseconds
-ma_uint64 timeMs = mySound.GetCursor();
-std::cout << "Position: " << timeMs << " ms\n";
-
-// Get cursor position as float (0.0 to 1.0)
-float progress = mySound.GetCursorFloat();
-std::cout << "Progress: " << (progress * 100) << "%\n";
-```
-
-### Advanced Usage
-
-#### Direct Access to Miniaudio Sound
-```cpp
-// Get pointer to underlying ma_sound for advanced features
-ma_sound* maSound = mySound.GetMASound();
-
-// Example: Set 3D position
-ma_sound_set_position(maSound, 10.0f, 0.0f, -5.0f);
-```
-
----
-
-## olc::ext::Miniaudio::Waveform
-
-Generate and play procedural waveforms for synthesis and sound effects.
-
-### Supported Waveform Types
-
-```cpp
-enum class Waveform::Type
-{
-    Sine,       // Smooth, pure tone
-    Square,     // Digital, buzzy tone
-    Triangle,   // Bright, harmonic tone
-    Sawtooth    // Bright, harsh tone
-};
-```
-
-### Creating Waveforms
-
-```cpp
-olc::ext::Miniaudio::Waveform sineWave;
-
-audio.CreateWaveform(
-    sineWave,
-    olc::ext::Miniaudio::Waveform::Type::Sine,  // Type
-    0.1,                                         // Amplitude (0.0-1.0)
-    440.0                                        // Frequency in Hz (A4 note)
-);
-```
-> **Note:** In the example above `audio` is the instance of `olc::ext::Miniaudio::AudioEngine`
-### Playback Control
-
-#### Play
-```cpp
-sineWave.Play();
-```
-
-#### Stop
-```cpp
-sineWave.Stop();
-```
-
-### Configuration
-
-#### Change Amplitude
-```cpp
-// Amplitude controls volume (0.0 = silent, 1.0 = loud)
-sineWave.SetAmplitude(0.1);   // 10% volume
-sineWave.SetAmplitude(0.5);   // 50% volume
-```
-
-#### Change Frequency
-```cpp
-// Frequency controls pitch in Hertz
-sineWave.SetFrequency(440.0);   // A4 note
-sineWave.SetFrequency(880.0);   // One octave higher
-sineWave.SetFrequency(220.0);   // One octave lower
-```
-
-#### Change Type
-```cpp
-// Set waveform types
-sineWave.SetType(olc::ext::Miniaudio::Waveform::Type::Square);
-sineWave.SetType(olc::ext::Miniaudio::Waveform::Type::Triangle);
-sineWave.SetType(olc::ext::Miniaudio::Waveform::Type::Sawtooth);
-```
-
-### Information Queries
-
-```cpp
-// Check if waveform is currently playing
-if(sineWave.IsPlaying())
-{
-    // Waveform is playing
-}
-
-// Check if waveform was created successfully
-if(sineWave.IsLoaded())
-{
-    // Waveform is ready to use
-}
-```
-
-## Advanced Features
-
-### Synthesizer Callback
-
-Provide custom synthesis function for procedural audio generation:
-> **HELP:** I need a sound guy to help flesh out this example so that it's actually useful. I'm not versed enough to do something actually useful here. Thanks to whoever steps up!
-> 
-> -Moros1138
-
-```cpp
-class MyGame : public olc::PixelGameEngine
-{
-private:
-    olc::ext::Miniaudio::AudioEngine audio;
-
-public:
     bool OnUserCreate() override
     {
-        // Set custom synthesizer callback
-        audio.SetSynthCallback([this](float& fLeftChannel, float& fRightChannel, float fElapsedTime)
-        {
-            // Generate custom audio
-            // fElapsedTime is in seconds since last sample
-            float frequency = 440.0f;
-            float phase = fmodf(/* your phase */, 6.28f);
-            float sample = sinf(phase);
-            
-            fLeftChannel = sample * 0.1f;
-            fRightChannel = sample * 0.1f;
-        });
-
+        audio.CreateSoundFromFile(music, "assets/song.mp3");
+        audio.CreateSoundFromFile(jump,  "assets/jump.wav");
+        audio.Play(music, true); // loop the music
         return true;
     }
 
     bool OnUserUpdate(float fElapsedTime) override
     {
-        // Clear callback if no longer needed
-        if(keyboard.GetKey(olc::Key::C).bPressed)
-        {
-            audio.ClearSynthCallback();
-        }
+        if(keyboard.GetKey(olc::Key::SPACE).bPressed)
+            audio.Play(jump);
 
         return true;
     }
+
+    olc::ext::Miniaudio::AudioEngine audio;
+
+private:
+    olc::ext::Miniaudio::Sound music;
+    olc::ext::Miniaudio::Sound jump;
 };
 ```
 
-### Raw Audio Data Callback
+All types live in the `olc::ext::Miniaudio` namespace.
 
-For maximum control, provide a custom data callback:
+## Configuration
+
+To change the defaults, call `Configure()` **before** the extension is installed (that is, before `InstallSystemExtension`). Calling it afterwards prints an error and has no effect.
 
 ```cpp
-audio.SetDataCallback([this](float* pFramesOut, ma_uint64 frameCount)
+olc::ext::Miniaudio::AudioEngine::Config cfg;
+cfg.DeviceChannels   = 2;
+cfg.DeviceSampleRate = 44100;
+cfg.BackgroundPlay   = true;
+
+audio.Configure(cfg);
+InstallSystemExtension(&audio);
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `DeviceChannels` | `2` | Number of output channels |
+| `DeviceFormat` | `ma_format_f32` | Sample format of the device |
+| `DeviceSampleRate` | `48000` | Sample rate in Hz |
+| `DeviceType` | `ma_device_type_playback` | Miniaudio device type |
+| `BackgroundPlay` | `false` | Keep playing when the window is unfocused |
+| `Verbose` | `false` | Verbose logging |
+
+Background playback can also be toggled at runtime:
+
+```cpp
+audio.EnableBackgroundPlayback();
+audio.DisableBackgroundPlayback();
+```
+
+When background playback is off and the window loses focus, the output is silenced (sounds keep advancing, they just aren't audible).
+
+## Working with sounds
+
+### Loading
+
+```cpp
+olc::ext::Miniaudio::Sound sound;
+
+// from a file on disk (on Android, loaded from the APK assets)
+audio.CreateSoundFromFile(sound, "assets/explosion.wav");
+
+// from memory
+audio.CreateSoundFromMemory(sound, pData, nBytes);
+audio.CreateSoundFromMemory(sound, vecData);
+
+// optionally choose how many simultaneous voices the sound gets (default 8)
+audio.CreateSoundFromFile(sound, "assets/shot.wav", 16);
+```
+
+Each loader returns `true` on success and `false` on failure. The sound is fully decoded before the call returns, so it is ready to play immediately. Check at any time with `audio.IsLoaded(sound)`.
+
+Release a sound when you're done with it:
+
+```cpp
+audio.DestroySound(sound);
+```
+
+Any sounds still alive when the `AudioEngine` is destroyed are cleaned up automatically.
+
+### Playback
+
+```cpp
+audio.Play(sound);                          // play once
+audio.Play(sound, true);                    // loop
+audio.Play(sound, false, 0.5f);             // half volume
+audio.Play(sound, false, 1.0f, -1.0f);      // hard left
+audio.Play(sound, false, 1.0f, 0.0f, 1.5f); // higher pitch
+```
+
+The signature is `Play(sound, looping, volume, pan, pitch)`. The default values for volume, pan and pitch are deliberately out of range (`2.0f`), which means "leave this setting as it is". Values you do pass are clamped to their valid range.
+
+| Function | Description |
+|---|---|
+| `Play(sound, looping, volume, pan, pitch)` | Start the sound from the beginning on the next voice |
+| `Stop(sound)` | Stop and rewind to the beginning |
+| `Pause(sound)` | Stop without changing position |
+| `Toggle(sound)` | Switch between playing and paused (resumes from the paused position) |
+| `Seek(sound, ms)` | Jump to a position in milliseconds |
+| `Seek(sound, float)` | Jump to a position from `0.0f` (start) to `1.0f` (end) |
+| `Forward(sound, ms)` / `Rewind(sound, ms)` | Move relative to the current position |
+| `SetVolume(sound, v)` | `0.0f` is mute, `1.0f` is full |
+| `SetPan(sound, p)` | `-1.0f` left, `0.0f` centre, `1.0f` right |
+| `SetPitch(sound, p)` | `1.0f` is normal speed and pitch |
+| `IsPlaying(sound)` | True if any voice of the sound is playing |
+| `GetCursor(sound)` | Current position in milliseconds |
+| `GetCursorFloat(sound)` | Current position as `0.0f` to `1.0f` |
+
+### How voices work
+
+Every call to `Play()` moves to the next voice in a round-robin pool and starts it from the beginning. This is what lets the same sound effect overlap with itself. A few things follow from this:
+
+- `Stop`, `Pause`, `Toggle`, `Seek`, `Forward`, `Rewind`, `GetCursor` and `GetCursorFloat` act on the **current** voice (the most recently started one).
+- `SetVolume`, `SetPan` and `SetPitch` apply to **all** voices of the sound.
+- `IsPlaying` returns true if **any** voice is playing.
+- If a sound was paused, calling `Play()` reuses the paused voice and restarts it from the beginning. Use `Toggle()` to resume instead.
+- When all voices are busy, the oldest is reused, so give frequently triggered effects more voices.
+
+A music track with a progress bar, as in the demo:
+
+```cpp
+if(keyboard.GetKey(olc::Key::SPACE).bPressed)
+    audio.Toggle(song1);
+
+float progress = audio.GetCursorFloat(song1);
+draw.FilledRect({0, 350}, {ScreenSize().x * progress, 20}, olc::Colour::YELLOW);
+```
+
+> **Note:** a sound that has never had `Play()` called on it can be started with `Toggle()`, as the demo does with its music.
+
+## Waveforms
+
+The extension includes a simple oscillator for tones, beeps and chiptune-style effects.
+
+```cpp
+olc::ext::Miniaudio::Waveform sine;
+
+// type, amplitude (0.0 - 1.0), frequency in Hz
+audio.CreateWaveform(sine, olc::ext::Miniaudio::Waveform::Type::Sine, 0.1, 440.0);
+```
+
+Available types: `Sine`, `Square`, `Triangle`, `Sawtooth`.
+
+| Function | Description |
+|---|---|
+| `CreateWaveform(wave, type, amplitude, frequency)` | Create a generator. Returns `false` on failure |
+| `DestroyWaveform(wave)` | Free a generator |
+| `Play(wave)` / `Stop(wave)` | Fade the waveform in or out (about 20 ms ramp, so there are no clicks) |
+| `SetWaveformAmplitude(wave, amp)` | Change amplitude |
+| `SetWaveformFrequency(wave, hz)` | Change frequency |
+| `SetWaveformType(wave, type)` | Change shape |
+| `IsPlaying(wave)` / `IsLoaded(wave)` | State queries |
+
+Waveforms are a natural fit for "play while key is held" behaviour. Because `Play` and `Stop` only set a target level, you can call them every frame:
+
+```cpp
+audio.Stop(sine);
+if(keyboard.GetKey(olc::Key::K7).bHeld)
+    audio.Play(sine);
+```
+
+## Custom audio
+
+### Synth callback
+
+For procedural audio, register a callback that is invoked once per sample frame. Whatever you write to the output channels is **added** to the mix (sounds and waveforms keep playing alongside it).
+
+```cpp
+float phase = 0.0f;
+
+audio.SetSynthCallback([&](float& left, float& right, float fElapsedTime)
 {
-    // pFramesOut: pointer to output buffer
-    // frameCount: number of frames to fill
-    
-    // Fill the buffer with your custom audio data
-    for(ma_uint64 i = 0; i < frameCount * 2; ++i)  // *2 for stereo
-    {
-        pFramesOut[i] = /* your audio sample */;
-    }
+    phase += 440.0f * fElapsedTime;
+    float s = 0.1f * sinf(phase * 2.0f * 3.14159f);
+
+    left  = s;
+    right = s;
 });
 
-// Clear callback later
+// later
+audio.ClearSynthCallback();
+```
+
+`fElapsedTime` is the duration of one sample (`1 / sample rate`). Always assign both `left` and `right`. They are not pre-zeroed.
+
+### Raw data callback
+
+For complete control, replace the extension's mixing entirely:
+
+```cpp
+audio.SetDataCallback([](float* pFramesOut, ma_uint64 frameCount)
+{
+    // fill pFramesOut with frameCount * channels interleaved float samples
+});
+
 audio.ClearDataCallback();
 ```
-> **Note:** This example doesn't do anything useful, that's up to you!
 
----
+While a data callback is set, the extension does **no** mixing at all. Sounds, waveforms, the synth callback, the limiter and the focus muting are all bypassed. This callback runs on the audio thread, so keep it fast and avoid allocating memory or locking.
 
-## Troubleshooting
+### Output limiter
 
-1. **Sound Won't Play?**
-    - Is the file path correct?
-    - Is the audio engine installed via `InstallSystemExtension(&audio)`?
-    - Use `IsLoaded()` to verify the sound loaded successfully
-    - Is the volume set to 0?
+The final mix passes through a simple limiter that ducks the gain when the signal would exceed full scale and recovers it slowly afterwards. This keeps stacked effects from clipping harshly. Keep individual sound volumes and waveform amplitudes sensible (the demo uses `0.1` for waveforms) to leave headroom.
 
-2. **Audio Crackles or Pops**
-    - This often indicates a limiter is catching clipping. Reduce the amplitude of waveforms or volume of sounds. Ensure the total output doesn't exceed 1.0 in amplitude
+## Advanced: direct miniaudio access
 
-3. **Sounds Not Working on Emscripten/Web**
-    - Browser audio requires user interaction before playing. Ensure playback is triggered by a user event (click, key press)
+When you need something the extension doesn't wrap, you can get at the underlying miniaudio objects:
 
----
+| Function | Returns |
+|---|---|
+| `GetMASound(sound)` | `ma_sound*` for a voice of the sound |
+| `GetMAWaveform(wave)` | `ma_waveform*` |
+| `GetEngine()` | `ma_engine&` |
+| `GetDevice()` | `ma_device&` |
+| `GetResourceManager()` | `ma_resource_manager&` |
+| `GetDeviceChannels()`, `GetDeviceFormat()`, `GetDeviceSampleRate()`, `GetDeviceType()` | Current device settings |
 
-## Acknowledgements (From Moros1138)
+`GetMASound` returns the currently playing voice, or the *next* voice to be used if the sound isn't playing. It returns `nullptr` if the sound isn't loaded.
 
-I'd like to give a special thanks to JavidX9 (aka OneLoneCoder), AniCator, JustinRichardsMusic, and everybody else who was a part of that audiophile conversation when I asked for help! Your patience and feedback made this project possible. Thank you!
+For example, the demo uses miniaudio's 3D audio features to position a sound and move the listener, producing a distance effect:
 
-Also, for v2 of this extension, I'd also like to single out sigonasr2 (Dense Dance 2π) for the waveform functionality and for crafting the demos for them! While the waveform and synthesis has seen some change, overall the v3 version of this extension wouldn't have this functionality were it not for sigonasr2's contributions. Thank you Sig!
+```cpp
+ma_sound_set_position(audio.GetMASound(song1), 0.0f, 0.0f, 0.0f);
+ma_engine_listener_set_position(&audio.GetEngine(), 0, 0.0f, distance, 0.0f);
+```
 
-## License
+Per-voice settings made through miniaudio directly only affect that one voice. For anything that should apply to every voice of a sound, prefer the extension's own functions.
 
-Licensed under the OLC-3 License (OneLoneCoder Public License v3)
+## Platform notes
 
-Copyright 2023-2026 Moros Smith
+- **Emscripten:** the extension configures miniaudio's resource manager for single-threaded, non-blocking operation and processes pending jobs each frame automatically. Browsers require a user gesture before audio starts, so expect silence until the user interacts with the page.
+- **Android:** `CreateSoundFromFile` reads from the app's bundled assets.
+- **Desktop:** files are read from disk using the path you provide, relative to the working directory.
 
-For full license details, see the header file or original source.
+## Credits and licence
+
+Copyright 2023-2026 Moros Smith. Licensed under the **OLC-3** licence (see the header of `olcPGEX3_Miniaudio.h` for the full text).
+
+Demo music: *Joy Ride [Full version]* by MusicLFiles, from [filmmusic.io](https://filmmusic.io/song/11627-joy-ride-full-version), licensed under [CC BY 4.0](https://filmmusic.io/standard-license).
+
+Built on [miniaudio](https://miniaud.io) by David Reid.

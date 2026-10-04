@@ -49,7 +49,7 @@ public:
 		// load `assets/SampleA.wav` into `sample`
 		audio.CreateSoundFromFile(sample, "assets/SampleA.wav");
         
-		// create all of the waveforms at 0.1 amplitude at 440Mhz (A4)
+		// create all of the waveforms at 0.1 amplitude at 440hz (A4)
 		audio.CreateWaveform(sine,     olc::ext::Miniaudio::Waveform::Type::Sine, 0.1, 440.0);
 		audio.CreateWaveform(square,   olc::ext::Miniaudio::Waveform::Type::Square, 0.1, 440.0);
 		audio.CreateWaveform(triangle, olc::ext::Miniaudio::Waveform::Type::Triangle, 0.1, 440.0);
