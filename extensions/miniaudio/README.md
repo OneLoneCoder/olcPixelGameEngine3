@@ -9,6 +9,7 @@ Because it sits on miniaudio, it needs next to no extra build configuration to w
 - **Sound loading** from disk or from memory (WAV and MP3, plus anything your miniaudio build can decode)
 - **Polyphonic playback**: each sound has a pool of voices (default 8), so rapid-fire sound effects overlap instead of cutting each other off
 - **Per-sound controls**: volume, pan, pitch, looping, seek, forward, rewind, pause, toggle
+- **Sound groups**: bundle sounds into groups (music, effects, UI...) and control volume, pan and pitch for the whole group at once, plus a built-in main group that doubles as a master volume
 - **Playback position** queries in milliseconds or as a normalised float (handy for progress bars)
 - **Waveform generators**: sine, square, triangle and sawtooth, with adjustable amplitude, frequency and type, and a short fade in/out to avoid clicks
 - **Synth callback**: generate or process audio sample by sample
@@ -192,6 +193,65 @@ draw.FilledRect({0, 350}, {ScreenSize().x * progress, 20}, olc::Colour::YELLOW);
 
 > **Note:** a sound that has never had `Play()` called on it can be started with `Toggle()`, as the demo does with its music.
 
+## Sound groups
+
+A sound group lets you control several sounds together. Typical uses are separate volume sliders for music and sound effects, or ducking all effects while a menu is open.
+
+```cpp
+olc::ext::Miniaudio::SoundGroup musicGroup;
+olc::ext::Miniaudio::SoundGroup sfxGroup;
+
+// create the groups (do this after the extension is installed, e.g. in OnUserCreate)
+audio.CreateSoundGroup(musicGroup);
+audio.CreateSoundGroup(sfxGroup);
+
+// assign already-loaded sounds to a group
+audio.SetGroup(song1, musicGroup);
+audio.SetGroup(jump,  sfxGroup);
+audio.SetGroup(coin,  sfxGroup);
+
+// now control them together
+audio.SetVolume(musicGroup, 0.4f);
+audio.SetVolume(sfxGroup,   0.8f);
+audio.SetPan(sfxGroup, -0.25f);
+```
+
+| Function | Description |
+|---|---|
+| `CreateSoundGroup(group)` | Create a group. Returns `false` on failure, or if that `SoundGroup` object has already been created |
+| `DestroySoundGroup(group)` | Free a group |
+| `SetGroup(sound, group)` | Route all voices of a sound through the group. Returns `false` if the sound or group isn't loaded |
+| `SetVolume(group, v)` | `0.0f` is mute, `1.0f` is full |
+| `SetPan(group, p)` | `-1.0f` left, `0.0f` centre, `1.0f` right |
+| `SetPitch(group, p)` | `1.0f` is normal |
+| `Play(group, volume, pan, pitch)` | Start the group, optionally applying volume, pan and pitch first (same out-of-range "leave unchanged" defaults as sounds) |
+| `Stop(group)` | Stop the group |
+| `IsPlaying(group)` / `IsLoaded(group)` | State queries |
+| `GetMainGroup()` | The built-in main group (see below) |
+
+### The main group
+
+When the engine is installed it creates a **main group**, and every sound you load is attached to it by default. Every group you create is a child of the main group, so audio flows like this:
+
+```
+sound  ->  its group  ->  main group  ->  output device
+```
+
+The volume, pan and pitch at each stage are combined, which makes the main group a convenient master control:
+
+```cpp
+// master volume
+audio.SetVolume(audio.GetMainGroup(), 0.5f);
+```
+
+### Things to know
+
+- `Play(group)` does nothing if the group is already playing, and in that case the volume, pan and pitch arguments are **not** applied either. To change settings on a running group, use `SetVolume`, `SetPan` or `SetPitch`.
+- `Stop(group)` stops the group's output, so everything routed through it goes quiet. Call `Play(group)` to bring it back.
+- `SetGroup` applies to every voice of the sound. It throws `std::runtime_error` if miniaudio fails to make the connection.
+- Before destroying a group, move its sounds elsewhere (for example `audio.SetGroup(sound, audio.GetMainGroup())`) so nothing is left routed through a freed group. Don't destroy the main group.
+- Groups only affect **sounds**. Waveforms, the synth callback and the raw data callback are mixed in separately, so they are not affected by group volume, pan or pitch (or by the main group).
+
 ## Waveforms
 
 The extension includes a simple oscillator for tones, beeps and chiptune-style effects.
@@ -274,10 +334,13 @@ When you need something the extension doesn't wrap, you can get at the underlyin
 |---|---|
 | `GetMASound(sound)` | `ma_sound*` for a voice of the sound |
 | `GetMAWaveform(wave)` | `ma_waveform*` |
-| `GetEngine()` | `ma_engine&` |
-| `GetDevice()` | `ma_device&` |
-| `GetResourceManager()` | `ma_resource_manager&` |
+| `GetEngine()` | `ma_engine*` |
+| `GetDevice()` | `ma_device*` |
+| `GetResourceManager()` | `ma_resource_manager*` |
 | `GetDeviceChannels()`, `GetDeviceFormat()`, `GetDeviceSampleRate()`, `GetDeviceType()` | Current device settings |
+| `GetMainGroup()` | `SoundGroup&` for the main group |
+
+> **Note:** `GetEngine()`, `GetDevice()` and `GetResourceManager()` return **pointers**. Pass them straight to miniaudio functions without the `&` operator.
 
 `GetMASound` returns the currently playing voice, or the *next* voice to be used if the sound isn't playing. It returns `nullptr` if the sound isn't loaded.
 
@@ -285,7 +348,7 @@ For example, the demo uses miniaudio's 3D audio features to position a sound and
 
 ```cpp
 ma_sound_set_position(audio.GetMASound(song1), 0.0f, 0.0f, 0.0f);
-ma_engine_listener_set_position(&audio.GetEngine(), 0, 0.0f, distance, 0.0f);
+ma_engine_listener_set_position(audio.GetEngine(), 0, 0.0f, distance, 0.0f);
 ```
 
 Per-voice settings made through miniaudio directly only affect that one voice. For anything that should apply to every voice of a sound, prefer the extension's own functions.
