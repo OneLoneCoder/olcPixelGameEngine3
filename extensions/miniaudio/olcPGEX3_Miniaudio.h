@@ -76,6 +76,13 @@ namespace olc::ext::Miniaudio
 
 	namespace internal
 	{
+		struct SoundGroupInstance
+		{
+			bool is_loaded{false};
+			ma_sound_group group;
+			ma_sound_group_config group_config;
+		};
+
 		struct SoundInstance
 		{
 			std::vector<uint8_t> buffer;
@@ -101,8 +108,15 @@ namespace olc::ext::Miniaudio
 			ma_waveform waveform;
 			ma_waveform_config waveform_config;
 		};
-
 	}
+	
+	class SoundGroup
+	{
+		friend class AudioEngine;
+	private:
+		internal::SoundGroupInstance* group{nullptr};
+		AudioEngine* pgex{nullptr};
+	};
 
 	class Sound
 	{
@@ -155,7 +169,30 @@ namespace olc::ext::Miniaudio
 
 	public: // Callback
 		static void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
+	
+	public: // SoundGroup
+		// Create a sound group
+		bool CreateSoundGroup(SoundGroup& group);
+		void DestroySoundGroup(SoundGroup& group);
+		// set the SoundGroup that a Sound belongs to
+		bool SetGroup(Sound& sound, SoundGroup& group);
 
+	public: // SoundGroup Playback and Controls
+		// plays a sound group, can set volume, pan, or pitch (note: default values are out of range deliberately)
+		void Play(SoundGroup& group, const float volume = 2.0f, const float pan = 2.0f, const float pitch = 2.0f);
+		// stops playback of a soundgroup
+		void Stop(SoundGroup& group);
+        // set volume of a sound, 0.0f is mute, 1.0f is full
+        void SetVolume(SoundGroup& group, const float& volume);
+        // set pan of a sound, -1.0f is left, 1.0f is right, 0.0f is center
+        void SetPan(SoundGroup& group, const float& pan);
+        // set pitch of a sound, 1.0f is normal
+        void SetPitch(SoundGroup& group, const float& pitch);
+		// determine if this SoundGroup is playing
+		bool IsPlaying(SoundGroup& group) const;
+		// determine if this SoundGroup is loaded
+		bool IsLoaded(SoundGroup& group) const;
+		
 	public: // Sounds
 		// Create a sound resource based on a sound file asset on disk
 		bool CreateSoundFromFile(Sound& sound, const std::string& sFileName, uint32_t nNumVoices = 8);
@@ -237,6 +274,8 @@ namespace olc::ext::Miniaudio
 		int GetDeviceSampleRate() const;
 		ma_device_type GetDeviceType() const;
 
+		SoundGroup& GetMainGroup();
+
 	public:
 		AudioEngine();
 		~AudioEngine();
@@ -264,7 +303,11 @@ namespace olc::ext::Miniaudio
 		// data callback function
 		std::function<void(float* pFramesOut, ma_uint64 frameCount)> m_data_callback;
 
-		// track sounds and waveforms
+		// the main sound group
+		SoundGroup m_main_sound_group;
+
+		// track SoundGroup, Sound and Waveforms instances
+		std::vector<internal::SoundGroupInstance*> m_sound_groups;
 		std::vector<internal::SoundInstance*> m_sounds;
 		std::vector<internal::WaveformInstance*> m_waveforms;
 
@@ -313,6 +356,14 @@ namespace olc::ext::Miniaudio
 				ma_waveform_uninit(&w->waveform);
 			}
 			m_waveforms.clear();
+
+			for(auto& g : m_sound_groups)
+			{
+				if(g == nullptr) continue;
+				if(!g->is_loaded) continue;
+				ma_sound_group_uninit(&g->group);
+			}
+			m_sound_groups.clear();
 
 			ma_resource_manager_uninit(&m_resource_manager);
 
@@ -435,6 +486,126 @@ namespace olc::ext::Miniaudio
 		}
     }
 
+	bool AudioEngine::CreateSoundGroup(SoundGroup& group)
+	{
+		// This group has already been created
+		if(group.group != nullptr)
+			return false;
+		
+		group.group = new internal::SoundGroupInstance();
+		group.pgex = this;
+		
+		group.group->group_config = ma_sound_config_init();
+		
+		// set parent to the main group, if it's been created, otherwise, we're creating the main group
+		ma_sound_group* parent = nullptr;
+		if(!m_sound_groups.empty())
+			parent = &m_sound_groups[0]->group;
+		
+		ma_result result = ma_sound_group_init(GetEngine(), 0, parent, &group.group->group);
+	    
+		if(result != MA_SUCCESS)
+		{
+			delete group.group;
+		}
+		
+		m_sound_groups.push_back(group.group);
+		group.group->is_loaded = true;
+		
+		return group.group->is_loaded;
+	}
+
+	void AudioEngine::DestroySoundGroup(SoundGroup& group)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		
+		ma_sound_group_uninit(&group.group->group);
+		group.group->is_loaded = false;
+		delete group.group;
+		group.group = nullptr;
+	}
+
+	bool AudioEngine::SetGroup(Sound& sound, SoundGroup& group)
+	{
+		if(sound.sound == nullptr) return false;
+		if(!sound.sound->is_loaded) return false;
+		if(group.group == nullptr) return false;
+		if(!group.group->is_loaded) return false;
+
+		ma_result result = ma_node_attach_output_bus(&sound.sound->base_sound, 0, &group.group->group, 0);
+		if(result != MA_SUCCESS)
+			throw std::runtime_error("Failed to attach a sound to a sound group");
+
+		for(auto& v : sound.sound->voices)
+		{
+			result = ma_node_attach_output_bus(&v, 0, &group.group->group, 0);
+			if(result != MA_SUCCESS)
+				throw std::runtime_error("Failed to attach a sound to a sound group");
+		}
+		return true;
+	}
+
+	void AudioEngine::Play(SoundGroup& group, const float volume, const float pan, const float pitch)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		if(ma_sound_group_is_playing(&group.group->group)) return;
+
+		if(volume != 2.0f)
+			ma_sound_group_set_volume(&group.group->group, std::clamp(volume, 0.0f, 1.0f));
+		
+		if(pan != 2.0f)
+			ma_sound_group_set_pan(&group.group->group, std::clamp(pan, -1.0f, 1.0f));
+		
+		if(pitch != 2.0f)
+			ma_sound_group_set_pitch(&group.group->group, std::max({0.0f, pitch}));
+		
+		ma_sound_group_start(&group.group->group);
+	}
+
+	void AudioEngine::Stop(SoundGroup& group)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		if(!ma_sound_group_is_playing(&group.group->group)) return;
+		ma_sound_group_stop(&group.group->group);
+	}
+
+	void AudioEngine::SetVolume(SoundGroup& group, const float& volume)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		ma_sound_group_set_volume(&group.group->group, std::clamp(volume, 0.0f, 1.0f));
+	}
+
+	void AudioEngine::SetPan(SoundGroup& group, const float& pan)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		ma_sound_group_set_pan(&group.group->group, std::clamp(pan, -1.0f, 1.0f));
+	}
+
+	void AudioEngine::SetPitch(SoundGroup& group, const float& pitch)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		ma_sound_group_set_pitch(&group.group->group, std::max({0.0f, pitch}));
+	}
+
+	bool AudioEngine::IsPlaying(SoundGroup& group) const
+	{
+		if(group.group == nullptr) return false;
+		if(!group.group->is_loaded) return false;
+		return ma_sound_group_is_playing(&group.group->group);
+	}
+
+	bool AudioEngine::IsLoaded(SoundGroup& group) const
+	{
+		if(group.group == nullptr) return false;
+		return group.group->is_loaded;
+	}
+
 	bool AudioEngine::CreateSoundFromFile(Sound& sound, const std::string& sFileName, uint32_t nNumVoices)
 	{
 		sound.sound = new internal::SoundInstance();
@@ -521,12 +692,12 @@ namespace olc::ext::Miniaudio
 			ma_resource_manager_unregister_data(&m_resource_manager, sound.sound->virtual_path.c_str());
 			return false;
 		}
-
+		
 		result = ma_sound_init_from_file(
 			GetEngine(),
 			sound.sound->virtual_path.c_str(),
 			MA_SOUND_FLAG_DECODE,
-			nullptr,
+			&GetMainGroup().group->group,
 			&fence,
 			&sound.sound->base_sound
 		);
@@ -540,7 +711,7 @@ namespace olc::ext::Miniaudio
 		sound.sound->voices.resize(sound.sound->num_voices);
 		for(int i = 0; i < sound.sound->num_voices; ++i)
 		{
-			result = ma_sound_init_copy(GetEngine(), &sound.sound->base_sound, 0, nullptr, &sound.sound->voices[i]);
+			result = ma_sound_init_copy(GetEngine(), &sound.sound->base_sound, 0, &GetMainGroup().group->group, &sound.sound->voices[i]);
 			if(result != MA_SUCCESS)
 				break;
 		}
@@ -907,6 +1078,11 @@ namespace olc::ext::Miniaudio
 		return m_cfg.DeviceType;
 	}
 
+	SoundGroup& AudioEngine::GetMainGroup()
+	{
+		return m_main_sound_group;
+	}
+
 	bool AudioEngine::OnInstall([[maybe_unused]] olc::PixelGameEngine* pge)
 	{
         m_pge = pge;
@@ -950,6 +1126,14 @@ namespace olc::ext::Miniaudio
 			std::cerr << "PGEX3_Miniaudio: failed to initialize engine\n";
 			return false;
 		}
+		
+		// group 0
+		if(!CreateSoundGroup(m_main_sound_group))
+		{
+			std::cerr << "PGEX3_Miniaudio: failed to create main sound group\n";
+			return false;
+		}
+
 		m_is_initialized = true;
 		return true;
 	}
