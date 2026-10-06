@@ -9,7 +9,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(miniaudio)
 
-add_example(ext_demo_Miniaudio demo_Miniaudio.cpp)
+file(GLOB SOURCES "*.cpp")
 
-target_include_directories(ext_demo_Miniaudio PRIVATE "${CMAKE_BINARY_DIR}/_deps/miniaudio-src")
-handle_assets(ext_demo_Miniaudio ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+# loop through each source file
+foreach(source ${SOURCES})
+    get_filename_component(EXE_NAME ${source} NAME_WE)
+    add_example(${EXE_NAME} ${source})
+    target_include_directories(${EXE_NAME} PRIVATE "${CMAKE_BINARY_DIR}/_deps/miniaudio-src")
+    handle_assets(${EXE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+endforeach()
