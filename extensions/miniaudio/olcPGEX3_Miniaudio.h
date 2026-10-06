@@ -946,7 +946,7 @@ namespace olc::ext::Miniaudio
 				frequency
 		);
 		
-		waveform.waveform->rampStep = 1.0f / (GetDeviceSampleRate() * 0.02f);
+		waveform.waveform->rampStep = 1.0f / (GetDeviceSampleRate() * 0.01f);
 
 		if(ma_waveform_init(&waveform.waveform->waveform_config, &waveform.waveform->waveform) != MA_SUCCESS)
 		{
@@ -1088,7 +1088,7 @@ namespace olc::ext::Miniaudio
         m_pge = pge;
 
 		m_device_config = ma_device_config_init(GetDeviceType());
-        m_device_config.playback.format = GetDeviceFormat();
+		m_device_config.playback.format = GetDeviceFormat();
         m_device_config.playback.channels = GetDeviceChannels();
         m_device_config.sampleRate = GetDeviceSampleRate();
         m_device_config.dataCallback = AudioEngine::data_callback;
@@ -1100,10 +1100,10 @@ namespace olc::ext::Miniaudio
 			return false;
 		}
 
-        m_resource_manager_config = ma_resource_manager_config_init();
-        m_resource_manager_config.decodedFormat     = GetDeviceFormat();
-        m_resource_manager_config.decodedChannels   = GetDeviceChannels();
-        m_resource_manager_config.decodedSampleRate = GetDeviceSampleRate();
+		m_resource_manager_config = ma_resource_manager_config_init();
+		m_resource_manager_config.decodedFormat     = GetDeviceFormat();
+		m_resource_manager_config.decodedChannels   = GetDeviceChannels();
+		m_resource_manager_config.decodedSampleRate = GetDeviceSampleRate();
     
     #ifdef __EMSCRIPTEN__
         m_resource_manager_config.jobThreadCount = 0;                           
@@ -1118,7 +1118,7 @@ namespace olc::ext::Miniaudio
 		}
     
         m_engine_config = ma_engine_config_init();
-        m_engine_config.pDevice = &m_device;
+		m_engine_config.pDevice = &m_device;
         m_engine_config.pResourceManager = &m_resource_manager;
     
         if(ma_engine_init(&m_engine_config, &m_engine) != MA_SUCCESS)
