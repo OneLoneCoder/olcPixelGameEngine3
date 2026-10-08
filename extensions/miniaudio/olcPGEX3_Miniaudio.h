@@ -132,10 +132,11 @@ namespace olc::ext::Miniaudio
 	public:
 		enum class Type
 		{
-			Sine,
-			Square,
-			Triangle,
-			Sawtooth
+			Sine = 0,
+			Square = 1,
+			Triangle = 2,
+			Sawtooth = 3,
+			Count
 		};
 	private:
 		internal::WaveformInstance* waveform{nullptr};
