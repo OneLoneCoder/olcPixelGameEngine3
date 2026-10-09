@@ -6,19 +6,12 @@
 	Licenced under the OLC-3 License
 */
 
-
-// Define OLC_PGE3_APPLICATION to include the implementation of 
-// the Pixel Game Engine as part of this translation unit
 #define OLC_PGE3_APPLICATION
 #include "olcPixelGameEngine3.h"
 
 #define OLC_PGEX3_MINIAUDIO
 #include "olcPGEX3_Miniaudio.h"
 
-// Example application demonstrating the miniaudio extension.
-// This class overrides the olc::PixelGameEngine base class
-// by implementing the OnUserCreate() and OnUserUpdate()
-// functions
 class Example_Miniaudio : public olc::PixelGameEngine
 {
 public:

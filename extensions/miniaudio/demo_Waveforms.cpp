@@ -1,14 +1,11 @@
 /*
-	olc::PixelGameEngine3 Example - olcPGEX3_Miniaudio
+	olc::PixelGameEngine3 Example - demo_Waveforms
 
-	Demonstrates using olcPGEX3_Miniaudio
+	Demonstrates using waveforms from olcPGEX3_Miniaudio
 
 	Licenced under the OLC-3 License
 */
 
-
-// Define OLC_PGE3_APPLICATION to include the implementation of 
-// the Pixel Game Engine as part of this translation unit
 #define OLC_PGE3_APPLICATION
 #include "olcPixelGameEngine3.h"
 
@@ -18,16 +15,12 @@
 // Save us a whole lot of typing in this demo
 using namespace olc::ext::Miniaudio;
 
-// Example application demonstrating the miniaudio extension.
-// This class overrides the olc::PixelGameEngine base class
-// by implementing the OnUserCreate() and OnUserUpdate()
-// functions
 class Example_Waveforms : public olc::PixelGameEngine
 {
 public:
 	Example_Waveforms()
 	{
-		sAppName = "Example - olcPGEX3_Miniaudio";
+		sAppName = "Example - demo_Waveforms";
     	if(!InstallSystemExtension(&audio))
 			throw std::runtime_error("Failed to install olcPGEX3_Miniaudio");
 	}
