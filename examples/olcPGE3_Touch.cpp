@@ -39,7 +39,7 @@ public:
 
 		// All "touches" get given a unique ID and are tracked by the OS. This ID
 		// could be anything, so we never really want to work with t directly.
-		auto touches = touch.GetTouchIDs();
+		auto touches = GetTouch().GetTouchIDs();
 
 		// Display total number of touches
 		draw.String({ 2.0f, 2.0f }, "Touch Points: " + std::to_string(touches.size()), olc::Colour::WHITE);
