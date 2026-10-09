@@ -147,7 +147,6 @@ static constexpr const char* kSetContentViewSel                 = "setContentVie
 static constexpr const char* kContentViewSel                    = "contentView";
 static constexpr const char* kBoundsSel                         = "bounds";
 static constexpr const char* kConvertRectToBackingSel           = "convertRectToBacking:";      // Thank you - Ben the Ultimate Guru
-static constexpr const char* kConvertRectFromBackingSel         = "convertRectFromBacking:";    // Thank you - Mr B the Ultimate Teacher!!!
 static constexpr const char* kConvertPointToBackingSel          = "convertPointToBacking:";
 static constexpr const char* kConvertPointFromBackingSel        = "convertPointFromBacking:";
 static constexpr const char* kConvertPointFromViewSel           = "convertPoint:fromView:";
@@ -331,7 +330,6 @@ namespace ObjectiveCSEL {
    static SEL contentViewSel              = nullptr;
    static SEL boundsSel                   = nullptr;
    static SEL convertRectToBackingSel     = nullptr; // Thank you - Ben the Ultimate Guru
-   static SEL convertRectFromBackingSel   = nullptr; // Thank you - Mr B the Ultimate Teacher!!!
    static SEL convertPointToBackingSel    = nullptr;
    static SEL convertPointFromBackingSel  = nullptr;
    static SEL convertPointFromViewSel     = nullptr;
@@ -481,7 +479,6 @@ namespace ObjectiveCSEL {
         contentViewSel                     = sel_registerName(kContentViewSel);
         boundsSel                          = sel_registerName(kBoundsSel);
         convertRectToBackingSel            = sel_registerName(kConvertRectToBackingSel);    // Thank you - Ben the Ultimate Guru
-        convertRectFromBackingSel          = sel_registerName(kConvertRectFromBackingSel);  // Thank you - Mr B the Ultimate Teacher!!!
         convertPointToBackingSel           = sel_registerName(kConvertPointToBackingSel);
         convertPointFromBackingSel         = sel_registerName(kConvertPointFromBackingSel);
         convertPointFromViewSel            = sel_registerName(kConvertPointFromViewSel);
@@ -1368,8 +1365,8 @@ void view_mouseDown(id self, SEL _cmd, id event) {
     CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
     uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
 
-    // Is it a mouse drag event (subtype 0) or a tablet pointer event (subtype 1 or 2)? Thanks Mr B
-    if (nPointerEventType != kCGEventMouseSubtypeTabletPoint && nPointerEventType != kCGEventMouseSubtypeTabletProximity) [[likely]] {
+    // Is it a mouse drag event (subtype 0) or a tablet pointer event (subtype 1 or 2)?
+    if (nPointerEventType == 0) [[likely]] {
 
         if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseDownCallback) [[likely]] {
             MouseEventData data = extractMouseEventData(event);
@@ -1400,8 +1397,8 @@ void view_mouseUp(id self, SEL _cmd, id event) {
     CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
     uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
 
-    // Is it a mouse drag event (subtype 0) or a tablet pointer event (subtype 1 or 2)? Thanks Mr B
-    if (nPointerEventType != kCGEventMouseSubtypeTabletPoint && nPointerEventType != kCGEventMouseSubtypeTabletProximity) [[likely]] {
+    // Is it a mouse drag event (subtype 0) or a tablet pointer event (subtype 1 or 2)?
+    if (nPointerEventType == 0) [[likely]] {
 
         MouseEventData data = extractMouseEventData(event);
         if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseUpCallback) [[likely]] {
@@ -1432,8 +1429,8 @@ void view_mouseDragged(id self, SEL _cmd, id event) {
     CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
     uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
 
-    // Is it a mouse drag event (subtype 0) or a tablet pointer event (subtype 1 or 2)? Thanks Mr B
-    if (nPointerEventType != kCGEventMouseSubtypeTabletPoint && nPointerEventType != kCGEventMouseSubtypeTabletProximity) [[likely]] {
+    // Is it a mouse drag event (subtype 0) or a tablet pointer event (subtype 1 or 2)?
+    if (nPointerEventType == 0) [[likely]] {
 
         if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->mouseDraggedCallback) [[likely]] {
             MouseEventData data = extractMouseEventData(event);
@@ -1459,7 +1456,12 @@ void view_mouseDragged(id self, SEL _cmd, id event) {
 // Handle mouse movement events
 void view_mouseMoved(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
-   
+
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    // if it is a trackpad event, ignore it.
+    if (nPointerEventType > 2) return;
+    
     // a Mouse move event and Stlus roximity Event have the same properties.
     NSPoint location         = ((NSPoint(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::locationInWindowSel);
     NSUInteger modifierFlags = ((NSUInteger(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::modifierFlagsSel);
@@ -1474,7 +1476,12 @@ void view_mouseMoved(id self, SEL _cmd, id event) {
 // Handle right mouse down events
 void view_rightMouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
-       
+    
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    if(nPointerEventType > 2) [[unlikely]]
+        return; // Ignore mouse events that are not mouse drag or tablet pointer events
+    
     MouseEventData data = extractMouseEventData(event);
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseDownCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseDownCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
@@ -1485,6 +1492,11 @@ void view_rightMouseDown(id self, SEL _cmd, id event) {
 void view_rightMouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
     
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    if(nPointerEventType > 2) [[unlikely]]
+        return; // Ignore mouse events that are not mouse drag or tablet pointer events
+    
     MouseEventData data = extractMouseEventData(event);
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseUpCallback) [[likely]] {
         gptrNSWindowEvents->rightMouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
@@ -1494,6 +1506,11 @@ void view_rightMouseUp(id self, SEL _cmd, id event) {
 // Handle right mouse drag events
 void view_rightMouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
+
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    if(nPointerEventType > 2) [[unlikely]]
+        return; // Ignore mouse events that are not mouse drag or tablet pointer events
     
     MouseEventData data = extractMouseEventData(event);
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->rightMouseDraggedCallback) [[likely]] {
@@ -1506,6 +1523,11 @@ void view_rightMouseDragged(id self, SEL _cmd, id event) {
 void view_otherMouseDown(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
     
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    if(nPointerEventType > 2) [[unlikely]]
+        return; // Ignore mouse events that are not mouse drag or tablet pointer events
+    
     MouseEventData data = extractMouseEventData(event);
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDownCallback) [[likely]] {
         gptrNSWindowEvents->otherMouseDownCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
@@ -1516,6 +1538,11 @@ void view_otherMouseDown(id self, SEL _cmd, id event) {
 void view_otherMouseUp(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
     
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    if(nPointerEventType > 2) [[unlikely]]
+        return; // Ignore mouse events that are not mouse drag or tablet pointer events
+    
     MouseEventData data = extractMouseEventData(event);
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseUpCallback) {
         gptrNSWindowEvents->otherMouseUpCallback(data.location.x, data.location.y, (int)data.buttonNumber, (unsigned int)data.modifierFlags, gptrNSWindowEvents->eventUserData);
@@ -1524,6 +1551,11 @@ void view_otherMouseUp(id self, SEL _cmd, id event) {
 
 void view_otherMouseDragged(id self, SEL _cmd, id event) {
     (void)self;(void)_cmd;
+
+    CGEventRef cgEvent        = ((CGEventRef(*)(id, SEL))objc_msgSend)(event, ObjectiveCSEL::cgEventSel);
+    uint8_t nPointerEventType = CGEventGetIntegerValueField(cgEvent, kCGMouseEventSubtype);
+    if(nPointerEventType > 2) [[unlikely]]
+        return; // Ignore mouse events that are not mouse drag or tablet pointer events
     
     MouseEventData data = extractMouseEventData(event);
     if (gptrNSWindowEvents && gptrNSWindowEvents->acceptsInputEvents && gptrNSWindowEvents->otherMouseDraggedCallback) [[likely]] {
@@ -2068,17 +2100,7 @@ extern "C" {
 
     // Destroy the window
     void window_destroy(Window* self) {
-
-        // Thanks Mr B!
-        if (self) {
-            self->acceptsInputEvents = NO;
-            if (gptrNSWindowEvents == self) {
-                gptrNSWindowEvents = NULL;
-            }
-            if (gptrWindowDelegate == self) {
-                gptrWindowDelegate = NULL;
-            }
-        }
+        (void)self;
         // NSWindow will be cleaned up by autorelease pool
     }
 
@@ -2389,9 +2411,8 @@ extern "C" {
         // Make context current
         ((void(*)(id, SEL))objc_msgSend)(self->glContext, ObjectiveCSEL::makeCurrentContextSel);
         
-        // Update the view frame Without folks like Mr B the Ultimate Teacher, this would have been tricky
-        NSRect pixelFrame = {0.0, 0.0, width, height};
-        NSRect newFrame = ((NSRect(*)(id, SEL, NSRect))objc_msgSend)(self->glView, ObjectiveCSEL::convertRectFromBackingSel, pixelFrame);
+        // Update the view frame
+        NSRect newFrame = {0.0, 0.0, width, height};
         ((void(*)(id, SEL, NSRect))objc_msgSend)(self->glView, ObjectiveCSEL::setFrameSel, newFrame);
         
         // Force context to reshape
