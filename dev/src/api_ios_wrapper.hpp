@@ -208,6 +208,11 @@ namespace olc {
                     if (app_) application_run(app_);
                 }
                 
+                void terminate() noexcept {
+                    if (app_) application_destroy(app_);
+                    app_ = nullptr;
+                }
+                
                 // Get underlying C handle
                 struct ::Application* getCHandle() const noexcept { return app_; }
                 

@@ -88,6 +88,7 @@ namespace olc
 		olc::ImageRegion region(const olc::vf2d& vTL, const olc::vf2d& vTR, const olc::vf2d& vBL, const olc::vf2d& vBR);
 		olc::ImageRegion flipV();
 		olc::ImageRegion flipH();
+		olc::ImageRegion flipD();
 
 	public: // Make friendly private later
 		void BindGPU();

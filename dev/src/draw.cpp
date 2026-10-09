@@ -366,10 +366,26 @@ GPUTask olc::Draw::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const olc
 
 }
 
+GPUTask olc::Draw::TaskDrawPoints(const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+{
+	GPUTask task;
+	task.structure = olc::Structure::Point;
+	task.vertexBuffer.resize(vPoints.size());
+	for (size_t i = 0; i < vPoints.size(); i++)
+	{
+		task.vertexBuffer[i] = { { vPoints[i].x, vPoints[i].y, 1.0f, 1.0f }, vColours[i],{ 0, 0 },{ 0, 0 },{ 0, 0 },{ 0, 0 } };
+	}
+	task.blendmode = blendMode;
+	task.tint = tint;
+	return task;
+}
+
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
-	olc_IgnoreUnused(structure);
-	return TaskDrawLine(vPoints, vColours, tint, false, true);
+	if (structure == olc::Structure::Point)
+		return TaskDrawPoints(vPoints, vColours, tint);
+	else
+		return TaskDrawLine(vPoints, vColours, tint, false, true);
 }
 
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
@@ -918,7 +934,7 @@ const GPUTask& olc::Draw::TexturedPolygon(const olc::Structure structure, const 
 		)));
 }
 
-const GPUTask& olc::Draw::String(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
+const GPUTask& olc::Draw::String(const olc::vf2d& pos, std::string_view text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
 {
 	PrepareTargetForHW();
 
@@ -949,7 +965,7 @@ const GPUTask& olc::Draw::String(const olc::vf2d& pos, const std::string& text, 
 	return Batch(task);
 }
 
-const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
+const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, std::string_view text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
 {
 	PrepareTargetForHW();
 
@@ -979,7 +995,7 @@ const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, const std::string& te
 	return Batch(task);
 }
 
-olc::vf2d olc::Draw::GetTextSize(const std::string& text, const bool bProportional, const olc::vf2d& scale, olc::Font& font)
+olc::vf2d olc::Draw::GetTextSize(std::string_view text, const bool bProportional, const olc::vf2d& scale, olc::Font& font)
 {	
 	olc::vf2d size = { 0, font.fLineHeight * scale.y };
 	olc::vf2d pos = { 0, font.fLineHeight * scale.y };

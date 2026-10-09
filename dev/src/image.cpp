@@ -99,6 +99,11 @@ namespace olc
 		return region({ 0,0 }, this->Size()).flipH();
 	}
 
+	olc::ImageRegion Image::flipD()
+	{		
+		return olc::ImageRegion(*this, { 0,0 }, { 0,1 }, { 1, 0 }, { 1,1 });
+	}
+
 	void Image::BindGPU()
 	{
 		onGPU = true;

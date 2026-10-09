@@ -2402,6 +2402,7 @@ namespace olc
 		olc::ImageRegion region(const olc::vf2d& vTL, const olc::vf2d& vTR, const olc::vf2d& vBL, const olc::vf2d& vBR);
 		olc::ImageRegion flipV();
 		olc::ImageRegion flipH();
+		olc::ImageRegion flipD();
 
 	public: // Make friendly private later
 		void BindGPU();
@@ -3471,7 +3472,7 @@ namespace olc
 		// Draws a string at specified location in monospace font
 		const GPUTask& String(
 			const olc::vf2d& pos,
-			const std::string& text, 
+			std::string_view text, 
 			const olc::Pixel col = olc::Colour::WHITE,
 			const olc::vf2d& scale = { 1.0f, 1.0f },
 			olc::Font& font = olc::fontClassicPGE);
@@ -3479,14 +3480,14 @@ namespace olc
 		// Draws a string at specified location in proportional font
 		const GPUTask& StringProp(
 			const olc::vf2d& pos,
-			const std::string& text,
+			std::string_view text,
 			const olc::Pixel col = olc::Colour::WHITE,
 			const olc::vf2d& scale = { 1.0f, 1.0f },
 			olc::Font& font = olc::fontClassicPGE);
 
 		// Returns the bounding box size of a string in pixels
 		olc::vf2d GetTextSize(
-			const std::string& text,
+			std::string_view text,
 			const bool bProportional = false,
 			const olc::vf2d& scale = { 1.0f, 1.0f },
 			olc::Font& font = olc::fontClassicPGE);
@@ -3668,6 +3669,11 @@ namespace olc
 			const olc::Pixel tint = olc::Colour::WHITE,
 			const bool constrain = true,
 			const bool looped = false);
+
+		GPUTask TaskDrawPoints(
+			const std::vector<olc::vf2d>& vPoints,
+			const std::vector<olc::Pixel>& vColours,
+			const olc::Pixel tint = olc::Colour::WHITE);
 		
 		GPUTask TaskDrawPolygon(
 			olc::Structure structure,
@@ -4418,6 +4424,7 @@ namespace olc
 		// Input devices are handled by a regular olc::Window, but for convenience...
 		olc::hw::Mouse& GetMouse();
 		olc::hw::Keyboard& GetKeyboard();
+		olc::hw::Touch& GetTouch();
 		
 		// Returns the current size of the "screen" in pixels
 		const olc::vi2d& ScreenSize();
@@ -6155,6 +6162,11 @@ namespace olc {
                 
                 void run() noexcept {
                     if (app_) application_run(app_);
+                }
+                
+                void terminate() noexcept {
+                    if (app_) application_destroy(app_);
+                    app_ = nullptr;
                 }
                 
                 // Get underlying C handle
@@ -16348,10 +16360,11 @@ namespace olc::host {
             }
             pIOSGLKView->enableTouchHandling();
             
-            auto test = pIOSGLKView->isMultipleTouchEnabled();
-            if(!test)
-                pIOSGLKView->setMultipleTouchEnabled(true);
-            pIOSGLKView->debugTouchSetup();
+            //auto test = pIOSGLKView->isMultipleTouchEnabled();
+            //if(!test)
+            //    pIOSGLKView->setMultipleTouchEnabled(true);
+            
+            //pIOSGLKView->debugTouchSetup();
             //std::cout << "iOS View Controller did load." << std::endl;
         });
 
@@ -16461,10 +16474,14 @@ namespace olc::host {
             
             if(!bPGEInitialized)
             {
-                pPrimaryPGE->OnContextStart();
+                if(!pPrimaryPGE->OnContextStart())
+                    throw std::runtime_error("PGE3 failed to initialize context, User aborted OnUserCreate()");
+                else
                 bPGEInitialized = true;
             }
-            pPrimaryPGE->OnContextTick();
+            if(bPGEInitialized) [[likely]]
+                if(!pPrimaryPGE->OnContextTick()
+                    throw std::runtime_error("PGE3 failed to tick context, User aborted OnUserUpdate()");
         });
         
         // Set up touch event handlers (iOS primary input method)
@@ -16617,6 +16634,7 @@ namespace olc::host
 				// Notify start of system thread
 				if (!this->OnSystemThreadStart())
 				{
+                    systemActive = false;
 					// PGE->OnContextStart() failed, or user aborted OnUserCreate()
 					return;
 				}
@@ -16819,7 +16837,7 @@ namespace olc::host
             }
 
             // Wait until an event appears on the x11 event queue file descriptor
-            poll(&x11_connection_fd, 1, -1);
+            poll(&x11_connection_fd, 1, 10);
         }
 
         systemActive = false;
@@ -17391,6 +17409,7 @@ namespace olc::host
 				if (!this->OnSystemThreadStart())
 				{
 					// PGE->OnContextStart() failed, or user aborted OnUserCreate()
+                    systemActive = false;
 					return;
 				}
 
@@ -17417,7 +17436,7 @@ namespace olc::host
         bool keep_running = true;
         while(systemActive && keep_running) {
             if(decor_context) {
-                poll(&decor_wl_fd, 1, -1);
+                poll(&decor_wl_fd, 1, 10);
                 {
                     std::lock_guard<std::mutex> l{decor_mutex};
                     keep_running = libdecor_dispatch(decor_context, 0) >= 0;
@@ -20894,6 +20913,8 @@ out vec4 oCol;
 R"(
 void main()
 {
+	gl_PointSize = 1.0; // Required for emscripten
+	
 	if (pgeDrawType == 2) // 3D																																  
 	{
 		gl_Position = pgeMVP * vec4(aPos.x, aPos.y, aPos.z, 1.0);
@@ -22609,10 +22630,26 @@ GPUTask olc::Draw::TaskDrawLine(const std::vector<olc::vf2d>& vPoints, const olc
 
 }
 
+GPUTask olc::Draw::TaskDrawPoints(const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
+{
+	GPUTask task;
+	task.structure = olc::Structure::Point;
+	task.vertexBuffer.resize(vPoints.size());
+	for (size_t i = 0; i < vPoints.size(); i++)
+	{
+		task.vertexBuffer[i] = { { vPoints[i].x, vPoints[i].y, 1.0f, 1.0f }, vColours[i],{ 0, 0 },{ 0, 0 },{ 0, 0 },{ 0, 0 } };
+	}
+	task.blendmode = blendMode;
+	task.tint = tint;
+	return task;
+}
+
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const std::vector<olc::Pixel>& vColours, const olc::Pixel tint)
 {
-	olc_IgnoreUnused(structure);
-	return TaskDrawLine(vPoints, vColours, tint, false, true);
+	if (structure == olc::Structure::Point)
+		return TaskDrawPoints(vPoints, vColours, tint);
+	else
+		return TaskDrawLine(vPoints, vColours, tint, false, true);
 }
 
 GPUTask olc::Draw::TaskDrawPolygon(olc::Structure structure, const std::vector<olc::vf2d>& vPoints, const olc::Pixel colour, const olc::Pixel tint)
@@ -23161,7 +23198,7 @@ const GPUTask& olc::Draw::TexturedPolygon(const olc::Structure structure, const 
 		)));
 }
 
-const GPUTask& olc::Draw::String(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
+const GPUTask& olc::Draw::String(const olc::vf2d& pos, std::string_view text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
 {
 	PrepareTargetForHW();
 
@@ -23192,7 +23229,7 @@ const GPUTask& olc::Draw::String(const olc::vf2d& pos, const std::string& text, 
 	return Batch(task);
 }
 
-const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, const std::string& text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
+const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, std::string_view text, const olc::Pixel col, const olc::vf2d& scale, olc::Font& font)
 {
 	PrepareTargetForHW();
 
@@ -23222,7 +23259,7 @@ const GPUTask& olc::Draw::StringProp(const olc::vf2d& pos, const std::string& te
 	return Batch(task);
 }
 
-olc::vf2d olc::Draw::GetTextSize(const std::string& text, const bool bProportional, const olc::vf2d& scale, olc::Font& font)
+olc::vf2d olc::Draw::GetTextSize(std::string_view text, const bool bProportional, const olc::vf2d& scale, olc::Font& font)
 {	
 	olc::vf2d size = { 0, font.fLineHeight * scale.y };
 	olc::vf2d pos = { 0, font.fLineHeight * scale.y };
@@ -24419,6 +24456,10 @@ namespace olc
 		return keyboard;
 	}
 
+	olc::hw::Touch& PGEWindow::GetTouch() {
+		return touch;
+	}
+	
 	const olc::vi2d& PGEWindow::ScreenSize()
 	{
 		return GetScreen().Size();
@@ -24890,6 +24931,11 @@ namespace olc
 	olc::ImageRegion Image::flipH()
 	{
 		return region({ 0,0 }, this->Size()).flipH();
+	}
+
+	olc::ImageRegion Image::flipD()
+	{		
+		return olc::ImageRegion(*this, { 0,0 }, { 0,1 }, { 1, 0 }, { 1,1 });
 	}
 
 	void Image::BindGPU()

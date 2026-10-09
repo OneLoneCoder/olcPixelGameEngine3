@@ -425,10 +425,11 @@ namespace olc::host {
             }
             pIOSGLKView->enableTouchHandling();
             
-            auto test = pIOSGLKView->isMultipleTouchEnabled();
-            if(!test)
-                pIOSGLKView->setMultipleTouchEnabled(true);
-            pIOSGLKView->debugTouchSetup();
+            //auto test = pIOSGLKView->isMultipleTouchEnabled();
+            //if(!test)
+            //    pIOSGLKView->setMultipleTouchEnabled(true);
+            
+            //pIOSGLKView->debugTouchSetup();
             //std::cout << "iOS View Controller did load." << std::endl;
         });
 
@@ -538,10 +539,14 @@ namespace olc::host {
             
             if(!bPGEInitialized)
             {
-                pPrimaryPGE->OnContextStart();
+                if(!pPrimaryPGE->OnContextStart())
+                    throw std::runtime_error("PGE3 failed to initialize context, User aborted OnUserCreate()");
+                else
                 bPGEInitialized = true;
             }
-            pPrimaryPGE->OnContextTick();
+            if(bPGEInitialized) [[likely]]
+                if(!pPrimaryPGE->OnContextTick()
+                    throw std::runtime_error("PGE3 failed to tick context, User aborted OnUserUpdate()");
         });
         
         // Set up touch event handlers (iOS primary input method)

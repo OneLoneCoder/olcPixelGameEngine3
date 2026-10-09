@@ -76,6 +76,8 @@ out vec4 oCol;
 R"(
 void main()
 {
+	gl_PointSize = 1.0; // Required for emscripten
+	
 	if (pgeDrawType == 2) // 3D																																  
 	{
 		gl_Position = pgeMVP * vec4(aPos.x, aPos.y, aPos.z, 1.0);
