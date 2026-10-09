@@ -1,14 +1,20 @@
 # Fetch 3rd Party miniaudio library
+# Fetch miniaudio.h
 FetchContent_Declare(
     miniaudio
-    GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-    GIT_TAG 0.11.25
+    URL "https://raw.githubusercontent.com/mackron/miniaudio/0.11.25/miniaudio.h"
+    DOWNLOAD_NO_EXTRACT ON
+    SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/miniaudio-src"
 )
 
 FetchContent_MakeAvailable(miniaudio)
 
-add_example(ext_demo_Miniaudio demo_Miniaudio.cpp)
+file(GLOB SOURCES "*.cpp")
 
-target_include_directories(ext_demo_Miniaudio PRIVATE ${miniaudio_SOURCE_DIR})
-
-handle_assets(ext_demo_Miniaudio ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+# loop through each source file
+foreach(source ${SOURCES})
+    get_filename_component(EXE_NAME ${source} NAME_WE)
+    add_example(${EXE_NAME} ${source})
+    target_include_directories(${EXE_NAME} PRIVATE "${CMAKE_BINARY_DIR}/_deps/miniaudio-src")
+    handle_assets(${EXE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+endforeach()

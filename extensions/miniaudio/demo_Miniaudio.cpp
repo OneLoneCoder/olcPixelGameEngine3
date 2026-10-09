@@ -6,19 +6,12 @@
 	Licenced under the OLC-3 License
 */
 
-
-// Define OLC_PGE3_APPLICATION to include the implementation of 
-// the Pixel Game Engine as part of this translation unit
 #define OLC_PGE3_APPLICATION
 #include "olcPixelGameEngine3.h"
 
 #define OLC_PGEX3_MINIAUDIO
 #include "olcPGEX3_Miniaudio.h"
 
-// Example application demonstrating the miniaudio extension.
-// This class overrides the olc::PixelGameEngine base class
-// by implementing the OnUserCreate() and OnUserUpdate()
-// functions
 class Example_Miniaudio : public olc::PixelGameEngine
 {
 public:
@@ -44,12 +37,12 @@ public:
          * Here you get a pointer to a next active voice, or the
 		 * currently playing voice.
          */
-        ma_sound_set_position(song1.GetMASound(), 0.0f, 0.0f, 0.0f);
+		ma_sound_set_position(audio.GetMASound(song1), 0.0f, 0.0f, 0.0f);
 
 		// load `assets/SampleA.wav` into `sample`
 		audio.CreateSoundFromFile(sample, "assets/SampleA.wav");
         
-		// create all of the waveforms at 0.1 amplitude at 440Mhz (A4)
+		// create all of the waveforms at 0.1 amplitude at 440hz (A4)
 		audio.CreateWaveform(sine,     olc::ext::Miniaudio::Waveform::Type::Sine, 0.1, 440.0);
 		audio.CreateWaveform(square,   olc::ext::Miniaudio::Waveform::Type::Square, 0.1, 440.0);
 		audio.CreateWaveform(triangle, olc::ext::Miniaudio::Waveform::Type::Triangle, 0.1, 440.0);
@@ -73,32 +66,32 @@ public:
 
 		// ensure all waveforms are stopped
 		// before we check for held keys
-		sine.Stop(); square.Stop();
-		triangle.Stop(); sawtooth.Stop();
+		audio.Stop(sine); audio.Stop(square);
+		audio.Stop(triangle); audio.Stop(sawtooth);
 
 		// play `sine` when held
 		if(keyboard.GetKey(olc::Key::K7).bHeld)
-			sine.Play();
+			audio.Play(sine);
 
 		// play `sqaure` when held
 		if(keyboard.GetKey(olc::Key::K8).bHeld)
-			square.Play();
+			audio.Play(square);
 
 		// play `triangle` when held
 		if(keyboard.GetKey(olc::Key::K9).bHeld)
-			triangle.Play();
+			audio.Play(triangle);
 
 		// play `sawtooth` when held
 		if(keyboard.GetKey(olc::Key::K0).bHeld)
-			sawtooth.Play();
+			audio.Play(sawtooth);
 
 		// toggle `song1` playback/pause
 		if(keyboard.GetKey(olc::Key::SPACE).bPressed)
-			song1.Toggle();
+			audio.Toggle(song1);
 
 		// play `sample`
 		if(keyboard.GetKey(olc::Key::S).bPressed)
-			sample.Play();
+			audio.Play(sample);
 		
 		// panning
         if(keyboard.GetKey(olc::Key::MINUS).bHeld)
@@ -139,30 +132,30 @@ public:
 		
 		// panning
 		pan = std::clamp(pan, -1.0f, 1.0f);
-		song1.SetPan(pan);
+		audio.SetPan(song1, pan);
 		
 		// pitch
 		pitch = std::clamp(pitch, 0.0f, 2.0f);
-		song1.SetPitch(pitch);
+		audio.SetPitch(song1, pitch);
 		
 		// volume
 		volume = std::clamp(volume, 0.0f, 1.0f);
-		song1.SetVolume(volume);
+		audio.SetVolume(song1, volume);
 
 		// this is here to demosntrate how the adventurous can exploit other
 		// features of miniaudio that haven't been abstracted by the PGEX.
         distance = std::clamp(distance, 0.0f, 100.0f);
-        ma_engine_listener_set_position(&audio.GetEngine(), 0, 0.0f, distance, 0.0f);
+        ma_engine_listener_set_position(audio.GetEngine(), 0, 0.0f, distance, 0.0f);
 
 		// // get float cursor. 0.0f to 1.0f
- 		cursorFloat  = song1.GetCursorFloat();
+ 		cursorFloat  = audio.GetCursorFloat(song1);
 		// // get cursor in milliseconds
-		cursorMillis = song1.GetCursor();
+		cursorMillis = audio.GetCursor(song1);
 
 		// Clear whole screen
 		draw.Clear(olc::Colour::BLACK);
 
-		if(song1.IsPlaying())
+		if(audio.IsPlaying(song1))
 			draw.Clear(olc::Colour::VERY_DARK_BLUE);
 		
 		draw.String(

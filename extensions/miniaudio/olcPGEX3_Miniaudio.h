@@ -57,10 +57,11 @@
 #include "olcPixelGameEngine3.h"
 #endif
 
-#ifdef OLC_PGEX3_MINIAUDIO
+#if defined(OLC_PGEX3_MINIAUDIO)
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
 #endif
+
+#include "miniaudio.h"
 
 #include <cstring>
 #include <fstream>
@@ -71,165 +72,79 @@
 
 namespace olc::ext::Miniaudio
 {
-    class AudioEngine;
+	class AudioEngine;
 
-#pragma region Sound
+	namespace internal
+	{
+		struct SoundGroupInstance
+		{
+			bool is_loaded{false};
+			ma_sound_group group;
+			ma_sound_group_config group_config;
+		};
+
+		struct SoundInstance
+		{
+			std::vector<uint8_t> buffer;
+			ma_sound base_sound{0};
+			std::vector<ma_sound> voices;
+			uint32_t id{0};
+			std::string virtual_path{""};
+			bool is_loaded{false};
+			bool is_paused{false};
+			uint32_t num_voices{8};
+			uint32_t current_voice;
+			ma_uint64 length_in_pcm_frames{0};
+			float length_in_seconds{0.0f};
+			static uint32_t id_tracker;
+		};
+		
+		struct WaveformInstance
+		{
+			bool is_loaded{false};
+			float gain{0.0f};
+			float target{0.0f};
+			float rampStep{0.0f};
+			ma_waveform waveform;
+			ma_waveform_config waveform_config;
+		};
+	}
+	
+	class SoundGroup
+	{
+		friend class AudioEngine;
+	private:
+		internal::SoundGroupInstance* group{nullptr};
+		AudioEngine* pgex{nullptr};
+	};
 
 	class Sound
 	{
 		friend class AudioEngine;
-	public:
-		Sound() = default;
-		~Sound();
-
-	public: // Loaders
-		// Create an image resource based on an image file asset on disk
-		bool CreateSoundFromFile(const std::string& sFileName, AudioEngine* pgex, uint32_t nNumVoices);
-		// Create an image resource based on an image file asset in memory
-		bool CreateSoundFromMemory(const uint8_t* data, const size_t bytes, AudioEngine* pgex, uint32_t nNumVoices);
-		// Create an image resource based on an image file asset in memory
-		bool CreateSoundFromMemory(const std::vector<uint8_t>& data, AudioEngine* pgex, uint32_t nNumVoices);
 	private:
-		// performs the necessary unloading of the parts of this sound
-		void DestroySound();
-
-	private: // loader function common to all loaders
-		bool _internalSoundLoader();
-
-	
-    public: // playback routines
-        // plays a sound, can be set to loop
-        void Play(const bool looping = false);
-        // stops a sound, rewinds to beginning
-        void Stop();
-        // pauses a sound, does not change position
-        void Pause();
-        // toggle between play and pause
-        void Toggle();
-
-    public: // seeking controls
-        // seek to the provided position in the sound, by milliseconds
-        void Seek(const ma_uint64 milliseconds);
-        // seek to the provided position in the sound, by float 0.f is beginning, 1.0f is end
-        void Seek(const float& location);
-        // seek forward from current position by the provided time
-        void Forward(const ma_uint64 milliseconds);
-        // seek forward from current position by the provided time
-        void Rewind(const ma_uint64 milliseconds);
-
-    public: // expression controls
-        // set volume of a sound, 0.0f is mute, 1.0f is full
-        void SetVolume(const float& volume);
-        // set pan of a sound, -1.0f is left, 1.0f is right, 0.0f is center
-        void SetPan(const float& pan);
-        // set pitch of a sound, 1.0f is normal
-        void SetPitch(const float& pitch);
-
-    public: // misc information
-        // determine if a sound is playing
-        bool IsPlaying();
-        // gets the current position in the sound, in milliseconds
-        ma_uint64 GetCursor();
-        // gets the current position in the sound, as a float between 0.0f and 1.0f
-        float GetCursorFloat();
-		// determine if this sound has been loaded successfully
-		bool IsLoaded() const;
-	public: // advanced usage
-		ma_sound* GetMASound();
-
-	private:
-		// pointer to the calling pgex
-		AudioEngine* m_pgex;
-		// contains the sound file in memory
-		std::vector<uint8_t> m_buffer;
-		// the base sound from which the voices are copied
-		ma_sound m_base_sound{0};
-		// the voices of this sound
-		std::vector<ma_sound> m_voices;
-		// the id of this sound, used to derive virtual path
-		uint32_t m_id{0};
-		// the virtual path for the resource manager, usually sound/<id>
-		std::string m_virtual_path{""};
-	private: // sound status
-		// has the sound been loaded successfully
-		bool m_is_loaded{false};
-		// is the sound in a paused state
-		bool m_is_paused{false};
-		// number of voices
-		uint32_t m_num_voices{8};
-		// track the current voice
-		uint32_t m_current_voice{0};
-	
-	private: // info
-		// the length of this sound in pcm frames
-		ma_uint64 m_length_in_pcm_frames{0};
-		// the length of this sound in seconds
-		float m_length_in_seconds{0.0f};
-
-	private: // globals, has an effect on all sounds
-		// id tracker allows us to ensure every sound has a unique id
-		static uint32_t m_id_tracker;
+		internal::SoundInstance* sound{nullptr};
+		AudioEngine* pgex{nullptr};
 	};
-#pragma endregion
 
-#pragma region Waveform
-	
-	
 	class Waveform
 	{
 		friend class AudioEngine;
-
 	public:
 		enum class Type
 		{
-			Sine,
-			Square,
-			Triangle,
-			Sawtooth
+			Sine = 0,
+			Square = 1,
+			Triangle = 2,
+			Sawtooth = 3,
+			Count
 		};
-	
-	public: // lifecycle
-		Waveform() = default;
-	
-		bool CreateWaveform(Waveform& waveform, const Type type, const double amplitude, const double frequency, AudioEngine* pgex);
-	private: 
-		void DestroyWaveform();
-	
-	public: // playback
-		void Play();
-		void Stop();
-	
-	public: // configuration
-		void SetAmplitude(const double amplitude);
-		void SetFrequency(const double frequency);
-		void SetType(const Type type);
-
-		bool IsPlaying() const;
-		bool IsLoaded() const;
-	
-		ma_waveform& Get();
-
 	private:
-		bool m_is_loaded{false};
-		float m_gain     = 0.0f;  // current gain
-		float m_target   = 0.0f;  // 0.0 = stopped, 1.0 = playing
-		float m_rampStep = 0.0f;  // set once at init: 1.0f / (sampleRate * 0.010f)
-
-		ma_waveform m_waveform;
-		ma_waveform_config m_waveform_config;
-
-		AudioEngine* m_pgex{nullptr};
+		internal::WaveformInstance* waveform{nullptr};
+		AudioEngine* pgex{nullptr};
 	};
 
-#pragma endregion
-
-#pragma region Miniaudio
-
 	class AudioEngine : public olc::PGESystemExtension
-    {
-		friend class Sound;
-		friend class Waveform;
-
+	{
 	public:
 		struct Config
 		{
@@ -246,7 +161,6 @@ namespace olc::ext::Miniaudio
 			// Logging: is logging verbose? default(false)
 			bool Verbose{false};
 		};
-
 		// configure the audio engine, see struct Config
 		void Configure(const Config& cfg);
 		// enable playback when the application window does not have focus.
@@ -256,7 +170,30 @@ namespace olc::ext::Miniaudio
 
 	public: // Callback
 		static void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
+	
+	public: // SoundGroup
+		// Create a sound group
+		bool CreateSoundGroup(SoundGroup& group);
+		void DestroySoundGroup(SoundGroup& group);
+		// set the SoundGroup that a Sound belongs to
+		bool SetGroup(Sound& sound, SoundGroup& group);
 
+	public: // SoundGroup Playback and Controls
+		// plays a sound group, can set volume, pan, or pitch (note: default values are out of range deliberately)
+		void Play(SoundGroup& group, const float volume = 2.0f, const float pan = 2.0f, const float pitch = 2.0f);
+		// stops playback of a soundgroup
+		void Stop(SoundGroup& group);
+        // set volume of a sound, 0.0f is mute, 1.0f is full
+        void SetVolume(SoundGroup& group, const float& volume);
+        // set pan of a sound, -1.0f is left, 1.0f is right, 0.0f is center
+        void SetPan(SoundGroup& group, const float& pan);
+        // set pitch of a sound, 1.0f is normal
+        void SetPitch(SoundGroup& group, const float& pitch);
+		// determine if this SoundGroup is playing
+		bool IsPlaying(SoundGroup& group) const;
+		// determine if this SoundGroup is loaded
+		bool IsLoaded(SoundGroup& group) const;
+		
 	public: // Sounds
 		// Create a sound resource based on a sound file asset on disk
 		bool CreateSoundFromFile(Sound& sound, const std::string& sFileName, uint32_t nNumVoices = 8);
@@ -264,10 +201,63 @@ namespace olc::ext::Miniaudio
 		bool CreateSoundFromMemory(Sound& sound, const uint8_t* data, const size_t bytes, uint32_t nNumVoices = 8);
 		bool CreateSoundFromMemory(Sound& sound, const std::vector<uint8_t>& data, uint32_t nNumVoices = 8);
 		void DestroySound(Sound& sound);
+		bool _internalSoundLoader(Sound& sound);
+
+	public: // Sound Playback and Controls
+        // plays a sound, can set looping, volume, pan, or pitch (note: default values are out of range deliberately)
+        void Play(Sound& sound, const bool looping = false, const float volume = 2.0f, const float pan = 2.0f, const float pitch = 2.0f);
+        // stops a sound, rewinds to beginning
+        void Stop(Sound& sound);
+        // pauses a sound, does not change position
+        void Pause(Sound& sound);
+        // toggle between play and pause
+        void Toggle(Sound& sound);
+        // seek to the provided position in the sound, by milliseconds
+        void Seek(Sound& sound, const ma_uint64 milliseconds);
+        // seek to the provided position in the sound, by float 0.f is beginning, 1.0f is end
+        void Seek(Sound& sound, const float& location);
+        // seek forward from current position by the provided time
+        void Forward(Sound& sound, const ma_uint64 milliseconds);
+        // seek forward from current position by the provided time
+        void Rewind(Sound& sound, const ma_uint64 milliseconds);
+        // set volume of a sound, 0.0f is mute, 1.0f is full
+        void SetVolume(Sound& sound, const float& volume);
+        // set pan of a sound, -1.0f is left, 1.0f is right, 0.0f is center
+        void SetPan(Sound& sound, const float& pan);
+        // set pitch of a sound, 1.0f is normal
+        void SetPitch(Sound& sound, const float& pitch);		
+        // determine if a sound is playing
+        bool IsPlaying(Sound& sound);
+		// determine if this sound has been loaded successfully
+		bool IsLoaded(Sound& sound) const;
+        // gets the current position in the sound, in milliseconds
+        ma_uint64 GetCursor(Sound& sound);
+        // gets the current position in the sound, as a float between 0.0f and 1.0f
+        float GetCursorFloat(Sound& sound);
+	public: // advanced usage
+		ma_sound* GetMASound(Sound& sound);
 
 	public: // Waveforms
+		// creates a waveform with the specified type, amplitude, and frequency
 		bool CreateWaveform(Waveform& waveform, const Waveform::Type type, const double amplitude, const double frequency);
+		// destroys a waveform
 		void DestroyWaveform(Waveform& waveform);
+		// plays a waveform
+		void Play(Waveform& waveform);
+		// stops a waveform
+		void Stop(Waveform& waveform);
+		// set the amplitude of a waveform
+		void SetWaveformAmplitude(Waveform& waveform, const double amplitude);
+		// set the frequency of a waveform
+		void SetWaveformFrequency(Waveform& waveform, const double frequency);
+		// set the type of a waveform
+		void SetWaveformType(Waveform& waveform, const Waveform::Type type);
+		// determine if this waveform is playing
+		bool IsPlaying(Waveform& waveform) const;
+		// determine if this waveform is loaded
+		bool IsLoaded(Waveform& waveform) const;
+		ma_waveform* GetMAWaveform(Waveform& waveform);
+
 	public: // Synth
 		void SetSynthCallback(std::function<void(float& fLeftChannel, float& fRightChannel, float fElapsedTime)> callback);
 		void ClearSynthCallback();
@@ -276,18 +266,19 @@ namespace olc::ext::Miniaudio
 		void ClearDataCallback();
 
 	public: // getters
-		// 
-		ma_device& GetDevice();
-		ma_engine& GetEngine();
-		ma_resource_manager& GetResourceManager();
+		ma_device* GetDevice();
+		ma_engine* GetEngine();
+		ma_resource_manager* GetResourceManager();
 
 		int GetDeviceChannels() const;
 		ma_format GetDeviceFormat() const;
 		int GetDeviceSampleRate() const;
 		ma_device_type GetDeviceType() const;
-		
+
+		SoundGroup& GetMainGroup();
+
 	public:
-        AudioEngine();
+		AudioEngine();
 		~AudioEngine();
 
 		virtual bool OnInstall([[maybe_unused]] olc::PixelGameEngine* pge);
@@ -295,7 +286,7 @@ namespace olc::ext::Miniaudio
 		virtual bool OnAfterUserCreate([[maybe_unused]] olc::PixelGameEngine* pge);
 		virtual bool OnBeforeSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime);
 		virtual bool OnAfterSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime);
-		
+	
 	private:
         Config m_cfg;
 		ma_device m_device;
@@ -313,424 +304,25 @@ namespace olc::ext::Miniaudio
 		// data callback function
 		std::function<void(float* pFramesOut, ma_uint64 frameCount)> m_data_callback;
 
-		// track sounds and waveforms
-		std::vector<Sound*> m_sounds;
-		std::vector<Waveform*> m_waveforms;
+		// the main sound group
+		SoundGroup m_main_sound_group;
+
+		// track SoundGroup, Sound and Waveforms instances
+		std::vector<internal::SoundGroupInstance*> m_sound_groups;
+		std::vector<internal::SoundInstance*> m_sounds;
+		std::vector<internal::WaveformInstance*> m_waveforms;
 
 		bool m_is_initialized{false};
-		olc::PixelGameEngine* m_pge{nullptr};
-    };
+		olc::PixelGameEngine* m_pge{nullptr};		
+	};
 }
-#pragma endregion
 
-
-#if defined(OLC_PGEX3_MINIAUDIO)
+#ifdef OLC_PGEX3_MINIAUDIO
 #undef OLC_PGEX3_MINIAUDIO
 
 namespace olc::ext::Miniaudio
 {
-
-#pragma region Sound
-
-	uint32_t Sound::m_id_tracker = 0;
-	
-	Sound::~Sound()
-	{
-		DestroySound();
-	}
-
-	bool Sound::CreateSoundFromFile(const std::string& sFileName, AudioEngine* pgex, uint32_t nNumVoices)
-	{
-#if OLC_HOST == OLC_HOST_ANDROID
-		AAsset* pAsset = AAssetManager_open(
-			olc::host::Host_Android::androidApp->activity->assetManager,
-			sFileName.c_str(),
-			AASSET_MODE_BUFFER
-		);
-		
-		if (pAsset == nullptr)
-			return false;
-
-		off_t size = AAsset_getLength(pAsset);
-		m_buffer.resize(size);
-		AAsset_read(pAsset, m_buffer.data(), size);
-		AAsset_close(pAsset);
-#else
-		std::ifstream f(sFileName, std::ios::binary | std::ios::ate);
-		if(f.fail())
-			return false;
-		m_buffer.resize(f.tellg());
-		f.seekg(0);
-		f.read(reinterpret_cast<char*>(m_buffer.data()), m_buffer.size());
-		f.close();
-#endif
-		m_pgex = pgex;
-		m_num_voices = nNumVoices;
-		return _internalSoundLoader();
-	}
-
-	bool Sound::CreateSoundFromMemory(const uint8_t* data, const size_t bytes, AudioEngine* pgex, uint32_t nNumVoices)
-	{
-		if(!data) return false;
-		if(bytes <= 0) return false;
-
-		m_buffer.resize(bytes);
-		uint8_t* result = reinterpret_cast<uint8_t*>(std::memcpy(m_buffer.data(), data, m_buffer.size()));
-		if(result == m_buffer.data())
-			return false;
-
-		m_pgex = pgex;
-		m_num_voices = nNumVoices;
-		return _internalSoundLoader();
-	}
-
-	bool Sound::CreateSoundFromMemory(const std::vector<uint8_t>& data, AudioEngine* pgex, uint32_t nNumVoices)
-	{
-		if(data.size() <= 0) return false;
-		m_buffer = data;
-		m_pgex = pgex;
-		m_num_voices = nNumVoices;
-		return _internalSoundLoader();
-	}
-
-	void Sound::DestroySound()
-	{
-		if(!m_is_loaded) return;
-
-		for(auto& v : m_voices)
-		{
-			if(ma_sound_is_playing(&v))
-				ma_sound_stop(&v);
-
-			ma_sound_uninit(&v);
-		}
-		m_voices.clear();
-		ma_sound_uninit(&m_base_sound);
-		ma_resource_manager_unregister_data(ma_engine_get_resource_manager(&m_pgex->GetEngine()), m_virtual_path.c_str());
-		m_is_loaded = false;
-	}
-
-	bool Sound::_internalSoundLoader()
-	{
-		ma_result result;
-		m_id = ++m_id_tracker;
-		m_virtual_path = "sound/" + std::to_string(m_id); 
-		
-		result = ma_resource_manager_register_encoded_data(
-			ma_engine_get_resource_manager(&m_pgex->GetEngine()),
-			m_virtual_path.c_str(),
-			m_buffer.data(), m_buffer.size()
-		);
-		
-		if(result != MA_SUCCESS)
-			return false;
-
-		ma_fence fence;
-		result = ma_fence_init(&fence);
-
-		if(result != MA_SUCCESS)
-		{
-			ma_resource_manager_unregister_data(ma_engine_get_resource_manager(&m_pgex->GetEngine()), m_virtual_path.c_str());
-			return false;
-		}
-
-		result = ma_sound_init_from_file(
-			&m_pgex->GetEngine(),
-			m_virtual_path.c_str(),
-			MA_SOUND_FLAG_DECODE,
-			nullptr,
-			&fence,
-			&m_base_sound
-		);
-		
-		if(result != MA_SUCCESS)
-		{
-			ma_resource_manager_unregister_data(ma_engine_get_resource_manager(&m_pgex->GetEngine()), m_virtual_path.c_str());
-			return false;
-		}
-		
-		m_voices.resize(m_num_voices);
-		for(int i = 0; i < m_num_voices; ++i)
-		{
-			result = ma_sound_init_copy(&m_pgex->GetEngine(), &m_base_sound, 0, nullptr, &m_voices[i]);
-			if(result != MA_SUCCESS)
-				break;
-		}
-		
-		// if the last result out of that loop isn't success, we failed
-		if(result != MA_SUCCESS)
-		{
-			for(auto& v : m_voices)
-				ma_sound_uninit(&v);
-			ma_sound_uninit(&m_base_sound);
-			ma_resource_manager_unregister_data(ma_engine_get_resource_manager(&m_pgex->GetEngine()), m_virtual_path.c_str());
-			return false;
-		}
-		
-		// wait here until the sound is fully loaded and dedoded
-		ma_fence_wait(&fence);
-		ma_fence_uninit(&fence);
-
-		ma_sound_get_length_in_pcm_frames(&m_base_sound, &m_length_in_pcm_frames);
-		ma_sound_get_length_in_seconds(&m_base_sound, &m_length_in_seconds);
-
-		m_is_loaded = true;
-        return true;
-	}
-
-	// plays a sound, can be set to loop
-	void Sound::Play(const bool looping)
-	{
-		if(!m_is_paused)
-			m_current_voice = (m_current_voice + 1) % m_num_voices;
-		
-		ma_sound_set_looping(&m_voices[m_current_voice], looping);
-		ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], 0);
-		ma_sound_start(&m_voices[m_current_voice]);
-		m_is_paused = false;
-	}
-	
-	// stops a sound, rewinds to beginning
-	void Sound::Stop()
-	{
-		if(!ma_sound_is_playing(&m_voices[m_current_voice]))
-			return;
-		ma_sound_stop(&m_voices[m_current_voice]);
-		ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], 0);
-	}
-
-	// pauses a sound, does not change position
-	void Sound::Pause()
-	{
-		if(!ma_sound_is_playing(&m_voices[m_current_voice]))
-			return;
-		
-		ma_sound_stop(&m_voices[m_current_voice]);
-		m_is_paused = true;
-	}
-	
-	// toggle between play and pause
-	void Sound::Toggle()
-	{
-		if(ma_sound_is_playing(&m_voices[m_current_voice]))
-		{
-			ma_sound_stop(&m_voices[m_current_voice]);
-			m_is_paused = true;
-			return;
-		}
-		
-		ma_sound_start(&m_voices[m_current_voice]);
-		m_is_paused = false;
-	}
-
-	// seek to the provided position in the sound, by milliseconds
-	void Sound::Seek(const ma_uint64 milliseconds)
-	{
-        ma_uint64 frame_to_seek_to = (milliseconds * m_pgex->GetDeviceSampleRate()) / 1000;
-        ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], frame_to_seek_to);
-	}
-	
-	// seek to the provided position in the sound, by float 0.f is beginning, 1.0f is end
-	void Sound::Seek(const float& location)
-	{
-		ma_uint64 frame_to_seek_to = static_cast<ma_uint64>(m_length_in_pcm_frames * location);
-		ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], frame_to_seek_to);
-	}
-	
-	// seek forward from current position by the provided time
-	void Sound::Forward(const ma_uint64 milliseconds)
-	{
-        ma_uint64 frame_to_seek_to;
-
-        // get the current position
-        ma_sound_get_cursor_in_pcm_frames(&m_voices[m_current_voice], &frame_to_seek_to);
-        
-        // calculate the step and add it to the current position
-        frame_to_seek_to += ((milliseconds * m_pgex->GetDeviceSampleRate()) / 1000);
-
-        // seek to the new position
-        ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], frame_to_seek_to);
-	}
-	
-	// seek forward from current position by the provided time
-	void Sound::Rewind(const ma_uint64 milliseconds)
-	{
-        ma_uint64 frame_to_seek_to;
-
-        // get the current position
-        ma_sound_get_cursor_in_pcm_frames(&m_voices[m_current_voice], &frame_to_seek_to);
-        
-        // calculate the step and add it to the current position
-        frame_to_seek_to -= ((milliseconds * m_pgex->GetDeviceSampleRate()) / 1000);
-
-        // seek to the new position
-        ma_sound_seek_to_pcm_frame(&m_voices[m_current_voice], frame_to_seek_to);		
-	}
-
-	// set volume of a sound, 0.0f is mute, 1.0f is full
-	void Sound::SetVolume(const float& volume)
-	{
-		for(auto& v : m_voices)
-		{
-			ma_sound_set_volume(&v, std::clamp(volume, 0.0f, 1.0f));
-		}
-	}
-
-	// set pan of a sound, -1.0f is left, 1.0f is right, 0.0f is center
-	void Sound::SetPan(const float& pan)
-	{
-		for(auto& v : m_voices)
-		{
-			ma_sound_set_pan(&v, std::clamp(pan, -1.0f, 1.0f));
-		}
-	}
-	
-	// set pitch of a sound, 1.0f is normal
-	void Sound::SetPitch(const float& pitch)
-	{
-		for(auto& v : m_voices)
-		{
-			ma_sound_set_pitch(&v, std::max({0.0f, pitch}));
-		}
-	}
-
-	// determine if a sound is playing
-	bool Sound::IsPlaying()
-	{
-		for(auto& v : m_voices)
-		{
-			if(ma_sound_is_playing(&v))
-				return true;
-		}
-		return false;
-	}
-	
-	// gets the current position in the sound, in milliseconds
-	ma_uint64 Sound::GetCursor()
-	{
-        ma_uint64 cursor;
-        ma_sound_get_cursor_in_pcm_frames(&m_voices[m_current_voice], &cursor);
-        return (cursor * 1000) / m_pgex->GetDeviceSampleRate();
-	}
-	
-	// gets the current position in the sound, as a float between 0.0f and 1.0f
-	float Sound::GetCursorFloat()
-	{
-        float cursor;
-		ma_sound_get_cursor_in_seconds(&m_voices[m_current_voice], &cursor);
-		return cursor / m_length_in_seconds;
-	}
-
-	// determine if this sound has been loaded successfully
-	bool Sound::IsLoaded() const
-	{
-		return m_is_loaded;
-	}
-
-	ma_sound* Sound::GetMASound()
-	{
-		// realistically, one wouldn't call this unless it was loaded
-		if(!IsLoaded())
-			return nullptr;
-		
-		// if we're not currently playing, get the pointer of the next voice
-		if(!IsPlaying())
-			return &m_voices[(m_current_voice + 1) % m_num_voices];
-		
-		// if we're playing, get the pointer of the current voice
-		return &m_voices[m_current_voice];
-	}
-
-#pragma endregion
-
-
-#pragma region Waveform
-
-	bool Waveform::CreateWaveform(Waveform& waveform, const Type type, const double amplitude, const double frequency, AudioEngine* pgex)
-	{
-		m_pgex = pgex;
-		m_waveform_config = ma_waveform_config_init(
-				m_pgex->GetDeviceFormat(),
-				m_pgex->GetDeviceChannels(),
-				m_pgex->GetDeviceSampleRate(),
-				static_cast<ma_waveform_type>(type),
-				amplitude,
-				frequency
-		);
-		
-		m_rampStep = 1.0f / (m_pgex->GetDeviceSampleRate() * 0.02f);
-
-		if(ma_waveform_init(&m_waveform_config, &m_waveform) != MA_SUCCESS)
-		{
-			return false;
-		}
-		
-		m_is_loaded = true;
-		return true;
-	}
-	
-	void Waveform::DestroyWaveform()
-	{
-		ma_waveform_uninit(&m_waveform);
-		m_is_loaded = false;
-	}
-	
-	void Waveform::Play()
-	{
-		if(!IsLoaded())
-			return;
-
-		m_target = 1.0f;
-	}
-	
-	void Waveform::Stop()
-	{
-		if(!IsLoaded())
-			return;
-		
-		m_target = 0.0f;
-	}
-
-	
-	void Waveform::SetAmplitude(const double amplitude)
-	{
-		if(!IsLoaded())
-			return;
-		ma_waveform_set_amplitude(&m_waveform, amplitude);
-	}
-
-	void Waveform::SetFrequency(const double frequency)
-	{
-		if(!IsLoaded())
-			return;
-		ma_waveform_set_frequency(&m_waveform, frequency);
-	}
-	
-	void Waveform::SetType(const Type type)
-	{
-		if(!IsLoaded())
-			return;
-		ma_waveform_set_type(&m_waveform, static_cast<ma_waveform_type>(type));
-	}
-
-	bool Waveform::IsPlaying() const
-	{
-		return m_target > 0.0f || m_gain > 0.0f;
-	}
-
-	bool Waveform::IsLoaded() const
-	{
-		return m_is_loaded;
-	}
-
-	ma_waveform& Waveform::Get()
-	{
-		return m_waveform;
-	}
-
-#pragma endregion
-
-#pragma region Miniaudio
+	uint32_t internal::SoundInstance::id_tracker = 0;
 
 	AudioEngine::AudioEngine()
     {
@@ -740,21 +332,53 @@ namespace olc::ext::Miniaudio
     {
 		if(m_is_initialized)
 		{
-			for(auto sound : m_sounds)
-				sound->DestroySound();
-			
+			for(auto& sound : m_sounds)
+			{
+				if(sound == nullptr) continue;
+				for(auto& v : sound->voices)
+				{
+					if(ma_sound_is_playing(&v))
+						ma_sound_stop(&v);
+					
+					ma_sound_uninit(&v);
+				}
+				ma_sound_uninit(&sound->base_sound);
+				ma_resource_manager_unregister_data(&m_resource_manager, sound->virtual_path.c_str());
+				sound->is_loaded = false;
+				
+				delete sound;
+			}
 			m_sounds.clear();
+
+			for(auto& w : m_waveforms)
+			{
+				if(w == nullptr) continue;
+				if(!w->is_loaded) continue;
+				ma_waveform_uninit(&w->waveform);
+			}
+			m_waveforms.clear();
+
+			for(auto& g : m_sound_groups)
+			{
+				if(g == nullptr) continue;
+				if(!g->is_loaded) continue;
+				ma_sound_group_uninit(&g->group);
+			}
+			m_sound_groups.clear();
+
+			ClearSynthCallback();
+			ClearDataCallback();
+
 			ma_resource_manager_uninit(&m_resource_manager);
 
 			ma_engine_stop(&m_engine);
 			ma_engine_uninit(&m_engine);
 			
-			
 			ma_device_stop(&m_device);
 			ma_device_uninit(&m_device);
 		}
     }
-	
+
 	void AudioEngine::Configure(const Config& cfg)
 	{
 		if(m_is_initialized)
@@ -782,9 +406,6 @@ namespace olc::ext::Miniaudio
         if(ma == nullptr)
             throw std::runtime_error{"unable to access miniaudio pgex instance from data_callback"};
 
-        if(!ma->m_cfg.BackgroundPlay && !ma->m_pge->IsFocused())
-			return;
-
 		// with great power comes...
 		if(ma->m_data_callback)
 		{
@@ -792,8 +413,10 @@ namespace olc::ext::Miniaudio
 			return;
 		}
 
+		const bool audioShouldPlay = !(!ma->m_cfg.BackgroundPlay && !ma->m_pge->IsFocused());
+		
 		std::span<float> engineBuffer((float*)pOutput, frameCount * ma->GetDeviceChannels());
-        ma_engine_read_pcm_frames(&ma->m_engine, engineBuffer.data(), frameCount, NULL);
+		ma_engine_read_pcm_frames(&ma->m_engine, engineBuffer.data(), frameCount, NULL);
 		
 		// resize, if required. frameCount is not guaranteed not to change.
         if(ma->m_waveform_buffer.size() != (frameCount * ma->GetDeviceChannels()))
@@ -802,26 +425,30 @@ namespace olc::ext::Miniaudio
         }
 
 		// waveforms
-		for(auto& waveform : ma->m_waveforms)
+		for(auto& w : ma->m_waveforms)
 		{
-			if (!waveform->IsPlaying())
+			// if waveform is not playing, continue
+			if (!(w->target > 0.0f || w->gain > 0.0f))
 				continue;
 
+			ma_waveform_read_pcm_frames(&w->waveform, ma->m_waveform_buffer.data(), frameCount, NULL);
 
-			ma_waveform_read_pcm_frames(&waveform->m_waveform, ma->m_waveform_buffer.data(), frameCount, NULL);
+			// if audio shouldn't play, move on here.
+			if(!audioShouldPlay)
+				continue;
 
 			for(int frame = 0; frame < frameCount; ++frame)
 			{
 				// Ramp gain toward target one step per frame
-				if (waveform->m_gain < waveform->m_target)
-					waveform->m_gain = std::min(waveform->m_gain + waveform->m_rampStep, waveform->m_target);
-				else if (waveform->m_gain > waveform->m_target)
-					waveform->m_gain = std::max(waveform->m_gain - waveform->m_rampStep, waveform->m_target);
+				if (w->gain < w->target)
+					w->gain = std::min(w->gain + w->rampStep, w->target);
+				else if (w->gain > w->target)
+					w->gain = std::max(w->gain - w->rampStep, w->target);
 
 				for(int channel = 0; channel < ma->GetDeviceChannels(); ++channel)
 				{
 					int i = frame * ma->GetDeviceChannels() + channel;
-					engineBuffer[i] += ma->m_waveform_buffer[i] * waveform->m_gain;
+					engineBuffer[i] += ma->m_waveform_buffer[i] * w->gain;
 				}
 			}
 		}
@@ -833,9 +460,11 @@ namespace olc::ext::Miniaudio
             {
                 float left, right;
                 ma->m_synth_callback(left, right, 1.0f / ma->GetDeviceSampleRate());
-
-                engineBuffer[(i * ma->GetDeviceChannels())]     += left;
-                engineBuffer[(i * ma->GetDeviceChannels()) + 1] += right;
+				if(audioShouldPlay)
+				{
+					engineBuffer[(i * ma->GetDeviceChannels())]     += left;
+					engineBuffer[(i * ma->GetDeviceChannels()) + 1] += right;
+				}
             }
 		}
 
@@ -844,6 +473,12 @@ namespace olc::ext::Miniaudio
 		
 		for(int i = 0; i < engineBuffer.size(); i++)
 		{
+			if(!audioShouldPlay)
+			{
+				engineBuffer[i] = 0.0f;
+				continue;
+			}
+
 			float peak = fabsf(engineBuffer[i]);
 			
 			if (peak > 1.0f)
@@ -855,58 +490,544 @@ namespace olc::ext::Miniaudio
 		}
     }
 
+	bool AudioEngine::CreateSoundGroup(SoundGroup& group)
+	{
+		// This group has already been created
+		if(group.group != nullptr)
+			return false;
+		
+		group.group = new internal::SoundGroupInstance();
+		group.pgex = this;
+		
+		group.group->group_config = ma_sound_config_init();
+		
+		// set parent to the main group, if it's been created, otherwise, we're creating the main group
+		ma_sound_group* parent = nullptr;
+		if(!m_sound_groups.empty())
+			parent = &m_sound_groups[0]->group;
+		
+		ma_result result = ma_sound_group_init(GetEngine(), 0, parent, &group.group->group);
+	    
+		if(result != MA_SUCCESS)
+		{
+			delete group.group;
+		}
+		
+		m_sound_groups.push_back(group.group);
+		group.group->is_loaded = true;
+		
+		return group.group->is_loaded;
+	}
+
+	void AudioEngine::DestroySoundGroup(SoundGroup& group)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		
+		ma_sound_group_uninit(&group.group->group);
+		group.group->is_loaded = false;
+		delete group.group;
+		group.group = nullptr;
+	}
+
+	bool AudioEngine::SetGroup(Sound& sound, SoundGroup& group)
+	{
+		if(sound.sound == nullptr) return false;
+		if(!sound.sound->is_loaded) return false;
+		if(group.group == nullptr) return false;
+		if(!group.group->is_loaded) return false;
+
+		ma_result result = ma_node_attach_output_bus(&sound.sound->base_sound, 0, &group.group->group, 0);
+		if(result != MA_SUCCESS)
+			throw std::runtime_error("Failed to attach a sound to a sound group");
+
+		for(auto& v : sound.sound->voices)
+		{
+			result = ma_node_attach_output_bus(&v, 0, &group.group->group, 0);
+			if(result != MA_SUCCESS)
+				throw std::runtime_error("Failed to attach a sound to a sound group");
+		}
+		return true;
+	}
+
+	void AudioEngine::Play(SoundGroup& group, const float volume, const float pan, const float pitch)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		if(ma_sound_group_is_playing(&group.group->group)) return;
+
+		if(volume != 2.0f)
+			ma_sound_group_set_volume(&group.group->group, std::clamp(volume, 0.0f, 1.0f));
+		
+		if(pan != 2.0f)
+			ma_sound_group_set_pan(&group.group->group, std::clamp(pan, -1.0f, 1.0f));
+		
+		if(pitch != 2.0f)
+			ma_sound_group_set_pitch(&group.group->group, std::max({0.0f, pitch}));
+		
+		ma_sound_group_start(&group.group->group);
+	}
+
+	void AudioEngine::Stop(SoundGroup& group)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		if(!ma_sound_group_is_playing(&group.group->group)) return;
+		ma_sound_group_stop(&group.group->group);
+	}
+
+	void AudioEngine::SetVolume(SoundGroup& group, const float& volume)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		ma_sound_group_set_volume(&group.group->group, std::clamp(volume, 0.0f, 1.0f));
+	}
+
+	void AudioEngine::SetPan(SoundGroup& group, const float& pan)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		ma_sound_group_set_pan(&group.group->group, std::clamp(pan, -1.0f, 1.0f));
+	}
+
+	void AudioEngine::SetPitch(SoundGroup& group, const float& pitch)
+	{
+		if(group.group == nullptr) return;
+		if(!group.group->is_loaded) return;
+		ma_sound_group_set_pitch(&group.group->group, std::max({0.0f, pitch}));
+	}
+
+	bool AudioEngine::IsPlaying(SoundGroup& group) const
+	{
+		if(group.group == nullptr) return false;
+		if(!group.group->is_loaded) return false;
+		return ma_sound_group_is_playing(&group.group->group);
+	}
+
+	bool AudioEngine::IsLoaded(SoundGroup& group) const
+	{
+		if(group.group == nullptr) return false;
+		return group.group->is_loaded;
+	}
+
 	bool AudioEngine::CreateSoundFromFile(Sound& sound, const std::string& sFileName, uint32_t nNumVoices)
 	{
-		m_sounds.push_back(&sound);
-		return sound.CreateSoundFromFile(sFileName, this, nNumVoices);
+		sound.sound = new internal::SoundInstance();
+		
+#if OLC_HOST == OLC_HOST_ANDROID
+		AAsset* pAsset = AAssetManager_open(
+			olc::host::Host_Android::androidApp->activity->assetManager,
+			sFileName.c_str(),
+			AASSET_MODE_BUFFER
+		);
+		
+		if (pAsset == nullptr)
+			return false;
+
+		off_t size = AAsset_getLength(pAsset);
+		sound.sound->buffer.resize(size);
+		AAsset_read(pAsset, sound.sound->buffer.data(), size);
+		AAsset_close(pAsset);
+#else
+		std::ifstream f(sFileName, std::ios::binary | std::ios::ate);
+		if(f.fail())
+			return false;
+		sound.sound->buffer.resize(f.tellg());
+		f.seekg(0);
+		f.read(reinterpret_cast<char*>(sound.sound->buffer.data()), sound.sound->buffer.size());
+		f.close();
+#endif
+		sound.sound->num_voices = nNumVoices;
+		sound.pgex = this;
+		return _internalSoundLoader(sound);
 	}
 	
 	bool AudioEngine::CreateSoundFromMemory(Sound& sound, const uint8_t* data, const size_t bytes, uint32_t nNumVoices)
 	{
-		m_sounds.push_back(&sound);
-		return sound.CreateSoundFromMemory(data, bytes, this, nNumVoices);
+		sound.sound = new internal::SoundInstance();
+		if(!data || bytes <= 0) return false;
+
+		// Thanks Linh
+		try
+		{
+			sound.sound->buffer.assign(data, data + bytes);
+		}
+		catch (const std::exception&)
+		{
+			sound.sound->buffer.clear();
+			return false;
+		}
+
+		sound.sound->num_voices = nNumVoices;
+		sound.pgex = this;
+		return _internalSoundLoader(sound);
 	}
 	
 	bool AudioEngine::CreateSoundFromMemory(Sound& sound, const std::vector<uint8_t>& data, uint32_t nNumVoices)
 	{
-		m_sounds.push_back(&sound);
-		return sound.CreateSoundFromMemory(data, this, nNumVoices);
+		sound.sound = new internal::SoundInstance();
+		if(data.size() <= 0) return false;
+		sound.sound->buffer = data;
+		sound.sound->num_voices = nNumVoices;
+		sound.pgex = this;
+		return _internalSoundLoader(sound);
 	}
 	
+	bool AudioEngine::_internalSoundLoader(Sound& sound)
+	{
+		ma_result result;
+		sound.sound->id = ++sound.sound->id_tracker;
+		sound.sound->virtual_path = "sound/" + std::to_string(sound.sound->id); 
+		
+		result = ma_resource_manager_register_encoded_data(
+			&m_resource_manager,
+			sound.sound->virtual_path.c_str(),
+			sound.sound->buffer.data(), sound.sound->buffer.size()
+		);
+		
+		if(result != MA_SUCCESS)
+			return false;
+
+		ma_fence fence;
+		result = ma_fence_init(&fence);
+
+		if(result != MA_SUCCESS)
+		{
+			ma_resource_manager_unregister_data(&m_resource_manager, sound.sound->virtual_path.c_str());
+			return false;
+		}
+		
+		result = ma_sound_init_from_file(
+			GetEngine(),
+			sound.sound->virtual_path.c_str(),
+			MA_SOUND_FLAG_DECODE,
+			&GetMainGroup().group->group,
+			&fence,
+			&sound.sound->base_sound
+		);
+		
+		if(result != MA_SUCCESS)
+		{
+			ma_resource_manager_unregister_data(&m_resource_manager, sound.sound->virtual_path.c_str());
+			return false;
+		}
+		
+		sound.sound->voices.resize(sound.sound->num_voices);
+		for(int i = 0; i < sound.sound->num_voices; ++i)
+		{
+			result = ma_sound_init_copy(GetEngine(), &sound.sound->base_sound, 0, &GetMainGroup().group->group, &sound.sound->voices[i]);
+			if(result != MA_SUCCESS)
+				break;
+		}
+		
+		// if the last result out of that loop isn't success, we failed
+		if(result != MA_SUCCESS)
+		{
+			for(auto& v : sound.sound->voices)
+				ma_sound_uninit(&v);
+			ma_sound_uninit(&sound.sound->base_sound);
+			ma_resource_manager_unregister_data(&m_resource_manager, sound.sound->virtual_path.c_str());
+			return false;
+		}
+		
+		// wait here until the sound is fully loaded and dedoded
+		ma_fence_wait(&fence);
+		ma_fence_uninit(&fence);
+
+		ma_sound_get_length_in_pcm_frames(&sound.sound->base_sound, &sound.sound->length_in_pcm_frames);
+		ma_sound_get_length_in_seconds(&sound.sound->base_sound, &sound.sound->length_in_seconds);
+
+		sound.sound->is_loaded = true;
+		m_sounds.push_back(sound.sound);
+        return true;
+	}
+
 	void AudioEngine::DestroySound(Sound& sound)
 	{
-		sound.DestroySound();
+		if(sound.sound == nullptr) return;
+		if(!sound.sound->is_loaded) return;
+		for(auto& v : sound.sound->voices)
+		{
+			if(ma_sound_is_playing(&v))
+				ma_sound_stop(&v);
+			
+			ma_sound_uninit(&v);
+		}
+		sound.sound->voices.clear();
+		ma_sound_uninit(&sound.sound->base_sound);
+		ma_resource_manager_unregister_data(&m_resource_manager, sound.sound->virtual_path.c_str());
+		sound.sound->is_loaded = false;
 		
-		m_sounds.erase(
-			std::remove_if(
-				m_sounds.begin(),
-				m_sounds.end(),
-				[&](Sound* s) { return (s == &sound); }
-			),
-			m_sounds.end()
-		);
+		delete sound.sound;
+
+		sound.sound = nullptr;
+	}
+
+	void AudioEngine::Play(Sound& sound, const bool looping, const float volume, const float pan, const float pitch)
+	{
+		if(sound.sound == nullptr) return;
+
+		if(!sound.sound->is_paused)
+			sound.sound->current_voice = (sound.sound->current_voice + 1) % sound.sound->num_voices;
+		
+		if(volume != 2.0f)
+			ma_sound_set_volume(&sound.sound->voices[sound.sound->current_voice], std::clamp(volume, 0.0f, 1.0f));
+		
+		if(pan != 2.0f)
+			ma_sound_set_pan(&sound.sound->voices[sound.sound->current_voice], std::clamp(pan, -1.0f, 1.0f));
+		
+		if(pitch != 2.0f)
+			ma_sound_set_pitch(&sound.sound->voices[sound.sound->current_voice], std::max({0.0f, pitch}));
+		
+		ma_sound_set_looping(&sound.sound->voices[sound.sound->current_voice], looping);
+		ma_sound_seek_to_pcm_frame(&sound.sound->voices[sound.sound->current_voice], 0);
+		ma_sound_start(&sound.sound->voices[sound.sound->current_voice]);
+		sound.sound->is_paused = false;
+	}
+
+	void AudioEngine::Stop(Sound& sound)
+	{
+		if(sound.sound == nullptr) return;
+		if(!ma_sound_is_playing(&sound.sound->voices[sound.sound->current_voice]))
+			return;
+		ma_sound_stop(&sound.sound->voices[sound.sound->current_voice]);
+		ma_sound_seek_to_pcm_frame(&sound.sound->voices[sound.sound->current_voice], 0);
+	}
+
+	void AudioEngine::Pause(Sound& sound)
+	{
+		if(sound.sound == nullptr) return;
+		if(!ma_sound_is_playing(&sound.sound->voices[sound.sound->current_voice]))
+			return;
+		
+		ma_sound_stop(&sound.sound->voices[sound.sound->current_voice]);
+		sound.sound->is_paused = true;
+	}
+
+	void AudioEngine::Toggle(Sound& sound)
+	{
+		if(sound.sound == nullptr) return;
+		if(ma_sound_is_playing(&sound.sound->voices[sound.sound->current_voice]))
+		{
+			ma_sound_stop(&sound.sound->voices[sound.sound->current_voice]);
+			sound.sound->is_paused = true;
+			return;
+		}
+		
+		ma_sound_start(&sound.sound->voices[sound.sound->current_voice]);
+		sound.sound->is_paused = false;
+	}
+
+	void AudioEngine::Seek(Sound& sound, const ma_uint64 milliseconds)
+	{
+		if(sound.sound == nullptr) return;
+        ma_uint64 frame_to_seek_to = (milliseconds * GetDeviceSampleRate()) / 1000;
+        ma_sound_seek_to_pcm_frame(&sound.sound->voices[sound.sound->current_voice], frame_to_seek_to);
+
+	}
+
+	void AudioEngine::Seek(Sound& sound, const float& location)
+	{
+		if(sound.sound == nullptr) return;
+		ma_uint64 frame_to_seek_to = static_cast<ma_uint64>(sound.sound->length_in_pcm_frames * location);
+		ma_sound_seek_to_pcm_frame(&sound.sound->voices[sound.sound->current_voice], frame_to_seek_to);
+	}
+
+	void AudioEngine::Forward(Sound& sound, const ma_uint64 milliseconds)
+	{
+		if(sound.sound == nullptr) return;
+        ma_uint64 frame_to_seek_to;
+
+        // get the current position
+        ma_sound_get_cursor_in_pcm_frames(&sound.sound->voices[sound.sound->current_voice], &frame_to_seek_to);
+        
+        // calculate the step and add it to the current position
+        frame_to_seek_to += ((milliseconds * GetDeviceSampleRate()) / 1000);
+
+        // seek to the new position
+        ma_sound_seek_to_pcm_frame(&sound.sound->voices[sound.sound->current_voice], frame_to_seek_to);
+	}
+
+	void AudioEngine::Rewind(Sound& sound, const ma_uint64 milliseconds)
+	{
+		if(sound.sound == nullptr) return;
+        ma_uint64 frame_to_seek_to;
+
+        // get the current position
+        ma_sound_get_cursor_in_pcm_frames(&sound.sound->voices[sound.sound->current_voice], &frame_to_seek_to);
+        
+        // calculate the step and add it to the current position
+        frame_to_seek_to -= ((milliseconds * GetDeviceSampleRate()) / 1000);
+
+        // seek to the new position
+        ma_sound_seek_to_pcm_frame(&sound.sound->voices[sound.sound->current_voice], frame_to_seek_to);
+	}
+
+	void AudioEngine::SetVolume(Sound& sound, const float& volume)
+	{
+		if(sound.sound == nullptr) return;
+		for(auto& v : sound.sound->voices)
+		{
+			ma_sound_set_volume(&v, std::clamp(volume, 0.0f, 1.0f));
+		}
+	}
+
+	void AudioEngine::SetPan(Sound& sound, const float& pan)
+	{
+		if(sound.sound == nullptr) return;
+		for(auto& v : sound.sound->voices)
+		{
+			ma_sound_set_pan(&v, std::clamp(pan, -1.0f, 1.0f));
+		}
+	}
+
+	void AudioEngine::SetPitch(Sound& sound, const float& pitch)
+	{
+		if(sound.sound == nullptr) return;
+		for(auto& v : sound.sound->voices)
+		{
+			ma_sound_set_pitch(&v, std::max({0.0f, pitch}));
+		}
+	}
+
+	bool AudioEngine::IsPlaying(Sound& sound)
+	{
+		if(sound.sound == nullptr) return false;
+		for(auto& v : sound.sound->voices)
+		{
+			if(ma_sound_is_playing(&v))
+				return true;
+		}
+		return false;
+	}
+
+	ma_uint64 AudioEngine::GetCursor(Sound& sound)
+	{
+		if(sound.sound == nullptr) return 0;
+        ma_uint64 cursor;
+        ma_sound_get_cursor_in_pcm_frames(&sound.sound->voices[sound.sound->current_voice], &cursor);
+        return (cursor * 1000) / GetDeviceSampleRate();
+	}
+
+	float AudioEngine::GetCursorFloat(Sound& sound)
+	{
+		if(sound.sound == nullptr) return 0.0f;
+        float cursor;
+		ma_sound_get_cursor_in_seconds(&sound.sound->voices[sound.sound->current_voice], &cursor);
+		return cursor / sound.sound->length_in_seconds;
+	}
+
+	bool AudioEngine::IsLoaded(Sound& sound) const
+	{
+		if(sound.sound == nullptr) return false;
+		return sound.sound->is_loaded;
+	}
+
+	ma_sound* AudioEngine::GetMASound(Sound& sound)
+	{
+		if(sound.sound == nullptr) return nullptr;
+		// realistically, one wouldn't call this unless it was loaded
+		if(!sound.sound->is_loaded)
+			return nullptr;
+		
+		// if we're not currently playing, get the pointer of the next voice
+		if(!IsPlaying(sound))
+			return &sound.sound->voices[(sound.sound->current_voice + 1) % sound.sound->num_voices];
+		
+		// if we're playing, get the pointer of the current voice
+		return &sound.sound->voices[sound.sound->current_voice];
 	}
 
 	bool AudioEngine::CreateWaveform(Waveform& waveform, const Waveform::Type type, const double amplitude, const double frequency)
 	{
-		m_waveforms.push_back(&waveform);
-		return waveform.CreateWaveform(waveform, type, amplitude, frequency, this);
+		waveform.waveform = new internal::WaveformInstance();
+		waveform.waveform->waveform_config = ma_waveform_config_init(
+				GetDeviceFormat(),
+				GetDeviceChannels(),
+				GetDeviceSampleRate(),
+				static_cast<ma_waveform_type>(type),
+				amplitude,
+				frequency
+		);
+		
+		waveform.waveform->rampStep = 1.0f / (GetDeviceSampleRate() * 0.01f);
+
+		if(ma_waveform_init(&waveform.waveform->waveform_config, &waveform.waveform->waveform) != MA_SUCCESS)
+		{
+			delete waveform.waveform;
+			waveform.waveform = nullptr;
+			return false;
+		}
+		
+		waveform.waveform->is_loaded = true;
+		waveform.pgex = this;
+		m_waveforms.push_back(waveform.waveform);
+		return true;
 	}
 
 	void AudioEngine::DestroyWaveform(Waveform& waveform)
 	{
-		waveform.DestroyWaveform();
-		m_waveforms.erase(
-			std::remove_if(
-				m_waveforms.begin(),
-				m_waveforms.end(),
-				[&](Waveform* w) { return (w == &waveform); }
-			),
-			m_waveforms.end()
-		);
+		if(waveform.waveform == nullptr) return;
+		ma_waveform_uninit(&waveform.waveform->waveform);
+		delete waveform.waveform;
+		waveform.waveform = nullptr;
 	}
 
-    void AudioEngine::SetSynthCallback(std::function<void(float& fLeftChannel, float& fRightChannel, float fElapsedTime)> callback)
+	void AudioEngine::Play(Waveform& waveform)
+	{
+		if(!IsLoaded(waveform))
+			return;
+		waveform.waveform->target = 1.0f;
+	}
+
+	void AudioEngine::Stop(Waveform& waveform)
+	{
+		if(!IsLoaded(waveform))
+			return;
+		waveform.waveform->target = 0.0f;
+	}
+
+	void AudioEngine::SetWaveformAmplitude(Waveform& waveform, const double amplitude)
+	{
+		if(!IsLoaded(waveform))
+			return;
+		ma_waveform_set_amplitude(&waveform.waveform->waveform, amplitude);
+	}
+
+	void AudioEngine::SetWaveformFrequency(Waveform& waveform, const double frequency)
+	{
+		if(!IsLoaded(waveform))
+			return;
+		ma_waveform_set_frequency(&waveform.waveform->waveform, frequency);
+	}
+
+	void AudioEngine::SetWaveformType(Waveform& waveform, const Waveform::Type type)
+	{
+		if(!IsLoaded(waveform))
+			return;
+		ma_waveform_set_type(&waveform.waveform->waveform, static_cast<ma_waveform_type>(type));
+	}
+
+	bool AudioEngine::IsPlaying(Waveform& waveform) const
+	{
+		if(waveform.waveform == nullptr) return false;
+		return waveform.waveform->target > 0.0f || waveform.waveform->gain > 0.0f;
+	}
+
+	bool AudioEngine::IsLoaded(Waveform& waveform) const
+	{
+		if(waveform.waveform == nullptr) return false;
+		return waveform.waveform->is_loaded;
+	}
+
+	ma_waveform* AudioEngine::GetMAWaveform(Waveform& waveform)
+	{
+		if(waveform.waveform == nullptr) return nullptr;
+		if(!waveform.waveform->is_loaded) return nullptr;
+		return &waveform.waveform->waveform;
+	}
+
+	void AudioEngine::SetSynthCallback(std::function<void(float& fLeftChannel, float& fRightChannel, float fElapsedTime)> callback)
     {
         m_synth_callback = callback;
     }
@@ -926,19 +1047,19 @@ namespace olc::ext::Miniaudio
 		m_data_callback = {};
 	}
 	
-	ma_device& AudioEngine::GetDevice()
+	ma_device* AudioEngine::GetDevice()
 	{
-		return m_device;
+		return &m_device;
 	}
 
-	ma_engine& AudioEngine::GetEngine()
+	ma_engine* AudioEngine::GetEngine()
 	{
-		return m_engine;
+		return &m_engine;
 	}
 
-	ma_resource_manager& AudioEngine::GetResourceManager()
+	ma_resource_manager* AudioEngine::GetResourceManager()
 	{
-		return m_resource_manager;
+		return &m_resource_manager;
 	}
 
 	int AudioEngine::GetDeviceChannels() const
@@ -961,12 +1082,17 @@ namespace olc::ext::Miniaudio
 		return m_cfg.DeviceType;
 	}
 
+	SoundGroup& AudioEngine::GetMainGroup()
+	{
+		return m_main_sound_group;
+	}
+
 	bool AudioEngine::OnInstall([[maybe_unused]] olc::PixelGameEngine* pge)
 	{
         m_pge = pge;
 
 		m_device_config = ma_device_config_init(GetDeviceType());
-        m_device_config.playback.format = GetDeviceFormat();
+		m_device_config.playback.format = GetDeviceFormat();
         m_device_config.playback.channels = GetDeviceChannels();
         m_device_config.sampleRate = GetDeviceSampleRate();
         m_device_config.dataCallback = AudioEngine::data_callback;
@@ -978,10 +1104,10 @@ namespace olc::ext::Miniaudio
 			return false;
 		}
 
-        m_resource_manager_config = ma_resource_manager_config_init();
-        m_resource_manager_config.decodedFormat     = GetDeviceFormat();
-        m_resource_manager_config.decodedChannels   = GetDeviceChannels();
-        m_resource_manager_config.decodedSampleRate = GetDeviceSampleRate();
+		m_resource_manager_config = ma_resource_manager_config_init();
+		m_resource_manager_config.decodedFormat     = GetDeviceFormat();
+		m_resource_manager_config.decodedChannels   = GetDeviceChannels();
+		m_resource_manager_config.decodedSampleRate = GetDeviceSampleRate();
     
     #ifdef __EMSCRIPTEN__
         m_resource_manager_config.jobThreadCount = 0;                           
@@ -996,7 +1122,7 @@ namespace olc::ext::Miniaudio
 		}
     
         m_engine_config = ma_engine_config_init();
-        m_engine_config.pDevice = &m_device;
+		m_engine_config.pDevice = &m_device;
         m_engine_config.pResourceManager = &m_resource_manager;
     
         if(ma_engine_init(&m_engine_config, &m_engine) != MA_SUCCESS)
@@ -1004,6 +1130,14 @@ namespace olc::ext::Miniaudio
 			std::cerr << "PGEX3_Miniaudio: failed to initialize engine\n";
 			return false;
 		}
+		
+		// group 0
+		if(!CreateSoundGroup(m_main_sound_group))
+		{
+			std::cerr << "PGEX3_Miniaudio: failed to create main sound group\n";
+			return false;
+		}
+
 		m_is_initialized = true;
 		return true;
 	}
@@ -1030,8 +1164,7 @@ namespace olc::ext::Miniaudio
 	bool AudioEngine::OnAfterSystemUpdate([[maybe_unused]] olc::PixelGameEngine* pge, [[maybe_unused]] float fElapsedTime)
 	{
 		return true;
-	}
-#pragma endregion
-
+	}	
 }
+
 #endif
