@@ -17,7 +17,7 @@
 
 //! START DECLARATION
 #if !defined(PGE_PIXEL_DECLARED)
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy" // Silence warnings about implicitly generated copy constructor for Pixel
 #endif
@@ -328,7 +328,7 @@ namespace olc
 	}
 }
 
-#if OLC_HOST == OLC_HOST_MACOS
+#if OLC_HOST == OLC_HOST_MACOS || OLC_HOST == OLC_HOST_IOS 
 #pragma clang diagnostic pop
 #endif
 
