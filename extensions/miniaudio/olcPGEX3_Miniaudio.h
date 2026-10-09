@@ -366,6 +366,9 @@ namespace olc::ext::Miniaudio
 			}
 			m_sound_groups.clear();
 
+			ClearSynthCallback();
+			ClearDataCallback();
+
 			ma_resource_manager_uninit(&m_resource_manager);
 
 			ma_engine_stop(&m_engine);
