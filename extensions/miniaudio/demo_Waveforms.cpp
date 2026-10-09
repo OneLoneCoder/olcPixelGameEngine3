@@ -15,6 +15,9 @@
 #define OLC_PGEX3_MINIAUDIO
 #include "olcPGEX3_Miniaudio.h"
 
+// Save us a whole lot of typing in this demo
+using namespace olc::ext::Miniaudio;
+
 // Example application demonstrating the miniaudio extension.
 // This class overrides the olc::PixelGameEngine base class
 // by implementing the OnUserCreate() and OnUserUpdate()
@@ -33,33 +36,30 @@ public:
 	// Called once at the start, so create things here
 	bool OnUserCreate() override
 	{
+		auto CreateWaveform = [&](olc::Key key, Waveform::Type type, double frequency)
 		{
-			using namespace olc::ext::Miniaudio;
-			auto CreateWaveform = [&](olc::Key key, Waveform::Type type, double frequency)
-			{
-				Waveform w;
-				audio.CreateWaveform(w, type, 0.01, frequency);
-				mapKeys[key] = w;
-			};
-			
-			CreateWaveform(olc::Key::A, Waveform::Type::Sine, 207.65f);
-			CreateWaveform(olc::Key::Z, Waveform::Type::Sine, 220.00f);
-			CreateWaveform(olc::Key::S, Waveform::Type::Sine, 233.08f);
-			CreateWaveform(olc::Key::X, Waveform::Type::Sine, 246.94f);
-			CreateWaveform(olc::Key::C, Waveform::Type::Sine, 261.63f);
-			CreateWaveform(olc::Key::F, Waveform::Type::Sine, 277.18f);
-			CreateWaveform(olc::Key::V, Waveform::Type::Sine, 293.66f);
-			CreateWaveform(olc::Key::G, Waveform::Type::Sine, 311.13f);
-			CreateWaveform(olc::Key::B, Waveform::Type::Sine, 329.63f);
-			CreateWaveform(olc::Key::N, Waveform::Type::Sine, 349.23f);
-			CreateWaveform(olc::Key::J, Waveform::Type::Sine, 369.99f);
-			CreateWaveform(olc::Key::M, Waveform::Type::Sine, 392.00f);
-			CreateWaveform(olc::Key::K, Waveform::Type::Sine, 415.30f);
-			CreateWaveform(olc::Key::COMMA, Waveform::Type::Sine, 440.00f);
-			CreateWaveform(olc::Key::L, Waveform::Type::Sine, 466.16f);
-			CreateWaveform(olc::Key::PERIOD, Waveform::Type::Sine, 493.88f);
-			CreateWaveform(olc::Key::OEM_2, Waveform::Type::Sine, 523.25f);
-		}
+			Waveform w;
+			audio.CreateWaveform(w, type, 0.01, frequency);
+			mapKeys[key] = w;
+		};
+		
+		CreateWaveform(olc::Key::A, Waveform::Type::Sine, 207.65f);
+		CreateWaveform(olc::Key::Z, Waveform::Type::Sine, 220.00f);
+		CreateWaveform(olc::Key::S, Waveform::Type::Sine, 233.08f);
+		CreateWaveform(olc::Key::X, Waveform::Type::Sine, 246.94f);
+		CreateWaveform(olc::Key::C, Waveform::Type::Sine, 261.63f);
+		CreateWaveform(olc::Key::F, Waveform::Type::Sine, 277.18f);
+		CreateWaveform(olc::Key::V, Waveform::Type::Sine, 293.66f);
+		CreateWaveform(olc::Key::G, Waveform::Type::Sine, 311.13f);
+		CreateWaveform(olc::Key::B, Waveform::Type::Sine, 329.63f);
+		CreateWaveform(olc::Key::N, Waveform::Type::Sine, 349.23f);
+		CreateWaveform(olc::Key::J, Waveform::Type::Sine, 369.99f);
+		CreateWaveform(olc::Key::M, Waveform::Type::Sine, 392.00f);
+		CreateWaveform(olc::Key::K, Waveform::Type::Sine, 415.30f);
+		CreateWaveform(olc::Key::COMMA, Waveform::Type::Sine, 440.00f);
+		CreateWaveform(olc::Key::L, Waveform::Type::Sine, 466.16f);
+		CreateWaveform(olc::Key::PERIOD, Waveform::Type::Sine, 493.88f);
+		CreateWaveform(olc::Key::OEM_2, Waveform::Type::Sine, 523.25f);
 		
 		return true;
 	}
@@ -69,16 +69,16 @@ public:
 	{
 		if(keyboard.GetKey(olc::Key::LEFT).bPressed)
 		{
-			typeTracker = ((typeTracker + (int)olc::ext::Miniaudio::Waveform::Type::Count) - 1) % (int)olc::ext::Miniaudio::Waveform::Type::Count;
+			waveformTypeTracker = ((waveformTypeTracker + (int)Waveform::Type::Count) - 1) % (int)Waveform::Type::Count;
 			for(auto& i : mapKeys)
-				audio.SetWaveformType(i.second, (olc::ext::Miniaudio::Waveform::Type)typeTracker);
+				audio.SetWaveformType(i.second, (Waveform::Type)waveformTypeTracker);
 		}
 		
 		if(keyboard.GetKey(olc::Key::RIGHT).bPressed)
 		{
-			typeTracker = (typeTracker + 1) % (int)olc::ext::Miniaudio::Waveform::Type::Count;
+			waveformTypeTracker = (waveformTypeTracker + 1) % (int)Waveform::Type::Count;
 			for(auto& i : mapKeys)
-				audio.SetWaveformType(i.second, (olc::ext::Miniaudio::Waveform::Type)typeTracker);
+				audio.SetWaveformType(i.second, (Waveform::Type)waveformTypeTracker);
 		}
 
 		for(auto& i : mapKeys)
@@ -110,7 +110,7 @@ public:
 			scale
 		);
 
-		demoMessage = "Current Wave (" + waveformTypeToName.at((olc::ext::Miniaudio::Waveform::Type)typeTracker) + ")";
+		demoMessage = "Current Wave (" + waveformTypeToName.at((Waveform::Type)waveformTypeTracker) + ")";
 		draw.String(
 			center + olc::vi2d{0, 24} - (draw.GetTextSize(demoMessage, false, scale) / 2),
 			demoMessage,
@@ -139,17 +139,16 @@ public:
 	olc::ext::Miniaudio::AudioEngine audio;
 
 private:	
-	int typeTracker = 0;
-
-    const std::unordered_map<olc::ext::Miniaudio::Waveform::Type,std::string> waveformTypeToName
+	int waveformTypeTracker = 0;
+    const std::unordered_map<Waveform::Type,std::string> waveformTypeToName
     {
-        {olc::ext::Miniaudio::Waveform::Type::Sine, "SINE"},
-        {olc::ext::Miniaudio::Waveform::Type::Square, "SQUARE"},
-        {olc::ext::Miniaudio::Waveform::Type::Triangle, "TRIANGLE"},
-        {olc::ext::Miniaudio::Waveform::Type::Sawtooth, "SAWTOOTH"},
+        {Waveform::Type::Sine, "SINE"},
+        {Waveform::Type::Square, "SQUARE"},
+        {Waveform::Type::Triangle, "TRIANGLE"},
+        {Waveform::Type::Sawtooth, "SAWTOOTH"},
     };
 
-	std::unordered_map<olc::Key, olc::ext::Miniaudio::Waveform> mapKeys;
+	std::unordered_map<olc::Key, Waveform> mapKeys;
     
 	const std::string piano{
 	    "  | |   |   |   |   | |   |   |   |   | |   | |   |   |   |\n"
