@@ -2379,6 +2379,13 @@ namespace olc
 		bool BoundToGPU() const;
 		bool BoundToCPU() const;
 
+
+		// SW Renderer IFace
+		bool set(int x, int y, olc::Pixel p);
+		olc::Pixel get(int x, int y);
+		int width();
+		int height();
+
 	public:
 		olc::ImageRegion all();
 		olc::ImageRegion region(const olc::vf2d pos, const olc::vf2d& size);
@@ -20673,6 +20680,37 @@ namespace olc
 	bool Image::BoundToCPU() const
 	{
 		return onCPU;
+	}
+
+	bool Image::set(int x, int y, olc::Pixel p)
+	{
+		if (x >= 0 && y >= 0 && x < dimensions.x && y < dimensions.y)
+		{
+			pixels[int(y) * dimensions.x + int(x)] = p;
+			return true;
+		}
+		else
+			return false;
+	}
+
+	olc::Pixel Image::get(int x, int y)
+	{
+		if (x >= 0 && y >= 0 && x < dimensions.x && y < dimensions.y)
+		{
+			return pixels[int(y) * dimensions.x + int(x)];
+		}
+		else
+			return olc::Colour::BLACK;
+	}
+
+	int Image::width()
+	{
+		return dimensions.x;
+	}
+
+	int Image::height()
+	{
+		return dimensions.y;
 	}
 
 	olc::ImageRegion Image::all()
