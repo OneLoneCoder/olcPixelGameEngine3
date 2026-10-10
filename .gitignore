@@ -50,12 +50,48 @@ xcuserdata/
 /dev/msvc/olcPGE3_BuildSH/x64
 build/
 
-# Android
-/dev/android
-.idea/
-*.iml
-/local.properties
-/.gradle
+# Android Studio
+/dev/android/.idea/
+/dev/android/*.iml
+/dev/android/*.iws
+/dev/android/*.ipr
+/dev/android/out/
+/dev/android/captures/
+/dev/android/.externalNativeBuild
+/dev/android/.cxx/
+
+
+# Android Sudio Gradle files
+/dev/android/.gradle/
+/dev/android/build/
+/dev/android/*.apk
+/dev/android/*.ap_
+/dev/android/*.aab
+
+# Android Studio Local configuration file
+/dev/android/local.properties
+
+# Android Sudio NDK
+/dev/android/obj/
+/dev/android/libs/
+
+# Android Studio CMake
+/dev/android/cmake-build-*/
+
+# Android Studio MacOS
+/dev/android/.DS_Store
+/dev/android/Thumbs.db
+
+# Android Studio Other
+/dev/android/*.log
+/dev/android/*.swp
+/dev/android/*.swo
+/dev/android/*~
+/dev/android/.classpath
+/dev/android/.project
+/dev/android/.settings/
+/dev/android/bin/
+/dev/android/gen/
 
 # wayland artifacts
 examples/olcPGE3_AntiAliasing
