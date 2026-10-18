@@ -107,8 +107,19 @@
 	and the many community contributors that have provided bug fixes, suggestions,
 	criticisms, and encouragement from the OneLoneCoder Discord server, YouTube & GitHub.
 
+	Additional Contributors
+	~~~~~~~~~~~~~~~~~~~~~~~
+	tgd20, MrB, AMay, Moon President, Samuel, fyre, Technicjelle, cstd, kevlin, Desp4,
+	lalaoopybee, codlivion, kimoisune, maltecc
+
 	Saladin, if you're out there, I know you would have been a proud contributer to this.
 	I miss you buddy.
+
+
+	olcCodeJam 2026 - Beta Testers - Big Thanks! (itch account names shown)
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KrossX, Zalambdodont, mgnooj, bblodget, bootsec, tgd20, AJSquirrel, Linh, pm1001
+	tobiasrox, mitchdev1, u2084511felix, BenKyd, Beefpants, objectname, MrB, raoul632
 
 	Version History
 	~~~~~~~~~~~~~~~
