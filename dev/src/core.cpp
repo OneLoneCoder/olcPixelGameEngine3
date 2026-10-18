@@ -77,11 +77,17 @@ namespace olc
 		//pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
 		pRenderer->PrepareWindowTarget(pHost->GetHostWindowDescriptor(this));
 		CreateImage(GetScreen(), vScreenSize);
-		SetWindowSize(vScreenSize * vPixelSize);
+		
+		olc::vi2d vPS = vPixelSize;
+		if (config.bRealWindow)
+			vPS = { 1,1 };
+		
+
+		SetWindowSize(vScreenSize * vPS);
 
 		// Assume 1:1 Relationship for now
 		vViewPos = { 0,0 };
-		vViewSize = vScreenSize * vPixelSize;
+		vViewSize = vScreenSize * vPS;
 		return true;
 	}
 
@@ -383,6 +389,16 @@ namespace olc
 		return true;
 	}
 
+	bool PGEWindow::olc_OnWindowSize(const olc::vi2d& vSize)
+	{
+		if (config.bRealWindow)
+		{
+			GetScreen().Resize(vSize);
+		}
+
+		return SetWindowSize(vSize);
+	}
+
 
 
 
@@ -407,8 +423,12 @@ namespace olc
 	bool PixelGameEngine::Construct(const PGEConfig& cfg)
 	{		
 		config = cfg;
+
+		if (config.bRealWindow)
+			config.vPixelSize = { 1,1 };
+
 		// Also assign the window level config since that is what the Host will see
-		Window::config = cfg;
+		Window::config = config;
 
 		// Check for constructor sAppName, if not set use Config sAppName
 		if (sAppName.empty())

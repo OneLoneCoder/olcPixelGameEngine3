@@ -133,6 +133,7 @@ namespace olc
 	protected:
 		bool olc_OnMouseMove(const olc::vi2d& vMousePos) override;
 		bool olc_OnTouch(const uint32_t nID, const olc::vf2d& vPos, const bool bPress, const bool bRelease, const olc::vf2d& vSize, const bool stylus = false, const float pressure = 0.0f, const float orientation = 0, const olc::vf2d& tilt = { 0,0 }) override;
+		bool olc_OnWindowSize(const olc::vi2d& vSize) override;
 
 	public:
 		virtual bool olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime);

@@ -4467,6 +4467,7 @@ namespace olc
 	protected:
 		bool olc_OnMouseMove(const olc::vi2d& vMousePos) override;
 		bool olc_OnTouch(const uint32_t nID, const olc::vf2d& vPos, const bool bPress, const bool bRelease, const olc::vf2d& vSize, const bool stylus = false, const float pressure = 0.0f, const float orientation = 0, const olc::vf2d& tilt = { 0,0 }) override;
+		bool olc_OnWindowSize(const olc::vi2d& vSize) override;
 
 	public:
 		virtual bool olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime);
@@ -20012,11 +20013,17 @@ namespace olc
 		//pRenderer->RetargetDevice(pHost->GetHostWindowDescriptor(this));
 		pRenderer->PrepareWindowTarget(pHost->GetHostWindowDescriptor(this));
 		CreateImage(GetScreen(), vScreenSize);
-		SetWindowSize(vScreenSize * vPixelSize);
+		
+		olc::vi2d vPS = vPixelSize;
+		if (config.bRealWindow)
+			vPS = { 1,1 };
+		
+
+		SetWindowSize(vScreenSize * vPS);
 
 		// Assume 1:1 Relationship for now
 		vViewPos = { 0,0 };
-		vViewSize = vScreenSize * vPixelSize;
+		vViewSize = vScreenSize * vPS;
 		return true;
 	}
 
@@ -20318,6 +20325,16 @@ namespace olc
 		return true;
 	}
 
+	bool PGEWindow::olc_OnWindowSize(const olc::vi2d& vSize)
+	{
+		if (config.bRealWindow)
+		{
+			GetScreen().Resize(vSize);
+		}
+
+		return SetWindowSize(vSize);
+	}
+
 
 
 
@@ -20342,8 +20359,12 @@ namespace olc
 	bool PixelGameEngine::Construct(const PGEConfig& cfg)
 	{		
 		config = cfg;
+
+		if (config.bRealWindow)
+			config.vPixelSize = { 1,1 };
+
 		// Also assign the window level config since that is what the Host will see
-		Window::config = cfg;
+		Window::config = config;
 
 		// Check for constructor sAppName, if not set use Config sAppName
 		if (sAppName.empty())
