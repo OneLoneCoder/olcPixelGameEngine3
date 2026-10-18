@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <cstdint>
+#include <algorithm>
 #include <string>
 //! END STDHEADER
 
@@ -85,6 +86,40 @@ namespace olc
 			// Set keyboard layout for glyph mapping
 			void UseKeyboardLayout(const olc::KeyboardLayout kbl);
 
+		public: // Text Entry Interface
+
+			// Text is handled differently to keyboard input, but is fundamentally
+			// driven by keyboard input (or at least events that smell like a keyboard)
+			//
+			// To use, EnableTextEntry() which then starts to accumulate keyboard 
+			// input from OS. A cursor is also maintained that can be moved with
+			// left and right arrow keys, and delete and backspace work as expected.
+			//
+			// When the user presses a delimiter key (e.g. enter), the current text
+			// input is added to a command buffer the user can interrogate. This
+			// method is used because some 3rd party device drivers may leverage
+			// keyboard input to do other interesting things like barcode readers.
+			//
+			// Being in Text entry mode does not prohibit normal keyboard behaviour
+			// so endure your application handles keyboard input appropriately.
+			//
+			// Leaving TextEntryMode happens automatically when delimiter encountered
+
+			// Enter Text Entry Mode
+			void EnableTextEntry(const std::string_view sDefault = "", const std::string_view delim = "\n", const bool bLeaveMode = true);
+			// Leave Text Entry Mode
+			void DisableTextEntry();
+			// Is TextEntryMode enabled?
+			bool TextEntryEnabled() const;
+			// Get the current accumulated text input
+			const std::string& GetCurrentText() const;
+			// Get the current cursor position within the input string
+			int32_t GetTextCursorPosition() const;
+			// Get a RO vector of current commands
+			const std::vector<std::string>& GetTextCommands() const;
+			// User must clear accumulated commands when appropriate
+			void ClearTextCommands();
+
 		private:
 			// Set key state from system keycode
 			void SetKey(const olc::Key key, bool state);
@@ -103,6 +138,13 @@ namespace olc
 			// autotyped by the OS repeat rate or peripheral
 			std::array<std::vector<olc::Key>, 2> keyCache{};
 			size_t nKeyCacheIndex = 0;
+
+			bool bTextEntryMode = false;
+			std::string sTextEntryString = "";
+			int32_t nTextEntryCursorPos = 0;
+			std::vector<std::string> vecTextEntryCommands;
+			std::string sTextEntryDelim = "\n";
+			bool bLeaveTextEntryModeUponDelimiter = true;
 
 			// Map of olc::Keycodes to printable glyphs
 			struct sKeyGlyph
