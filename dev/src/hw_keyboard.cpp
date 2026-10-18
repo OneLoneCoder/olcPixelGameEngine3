@@ -187,6 +187,46 @@ namespace olc::hw
         }
     }
 
+    void Keyboard::EnableTextEntry(const std::string_view sDefault, const std::string_view delim, const bool bLeaveMode)
+    {
+        sTextEntryString = sDefault;
+        vecTextEntryCommands.clear();
+        sTextEntryDelim = delim;
+        nTextEntryCursorPos = uint32_t(sTextEntryString.size());
+        bTextEntryMode = true;
+        bLeaveTextEntryModeUponDelimiter = bLeaveMode;
+    }
+
+    void Keyboard::DisableTextEntry()
+    {                              
+        bTextEntryMode = false;
+    }
+
+    bool Keyboard::TextEntryEnabled() const
+    {
+        return bTextEntryMode;
+    }
+
+    const std::string& Keyboard::GetCurrentText() const
+    {
+        return sTextEntryString;
+    }
+
+    int32_t Keyboard::GetTextCursorPosition() const
+    {
+        return nTextEntryCursorPos;
+    }
+
+    const std::vector<std::string>& Keyboard::GetTextCommands() const
+    {
+        return vecTextEntryCommands;
+    }
+
+    void Keyboard::ClearTextCommands()
+    {
+        vecTextEntryCommands.clear();
+    }
+
     const Button& Keyboard::GetKey(const olc::Key key) const
     {
 		return keys.at(size_t(key));
@@ -222,6 +262,55 @@ namespace olc::hw
         if (state)
         {
             keyCache[nKeyCacheIndex].push_back(key);
+
+            // Process Text entry
+            if (bTextEntryMode)
+            {
+                const auto& sym = GetKeyGlyph(key, GetKey(olc::Key::SHIFT).bHeld, GetKey(olc::Key::CTRL).bHeld);
+
+
+                // Check for command characters
+                if (sym == "_L") // Left
+                    nTextEntryCursorPos = std::max(0, nTextEntryCursorPos - 1);
+                else if (sym == "_R") // Right
+                    nTextEntryCursorPos = std::min(int32_t(sTextEntryString.size()), nTextEntryCursorPos + 1);
+                else if (sym == "\b") // Backspace
+                {
+                    // Still need 'back' to be consumed
+                    if (nTextEntryCursorPos > 0)
+                    {
+                        sTextEntryString.erase(nTextEntryCursorPos - 1, 1);
+                        nTextEntryCursorPos = std::max(0, nTextEntryCursorPos - 1);
+                    }
+                }
+                else if (sym == "_X" && size_t(nTextEntryCursorPos) < sTextEntryString.size()) // Del
+                {
+                    sTextEntryString.erase(nTextEntryCursorPos, 1);
+                }
+                /*else if (sym == "_U")
+                {
+               
+                }
+                else if (sym == "_D")
+                {
+
+                }*/
+                else if (sym == sTextEntryDelim)
+                {
+                    vecTextEntryCommands.push_back(sTextEntryString);
+                    sTextEntryString.clear();
+                    nTextEntryCursorPos = 0;
+                    if(bLeaveTextEntryModeUponDelimiter)
+                        DisableTextEntry();
+                }
+                else if (sym.size() == 1)
+                {
+                    sTextEntryString.insert(nTextEntryCursorPos, sym);
+                    nTextEntryCursorPos++;
+                }
+
+
+            }
         }
 	}
 
@@ -253,6 +342,7 @@ namespace olc::hw
 
         // Swap active cache index
         nKeyCacheIndex ^= 0x01;
+
     }
 }
 //! END IMPLEMENTATION

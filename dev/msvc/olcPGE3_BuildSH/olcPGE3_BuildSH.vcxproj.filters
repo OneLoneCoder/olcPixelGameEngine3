@@ -102,6 +102,9 @@
     <ClCompile Include="..\..\..\examples\olcPGE3_SoftwareRendering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\examples\olcPGE3_TextEntry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\examples\assets\minsanity_texture.png">
