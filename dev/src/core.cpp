@@ -107,6 +107,17 @@ namespace olc
 		return true;
 	}
 
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
+	void PGEWindow::OnSaveStateRequested()
+	{
+		return;
+	}
+
+	void PGEWindow::OnResumeStateRequested()
+	{
+		return;
+	}
+#endif // OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
 	bool PGEWindow::olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime)
 	{
 		float fDT = fElapsedTime;
