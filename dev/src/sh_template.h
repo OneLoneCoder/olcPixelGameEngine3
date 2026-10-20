@@ -182,6 +182,12 @@
 //! GRAB api_macos_wrapper.hpp DECLARATION
 #endif
 
+#if OLC_HOST == OLC_HOST_IOS
+//! GRAB api_ios.h DECLARATION
+
+//! GRAB api_ios_wrapper.hpp DECLARATION
+#endif
+
 #if !defined(OLC_USE_WXWIDGETS)
 
 #if OLC_HOST == OLC_HOST_NONE
@@ -200,6 +206,12 @@
 //! GRAB host_apple_macos.h MACOS_CONFIG
 
 //! GRAB host_apple_macos.h DECLARATION
+#endif
+
+#if OLC_HOST == OLC_HOST_IOS
+//! GRAB host_apple_ios.h IOS_CONFIG
+
+//! GRAB host_apple_ios.h DECLARATION
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
@@ -256,6 +268,10 @@
 //! GRAB imload_macos.h DECLARATION
 #endif
 
+#if OLC_IMAGELOADER == OLC_IMAGELOADER_IOS
+//! GRAB imload_ios.h DECLARATION
+#endif
+
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG
 //! GRAB imload_lib_png.h DECLARATION
 #endif
@@ -275,6 +291,11 @@
 //! GRAB api_macos.cpp IMPLEMENTATION
 #endif
 
+#if OLC_HOST == OLC_HOST_IOS
+//! GRAB api_ios.cpp IMPLEMENTATION
+#endif
+
+
 #if !defined(OLC_USE_WXWIDGETS)
 
 #if OLC_HOST == OLC_HOST_NONE
@@ -287,6 +308,10 @@
 
 #if OLC_HOST == OLC_HOST_MACOS
 //! GRAB host_apple_macos.cpp IMPLEMENTATION
+#endif
+
+#if OLC_HOST == OLC_HOST_IOS
+//! GRAB host_apple_ios.cpp IMPLEMENTATION
 #endif
 
 #if OLC_HOST == OLC_HOST_LINUX_X11
@@ -374,6 +399,9 @@
 #endif
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_MACOS
 //! GRAB imload_macos.cpp IMPLEMENTATION 
+#endif
+#if OLC_IMAGELOADER == OLC_IMAGELOADER_IOS
+//! GRAB imload_ios.cpp IMPLEMENTATION 
 #endif
 #if OLC_IMAGELOADER == OLC_IMAGELOADER_LIB_PNG
 //! GRAB imload_lib_png.cpp IMPLEMENTATION 

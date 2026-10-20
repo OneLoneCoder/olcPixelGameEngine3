@@ -37,7 +37,7 @@ namespace olc::apis::opengl
 		bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffersEXT)) != nullptr;
 		// bLoaded &= (_glTexImage2DMultisample = OGL_LOAD(glTexImage2DMultisample)) != nullptr;
 		bLoaded &= (_glBlitFramebuffer = OGL_LOAD(glBlitFramebuffer)) != nullptr;
-#elif OLC_HOST == OLC_HOST_ANDROID
+#elif OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
         bLoaded &= (_glBindVertexArray = OGL_LOAD(glBindVertexArray)) != nullptr;
         bLoaded &= (_glGenVertexArrays = OGL_LOAD(glGenVertexArrays)) != nullptr;
         bLoaded &= (_glDrawBuffers = OGL_LOAD(glDrawBuffers)) != nullptr;
@@ -117,7 +117,7 @@ namespace olc::apis::opengl
 				sLocation << "OGL33 Error: GL_INVALID_FRAMEBUFFER_OPERATION\n"; break;
 			case GL_OUT_OF_MEMORY:
 				sLocation << "OGL33 Error: GL_OUT_OF_MEMORY\n"; break;
-#if OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 			case GL_STACK_UNDERFLOW:
 				sLocation << "OGL33 Error: GL_STACK_UNDERFLOW\n"; break;
 			case GL_STACK_OVERFLOW:
@@ -155,7 +155,7 @@ namespace olc::apis::opengl
 
 	void gl::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	{
-#if OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		::glTexEnvf(target, pname, param);
 		CheckError();
 #endif
@@ -235,7 +235,7 @@ namespace olc::apis::opengl
 
 	void gl::glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		::glGetTexImage(target, level, format, type, pixels);
 		CheckError();
 #endif
@@ -249,7 +249,7 @@ namespace olc::apis::opengl
 
 	void gl::glPolygonMode(GLenum face, GLenum mode)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		::glPolygonMode(face, mode);
 		CheckError();
 #endif
@@ -454,7 +454,7 @@ namespace olc::apis::opengl
 
 	void gl::glTexImage2DMultisample(GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
 	{
-#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID
+#if OLC_HOST != OLC_HOST_EMSCRIPTEN && OLC_HOST != OLC_HOST_ANDROID && OLC_HOST != OLC_HOST_IOS
 		_glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);
 		CheckError();
 #endif
