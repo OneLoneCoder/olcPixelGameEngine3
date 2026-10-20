@@ -117,6 +117,11 @@ namespace olc
 	{
 		return;
 	}
+
+	void PGEWindow::OnLowMemory()
+	{
+		return;
+	}
 #endif // OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
 	bool PGEWindow::olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime)
 	{

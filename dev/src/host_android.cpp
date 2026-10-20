@@ -284,6 +284,11 @@ namespace olc::host
                 if(host) host->pgeWindow->olc_OnFocus(false);
                 break;
             } 
+            case APP_CMD_LOW_MEMORY: {
+                LOGD("APP_CMD_LOW_MEMORY received");
+                if(pPrimaryPGE) pPrimaryPGE->OnLowMemory();
+                break;
+            }
             default: break;
         }
     }

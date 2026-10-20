@@ -4442,6 +4442,8 @@ namespace olc
 		virtual void OnSaveStateRequested();
 		// Called when the application is requested to resume its state
 		virtual void OnResumeStateRequested();
+		// Called when the application is running low on memory
+		virtual void OnLowMemory();
 #endif
 
 	public:	// olc::Image Handling
@@ -15103,6 +15105,11 @@ namespace olc::host
                 if(host) host->pgeWindow->olc_OnFocus(false);
                 break;
             } 
+            case APP_CMD_LOW_MEMORY: {
+                LOGD("APP_CMD_LOW_MEMORY received");
+                if(pPrimaryPGE) pPrimaryPGE->OnLowMemory();
+                break;
+            }
             default: break;
         }
     }
@@ -20085,6 +20092,11 @@ namespace olc
 	}
 
 	void PGEWindow::OnResumeStateRequested()
+	{
+		return;
+	}
+
+	void PGEWindow::OnLowMemory()
 	{
 		return;
 	}
