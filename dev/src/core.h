@@ -94,11 +94,11 @@ namespace olc
 		// Apple iOS and Android only
 #if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
 		// Called when the application is requested to save its state
-		virtual void OnSaveStateRequested();
+		virtual void OnUserSaveState();
 		// Called when the application is requested to resume its state
-		virtual void OnResumeStateRequested();
+		virtual void OnUserResume();
 		// Called when the application is running low on memory
-		virtual void OnLowMemory();
+		virtual void OnUserLowMemory();
 #endif
 
 	public:	// olc::Image Handling

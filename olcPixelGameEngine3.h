@@ -4439,11 +4439,11 @@ namespace olc
 		// Apple iOS and Android only
 #if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
 		// Called when the application is requested to save its state
-		virtual void OnSaveStateRequested();
+		virtual void OnUserSaveState();
 		// Called when the application is requested to resume its state
-		virtual void OnResumeStateRequested();
+		virtual void OnUserResume();
 		// Called when the application is running low on memory
-		virtual void OnLowMemory();
+		virtual void OnUserLowMemory();
 #endif
 
 	public:	// olc::Image Handling
@@ -15087,12 +15087,12 @@ namespace olc::host
             } 
             case APP_CMD_SAVE_STATE: {
                 LOGD("APP_CMD_SAVE_STATE received");
-                if(pPrimaryPGE) pPrimaryPGE->OnSaveStateRequested();
+                if(pPrimaryPGE) pPrimaryPGE->OnUserSaveState();
                 break;
             }
             case APP_CMD_RESUME: {
                 LOGD("APP_CMD_RESUME received");
-                if(pPrimaryPGE) pPrimaryPGE->OnResumeStateRequested();
+                if(pPrimaryPGE) pPrimaryPGE->OnUserResume();
                 break;
             }
             case APP_CMD_GAINED_FOCUS: {
@@ -15107,7 +15107,7 @@ namespace olc::host
             } 
             case APP_CMD_LOW_MEMORY: {
                 LOGD("APP_CMD_LOW_MEMORY received");
-                if(pPrimaryPGE) pPrimaryPGE->OnLowMemory();
+                if(pPrimaryPGE) pPrimaryPGE->OnUserLowMemory();
                 break;
             }
             default: break;
@@ -20086,17 +20086,17 @@ namespace olc
 	}
 
 #if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
-	void PGEWindow::OnSaveStateRequested()
+	void PGEWindow::OnUserSaveState()
 	{
 		return;
 	}
 
-	void PGEWindow::OnResumeStateRequested()
+	void PGEWindow::OnUserResume()
 	{
 		return;
 	}
 
-	void PGEWindow::OnLowMemory()
+	void PGEWindow::OnUserLowMemory()
 	{
 		return;
 	}

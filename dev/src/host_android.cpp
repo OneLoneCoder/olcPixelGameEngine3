@@ -266,12 +266,12 @@ namespace olc::host
             } 
             case APP_CMD_SAVE_STATE: {
                 LOGD("APP_CMD_SAVE_STATE received");
-                if(pPrimaryPGE) pPrimaryPGE->OnSaveStateRequested();
+                if(pPrimaryPGE) pPrimaryPGE->OnUserSaveState();
                 break;
             }
             case APP_CMD_RESUME: {
                 LOGD("APP_CMD_RESUME received");
-                if(pPrimaryPGE) pPrimaryPGE->OnResumeStateRequested();
+                if(pPrimaryPGE) pPrimaryPGE->OnUserResume();
                 break;
             }
             case APP_CMD_GAINED_FOCUS: {
@@ -286,7 +286,7 @@ namespace olc::host
             } 
             case APP_CMD_LOW_MEMORY: {
                 LOGD("APP_CMD_LOW_MEMORY received");
-                if(pPrimaryPGE) pPrimaryPGE->OnLowMemory();
+                if(pPrimaryPGE) pPrimaryPGE->OnUserLowMemory();
                 break;
             }
             default: break;

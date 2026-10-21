@@ -108,17 +108,17 @@ namespace olc
 	}
 
 #if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
-	void PGEWindow::OnSaveStateRequested()
+	void PGEWindow::OnUserSaveState()
 	{
 		return;
 	}
 
-	void PGEWindow::OnResumeStateRequested()
+	void PGEWindow::OnUserResume()
 	{
 		return;
 	}
 
-	void PGEWindow::OnLowMemory()
+	void PGEWindow::OnUserLowMemory()
 	{
 		return;
 	}
