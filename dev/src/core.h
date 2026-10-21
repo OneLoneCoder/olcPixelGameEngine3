@@ -90,8 +90,17 @@ namespace olc
 		virtual bool OnUserUpdate(float fElapsedTime);
 		// Return true if window is to close
 		virtual bool OnUserDestroy();
-		
 	
+		// Apple iOS and Android only
+#if OLC_HOST == OLC_HOST_ANDROID || OLC_HOST == OLC_HOST_IOS
+		// Called when the application is requested to save its state
+		virtual void OnUserSaveState();
+		// Called when the application is requested to resume its state
+		virtual void OnUserResume();
+		// Called when the application is running low on memory
+		virtual void OnUserLowMemory();
+#endif
+
 	public:	// olc::Image Handling
 
 		// These are the preferred  methods to create olc::Image objects

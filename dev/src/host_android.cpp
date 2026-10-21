@@ -239,7 +239,7 @@ namespace olc::host
         if (!host->pgeWindow) return;
 
         switch (cmd) {
-            case APP_CMD_WINDOW_RESIZED:
+            case APP_CMD_WINDOW_RESIZED:{
                 host->pgeWindow->olc_OnWindowSize({
                   ANativeWindow_getWidth(app->window),
                   ANativeWindow_getHeight(app->window)
@@ -248,25 +248,47 @@ namespace olc::host
                       ANativeWindow_getWidth(app->window),
                       ANativeWindow_getHeight(app->window));
                 break;
-            case APP_CMD_INIT_WINDOW:
+            }
+            case APP_CMD_INIT_WINDOW:{
                 if (app->window) {
                     host->initialized = true;
                     LOGD("APP_CMD_INIT_WINDOW received with Window");
                 }
                 break;
+            }
             case APP_CMD_TERM_WINDOW: {
-                host->pgeWindow->olc_OnWindowClose();
-                host->initialized = false;
                 LOGD("APP_CMD_TERM_WINDOW received");
-            } break;
+                if(host){
+                    host->pgeWindow->olc_OnWindowClose();
+                    host->initialized = false;
+                }
+                break;
+            } 
+            case APP_CMD_SAVE_STATE: {
+                LOGD("APP_CMD_SAVE_STATE received");
+                if(pPrimaryPGE) pPrimaryPGE->OnUserSaveState();
+                break;
+            }
+            case APP_CMD_RESUME: {
+                LOGD("APP_CMD_RESUME received");
+                if(pPrimaryPGE) pPrimaryPGE->OnUserResume();
+                break;
+            }
             case APP_CMD_GAINED_FOCUS: {
                 LOGD("APP_CMD_GAINED_FOCUS received");
-                host->pgeWindow->olc_OnFocus(true);
-            } break;
+                if(host)host->pgeWindow->olc_OnFocus(true);
+                break;
+            }
             case APP_CMD_LOST_FOCUS: {
                 LOGD("APP_CMD_LOST_FOCUS received");
-                host->pgeWindow->olc_OnFocus(false);
-            } break;
+                if(host) host->pgeWindow->olc_OnFocus(false);
+                break;
+            } 
+            case APP_CMD_LOW_MEMORY: {
+                LOGD("APP_CMD_LOW_MEMORY received");
+                if(pPrimaryPGE) pPrimaryPGE->OnUserLowMemory();
+                break;
+            }
             default: break;
         }
     }
