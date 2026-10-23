@@ -451,11 +451,11 @@ namespace olc::host
 		// Note for Microsoft: if you hide the border, it hides the title bar too, and via versa
 
 		// For fullscreen,borderless/noTitlebar we want to skip all the window furniture and just have a big ol canvas
-		if (!pPrimaryPGE->config.bShowWindowBorder || !pPrimaryPGE->config.bShowWindowTilebar) return dwStyle |= WS_POPUP;
+		if (!pPrimaryPGE->config.bShowWindowBorder || !pPrimaryPGE->config.bShowWindowTitlebar) return dwStyle |= WS_POPUP;
 
 		// If any max/min/close button(s) display the button menu
 		if (pPrimaryPGE->config.bShowWindowCloseButton || pPrimaryPGE->config.bShowWindowMaximiseButton || pPrimaryPGE->config.bShowWindowMinimiseButton) dwStyle |= WS_SYSMENU;
-		if (pPrimaryPGE->config.bShowWindowTilebar)			dwStyle |= WS_CAPTION;		// Add a title bar
+		if (pPrimaryPGE->config.bShowWindowTitlebar)		dwStyle |= WS_CAPTION;		// Add a title bar
 		if (pPrimaryPGE->config.bShowWindowBorder)			dwStyle |= WS_BORDER;		// Add a border
 		if (pPrimaryPGE->config.bResizeable)				dwStyle |= WS_THICKFRAME;	// Enable resizing
 		if (pPrimaryPGE->config.bShowWindowMinimiseButton)	dwStyle |= WS_MINIMIZEBOX;	// Add Min Button

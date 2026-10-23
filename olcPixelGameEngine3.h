@@ -4395,7 +4395,7 @@ namespace olc
 		// Allow the window border to be hidden by user
 		bool bShowWindowBorder = true;
 		// Allow the window title bar to be hidden by user
-		bool bShowWindowTilebar = true;
+		bool bShowWindowTitlebar = true;
 		// Allow the windows minimise button to be hidden by user
 		bool bShowWindowMinimiseButton = true;
 		// Allow the windows maximised button to be hidden by user
@@ -11182,11 +11182,11 @@ namespace olc::host
 		// Note for Microsoft: if you hide the border, it hides the title bar too, and via versa
 
 		// For fullscreen,borderless/noTitlebar we want to skip all the window furniture and just have a big ol canvas
-		if (!pPrimaryPGE->config.bShowWindowBorder || !pPrimaryPGE->config.bShowWindowTilebar) return dwStyle |= WS_POPUP;
+		if (!pPrimaryPGE->config.bShowWindowBorder || !pPrimaryPGE->config.bShowWindowTitlebar) return dwStyle |= WS_POPUP;
 
 		// If any max/min/close button(s) display the button menu
 		if (pPrimaryPGE->config.bShowWindowCloseButton || pPrimaryPGE->config.bShowWindowMaximiseButton || pPrimaryPGE->config.bShowWindowMinimiseButton) dwStyle |= WS_SYSMENU;
-		if (pPrimaryPGE->config.bShowWindowTilebar)			dwStyle |= WS_CAPTION;		// Add a title bar
+		if (pPrimaryPGE->config.bShowWindowTitlebar)		dwStyle |= WS_CAPTION;		// Add a title bar
 		if (pPrimaryPGE->config.bShowWindowBorder)			dwStyle |= WS_BORDER;		// Add a border
 		if (pPrimaryPGE->config.bResizeable)				dwStyle |= WS_THICKFRAME;	// Enable resizing
 		if (pPrimaryPGE->config.bShowWindowMinimiseButton)	dwStyle |= WS_MINIMIZEBOX;	// Add Min Button
@@ -11823,12 +11823,12 @@ namespace olc::host {
         uint16_t nsStyle = 0;
         
         // Note for MacOS: You cannot fully hide both the title bar and border, therefore we return titled when both are disabled, which is the closest we can get to a borderless window
-        if (!pPrimaryPGE->config.bShowWindowBorder || !pPrimaryPGE->config.bShowWindowTilebar) return static_cast<unsigned int>(NSWindowStyleMask::Titled);
+        if (!pPrimaryPGE->config.bShowWindowBorder || !pPrimaryPGE->config.bShowWindowTitlebar) return static_cast<unsigned int>(NSWindowStyleMask::Titled);
 
         // On MacOS, the maximize button is tied to the resizable style, therefore there is no need to implemenent a separate bShowWindowMaximiseButton config,
         // For MacOS you can only disable the buttons, you can't hide them
         if (pPrimaryPGE->config.bFullScreen)               nsStyle |= static_cast<unsigned int>(NSWindowStyleMask::FullSizeContentView);      // Fullscreen window
-        if (pPrimaryPGE->config.bShowWindowTilebar)        nsStyle |= static_cast<unsigned int>(NSWindowStyleMask::Titled);          // Add a title bar
+        if (pPrimaryPGE->config.bShowWindowTitlebar)       nsStyle |= static_cast<unsigned int>(NSWindowStyleMask::Titled);          // Add a title bar
         if (pPrimaryPGE->config.bShowWindowBorder)         nsStyle |= static_cast<unsigned int>(NSWindowStyleMask::Titled);          // Add a border
         if (pPrimaryPGE->config.bResizeable)               nsStyle |= static_cast<unsigned int>(NSWindowStyleMask::Resizable);       // Enable resizing
         if (pPrimaryPGE->config.bShowWindowMinimiseButton) nsStyle |= static_cast<unsigned int>(NSWindowStyleMask::Miniaturizable);  // Add Min Button
