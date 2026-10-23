@@ -50,7 +50,7 @@ namespace olc
 		// Allow the window border to be hidden by user
 		bool bShowWindowBorder = true;
 		// Allow the window title bar to be hidden by user
-		bool bShowWindowTilebar = true;
+		bool bShowWindowTitlebar = true;
 		// Allow the windows minimise button to be hidden by user
 		bool bShowWindowMinimiseButton = true;
 		// Allow the windows maximised button to be hidden by user
