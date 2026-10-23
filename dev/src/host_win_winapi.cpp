@@ -25,6 +25,7 @@ namespace olc::host
 				if (!this->OnSystemThreadStart())
 				{
 					// PGE->OnContextStart() failed, or user aborted OnUserCreate()
+					systemActive = false; // Ensure Windows message loop exits
 					return;
 				}
 
