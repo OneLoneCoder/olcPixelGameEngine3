@@ -101,6 +101,11 @@ namespace olc::utils
 			return m_nMode;
 		}
 
+		inline void SetScreenSize(const olc::vf2d& vScreenSize)
+		{
+			m_vViewSize = vScreenSize / m_vViewScale;
+		}
+
 		// Get the position of the target being tracked by this camera
 		inline const olc::vf2d& GetTarget() const
 		{
