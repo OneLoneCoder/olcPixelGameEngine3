@@ -4436,6 +4436,8 @@ namespace olc
 		virtual bool OnUserUpdate(float fElapsedTime);
 		// Return true if window is to close
 		virtual bool OnUserDestroy();
+
+		virtual void OnUserResize(const olc::vi2d vNewWindowSize);
 		
 	
 	public:	// olc::Image Handling
@@ -4493,6 +4495,8 @@ namespace olc
 		olc::imload::ImageLoader* pImageLoader = nullptr;
 		olc::vi2d vViewPos = { 0,0 };
 		olc::vi2d vViewSize = { 0,0 };
+		bool bWindowResizeRequest = false;
+		olc::vi2d vWindowResizeRequest = { 0,0 };
 
 	protected: // Extensions
 		bool InstallWindowExtension(olc::PGEWindowExtension* pgex);
@@ -20055,9 +20059,29 @@ namespace olc
 		return true;
 	}
 
+	void PGEWindow::OnUserResize(const olc::vi2d vNewWindowSize)
+	{
+		return;
+	}
+
 	bool PGEWindow::olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime)
 	{
 		float fDT = fElapsedTime;
+
+		// This synchronises resizes of windows so we dont draw
+		// to screens that have changed size
+		if (bWindowResizeRequest)
+		{
+			if(config.bRealWindow)
+				GetScreen().Resize(vWindowResizeRequest);
+
+			SetWindowSize(vWindowResizeRequest);
+			bWindowResizeRequest = false;
+
+			// Allow user to react if they want
+			OnUserResize(vWindowResizeRequest);
+		}
+
 
 		// Input Changes
 		mouse.UpdateState();
@@ -20339,12 +20363,9 @@ namespace olc
 
 	bool PGEWindow::olc_OnWindowSize(const olc::vi2d& vSize)
 	{
-		if (config.bRealWindow)
-		{
-			GetScreen().Resize(vSize);
-		}
-
-		return SetWindowSize(vSize);
+		bWindowResizeRequest = true;
+		vWindowResizeRequest = vSize;
+		return true;
 	}
 
 

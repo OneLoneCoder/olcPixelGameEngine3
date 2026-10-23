@@ -107,9 +107,29 @@ namespace olc
 		return true;
 	}
 
+	void PGEWindow::OnUserResize(const olc::vi2d vNewWindowSize)
+	{
+		return;
+	}
+
 	bool PGEWindow::olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime)
 	{
 		float fDT = fElapsedTime;
+
+		// This synchronises resizes of windows so we dont draw
+		// to screens that have changed size
+		if (bWindowResizeRequest)
+		{
+			if(config.bRealWindow)
+				GetScreen().Resize(vWindowResizeRequest);
+
+			SetWindowSize(vWindowResizeRequest);
+			bWindowResizeRequest = false;
+
+			// Allow user to react if they want
+			OnUserResize(vWindowResizeRequest);
+		}
+
 
 		// Input Changes
 		mouse.UpdateState();
@@ -391,12 +411,9 @@ namespace olc
 
 	bool PGEWindow::olc_OnWindowSize(const olc::vi2d& vSize)
 	{
-		if (config.bRealWindow)
-		{
-			GetScreen().Resize(vSize);
-		}
-
-		return SetWindowSize(vSize);
+		bWindowResizeRequest = true;
+		vWindowResizeRequest = vSize;
+		return true;
 	}
 
 

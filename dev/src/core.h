@@ -90,6 +90,8 @@ namespace olc
 		virtual bool OnUserUpdate(float fElapsedTime);
 		// Return true if window is to close
 		virtual bool OnUserDestroy();
+
+		virtual void OnUserResize(const olc::vi2d vNewWindowSize);
 		
 	
 	public:	// olc::Image Handling
@@ -147,6 +149,8 @@ namespace olc
 		olc::imload::ImageLoader* pImageLoader = nullptr;
 		olc::vi2d vViewPos = { 0,0 };
 		olc::vi2d vViewSize = { 0,0 };
+		bool bWindowResizeRequest = false;
+		olc::vi2d vWindowResizeRequest = { 0,0 };
 
 	protected: // Extensions
 		bool InstallWindowExtension(olc::PGEWindowExtension* pgex);
