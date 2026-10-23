@@ -107,7 +107,7 @@ namespace olc
 		return true;
 	}
 
-	void PGEWindow::OnUserResize(const olc::vi2d vNewWindowSize)
+	void PGEWindow::OnUserResize(const olc::vi2d& vNewWindowSize)
 	{
 		return;
 	}

@@ -2922,6 +2922,11 @@ namespace olc
 		olc::vf2d WorldToScreen(const olc::vf2d& v) const;
 		olc::vf2d ScreenToWorld(const olc::vf2d& v) const;
 
+		// Scale a size in screen pixels to world units
+		// (essentially scale only, no offsets or rotations)
+		olc::vf2d SizeInWorld(const olc::vf2d& v) const;
+		olc::vf2d SizeOnScreen(const olc::vf2d& v) const;
+
 	public: // Primitive Drawing Functions
 		// Plot a single pixel
 		void Pixel(
@@ -4437,7 +4442,7 @@ namespace olc
 		// Return true if window is to close
 		virtual bool OnUserDestroy();
 
-		virtual void OnUserResize(const olc::vi2d vNewWindowSize);
+		virtual void OnUserResize(const olc::vi2d& vNewWindowSize);
 		
 	
 	public:	// olc::Image Handling
@@ -18327,6 +18332,16 @@ olc::vf2d olc::Draw::ScreenToWorld(const olc::vf2d& v) const
 	return transformAffine.inverse(v);
 }
 
+olc::vf2d olc::Draw::SizeInWorld(const olc::vf2d& v) const
+{
+	return v / transformAffine.scale();
+}
+
+olc::vf2d olc::Draw::SizeOnScreen(const olc::vf2d& v) const
+{
+	return transformAffine.scale() * v;
+}
+
 void Draw::Pixel(const olc::vf2d& pos, const olc::Pixel col, const olc::Pixel tint)
 {
 	// Check if in bounds
@@ -20059,7 +20074,7 @@ namespace olc
 		return true;
 	}
 
-	void PGEWindow::OnUserResize(const olc::vi2d vNewWindowSize)
+	void PGEWindow::OnUserResize(const olc::vi2d& vNewWindowSize)
 	{
 		return;
 	}

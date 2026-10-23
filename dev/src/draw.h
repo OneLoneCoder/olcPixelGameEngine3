@@ -226,6 +226,11 @@ namespace olc
 		olc::vf2d WorldToScreen(const olc::vf2d& v) const;
 		olc::vf2d ScreenToWorld(const olc::vf2d& v) const;
 
+		// Scale a size in screen pixels to world units
+		// (essentially scale only, no offsets or rotations)
+		olc::vf2d SizeInWorld(const olc::vf2d& v) const;
+		olc::vf2d SizeOnScreen(const olc::vf2d& v) const;
+
 	public: // Primitive Drawing Functions
 		// Plot a single pixel
 		void Pixel(

@@ -91,7 +91,7 @@ namespace olc
 		// Return true if window is to close
 		virtual bool OnUserDestroy();
 
-		virtual void OnUserResize(const olc::vi2d vNewWindowSize);
+		virtual void OnUserResize(const olc::vi2d& vNewWindowSize);
 		
 	
 	public:	// olc::Image Handling
