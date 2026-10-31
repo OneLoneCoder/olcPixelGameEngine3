@@ -679,12 +679,16 @@ namespace olc
 #define PGE_PIXEL_DECLARED 1
 #endif
 
-#if !defined(PGE_VECTOR2D_DECLARED)
+
 namespace olc
 {
 	template <typename T>
 	concept numeric = std::integral<T> || std::floating_point<T>;
+}
 
+#if !defined(PGE_VECTOR2D_DECLARED)
+namespace olc
+{
 	/*
 		A complete 2D geometric vector structure, with a variety
 		of useful utility functions and operator overloads
