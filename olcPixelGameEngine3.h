@@ -680,11 +680,14 @@ namespace olc
 #endif
 
 
+#if !defined(PGE_NUMERIC_CONCEPT_DECLARED)
 namespace olc
 {
 	template <typename T>
 	concept numeric = std::integral<T> || std::floating_point<T>;
 }
+#define PGE_NUMERIC_CONCEPT_DECLARED 1
+#endif
 
 #if !defined(PGE_VECTOR2D_DECLARED)
 namespace olc
