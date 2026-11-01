@@ -118,8 +118,9 @@
 
 	olcCodeJam 2026 - Beta Testers - Big Thanks! (itch account names shown)
 	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KrossX, Zalambdodont, mgnooj, bblodget, bootsec, tgd20, AJSquirrel, Linh, pm1001
-	tobiasrox, mitchdev1, u2084511felix, BenKyd, Beefpants, objectname, MrB, raoul632
+	KrossX, Zalambdodont, mgnooj, bblodget, bootsec, tgd20, AJSquirrel, Linh, pm1001,
+	tobiasrox, mitchdev1, u2084511felix, BenKyd, Beefpants, objectname, MrB, raoul632,
+	yolicap, JustBrailey, AlfaDrottning
 
 	Version History
 	~~~~~~~~~~~~~~~

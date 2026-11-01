@@ -13,12 +13,19 @@
 //! END CUSTOMHEADER
 
 //! START DECLARATION
-#if !defined(PGE_VECTOR2D_DECLARED)
+
+#if !defined(PGE_NUMERIC_CONCEPT_DECLARED)
 namespace olc
 {
 	template <typename T>
 	concept numeric = std::integral<T> || std::floating_point<T>;
+}
+#define PGE_NUMERIC_CONCEPT_DECLARED 1
+#endif
 
+#if !defined(PGE_VECTOR2D_DECLARED)
+namespace olc
+{
 	/*
 		A complete 2D geometric vector structure, with a variety
 		of useful utility functions and operator overloads

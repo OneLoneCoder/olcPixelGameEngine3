@@ -229,6 +229,16 @@ olc::vf2d olc::Draw::ScreenToWorld(const olc::vf2d& v) const
 	return transformAffine.inverse(v);
 }
 
+olc::vf2d olc::Draw::SizeInWorld(const olc::vf2d& v) const
+{
+	return v / transformAffine.scale();
+}
+
+olc::vf2d olc::Draw::SizeOnScreen(const olc::vf2d& v) const
+{
+	return transformAffine.scale() * v;
+}
+
 void Draw::Pixel(const olc::vf2d& pos, const olc::Pixel col, const olc::Pixel tint)
 {
 	// Check if in bounds

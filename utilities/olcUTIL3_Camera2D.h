@@ -101,6 +101,11 @@ namespace olc::utils
 			return m_nMode;
 		}
 
+		inline void SetScreenSize(const olc::vf2d& vScreenSize)
+		{
+			m_vViewSize = vScreenSize / m_vViewScale;
+		}
+
 		// Get the position of the target being tracked by this camera
 		inline const olc::vf2d& GetTarget() const
 		{
@@ -361,7 +366,7 @@ namespace olc::utils
 
 		// Target Vector2D object camera should follow (either ref or ptr)
 		olc::vf2d* m_pTarget = nullptr;
-		olc::vf2d m_vLocalTarget;
+		olc::vf2d m_vLocalTarget = { 0,0 };
 
 		// World Boundary
 		bool m_bWorldBoundary = false;

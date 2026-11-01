@@ -118,8 +118,9 @@
 
 	olcCodeJam 2026 - Beta Testers - Big Thanks! (itch account names shown)
 	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KrossX, Zalambdodont, mgnooj, bblodget, bootsec, tgd20, AJSquirrel, Linh, pm1001
-	tobiasrox, mitchdev1, u2084511felix, BenKyd, Beefpants, objectname, MrB, raoul632
+	KrossX, Zalambdodont, mgnooj, bblodget, bootsec, tgd20, AJSquirrel, Linh, pm1001,
+	tobiasrox, mitchdev1, u2084511felix, BenKyd, Beefpants, objectname, MrB, raoul632,
+	yolicap, JustBrailey, AlfaDrottning
 
 	Version History
 	~~~~~~~~~~~~~~~
@@ -678,12 +679,19 @@ namespace olc
 #define PGE_PIXEL_DECLARED 1
 #endif
 
-#if !defined(PGE_VECTOR2D_DECLARED)
+
+#if !defined(PGE_NUMERIC_CONCEPT_DECLARED)
 namespace olc
 {
 	template <typename T>
 	concept numeric = std::integral<T> || std::floating_point<T>;
+}
+#define PGE_NUMERIC_CONCEPT_DECLARED 1
+#endif
 
+#if !defined(PGE_VECTOR2D_DECLARED)
+namespace olc
+{
 	/*
 		A complete 2D geometric vector structure, with a variety
 		of useful utility functions and operator overloads
@@ -2921,6 +2929,11 @@ namespace olc
 		olc::vf2d WorldToScreen(const olc::vf2d& v) const;
 		olc::vf2d ScreenToWorld(const olc::vf2d& v) const;
 
+		// Scale a size in screen pixels to world units
+		// (essentially scale only, no offsets or rotations)
+		olc::vf2d SizeInWorld(const olc::vf2d& v) const;
+		olc::vf2d SizeOnScreen(const olc::vf2d& v) const;
+
 	public: // Primitive Drawing Functions
 		// Plot a single pixel
 		void Pixel(
@@ -4435,6 +4448,8 @@ namespace olc
 		virtual bool OnUserUpdate(float fElapsedTime);
 		// Return true if window is to close
 		virtual bool OnUserDestroy();
+
+		virtual void OnUserResize(const olc::vi2d& vNewWindowSize);
 		
 	
 	public:	// olc::Image Handling
@@ -4492,6 +4507,8 @@ namespace olc
 		olc::imload::ImageLoader* pImageLoader = nullptr;
 		olc::vi2d vViewPos = { 0,0 };
 		olc::vi2d vViewSize = { 0,0 };
+		bool bWindowResizeRequest = false;
+		olc::vi2d vWindowResizeRequest = { 0,0 };
 
 	protected: // Extensions
 		bool InstallWindowExtension(olc::PGEWindowExtension* pgex);
@@ -18322,6 +18339,16 @@ olc::vf2d olc::Draw::ScreenToWorld(const olc::vf2d& v) const
 	return transformAffine.inverse(v);
 }
 
+olc::vf2d olc::Draw::SizeInWorld(const olc::vf2d& v) const
+{
+	return v / transformAffine.scale();
+}
+
+olc::vf2d olc::Draw::SizeOnScreen(const olc::vf2d& v) const
+{
+	return transformAffine.scale() * v;
+}
+
 void Draw::Pixel(const olc::vf2d& pos, const olc::Pixel col, const olc::Pixel tint)
 {
 	// Check if in bounds
@@ -20054,9 +20081,29 @@ namespace olc
 		return true;
 	}
 
+	void PGEWindow::OnUserResize(const olc::vi2d& vNewWindowSize)
+	{
+		return;
+	}
+
 	bool PGEWindow::olc_WindowUpdate(const float fElapsedTime, const float fTotalElapsedTime)
 	{
 		float fDT = fElapsedTime;
+
+		// This synchronises resizes of windows so we dont draw
+		// to screens that have changed size
+		if (bWindowResizeRequest)
+		{
+			if(config.bRealWindow)
+				GetScreen().Resize(vWindowResizeRequest);
+
+			SetWindowSize(vWindowResizeRequest);
+			bWindowResizeRequest = false;
+
+			// Allow user to react if they want
+			OnUserResize(vWindowResizeRequest);
+		}
+
 
 		// Input Changes
 		mouse.UpdateState();
@@ -20338,12 +20385,9 @@ namespace olc
 
 	bool PGEWindow::olc_OnWindowSize(const olc::vi2d& vSize)
 	{
-		if (config.bRealWindow)
-		{
-			GetScreen().Resize(vSize);
-		}
-
-		return SetWindowSize(vSize);
+		bWindowResizeRequest = true;
+		vWindowResizeRequest = vSize;
+		return true;
 	}
 
 
