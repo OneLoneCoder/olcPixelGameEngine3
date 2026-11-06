@@ -20,9 +20,6 @@ using namespace olc;
 
 ImageBatch olc::Draw::CreateImageBatch(olc::Image& image)
 {
-	PrepareImageForHW(image);
-	PrepareTargetForHW();
-
 	ImageBatch b;
 	b.task.structure = olc::Structure::List;
 	b.task.pImage = &image;
@@ -31,6 +28,8 @@ ImageBatch olc::Draw::CreateImageBatch(olc::Image& image)
 
 const GPUTask& olc::Draw::Batch(olc::ImageBatch& batch, const olc::Pixel tint)
 {
+	PrepareImageForHW(*batch.task.pImage);
+	PrepareTargetForHW();
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
@@ -44,6 +43,7 @@ FilledBatch olc::Draw::CreateFilledBatch()
 
 const GPUTask& olc::Draw::Batch(olc::FilledBatch& batch, const olc::Pixel tint)
 {
+	PrepareTargetForHW();
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
@@ -57,15 +57,13 @@ LineBatch olc::Draw::CreateLineBatch()
 
 const GPUTask& olc::Draw::Batch(olc::LineBatch& batch, const olc::Pixel tint)
 {
+	PrepareTargetForHW();
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
 
 TextureBatch olc::Draw::CreateTextureBatch(olc::Image& image)
 {
-	PrepareImageForHW(image);
-	PrepareTargetForHW();
-
 	TextureBatch b;
 	b.task.structure = olc::Structure::List;
 	b.task.pImage = &image;
@@ -74,6 +72,8 @@ TextureBatch olc::Draw::CreateTextureBatch(olc::Image& image)
 
 const GPUTask& olc::Draw::Batch(olc::TextureBatch& batch, const olc::Pixel tint)
 {
+	PrepareImageForHW(*batch.task.pImage);
+	PrepareTargetForHW();
 	batch.task.tint = tint;
 	return vecGPUTasks.data.emplace_back(batch.task);
 }
