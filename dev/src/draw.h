@@ -68,7 +68,12 @@
 	[#] Line(p1, p2, col, [tint])					
 	[#] Line(p1, c1, p2, c2, [tint])				
 	[#] Line(batch, p1, p2, col, [tint])			
-	[#] Line(batch, p1, c1, p2, c2, [tint])			
+	[#] Line(batch, p1, c1, p2, c2, [tint])	
+
+	[#] Curve(p1, p2, pControl, col, [tint])
+	[#] Curve(p1, c1, p2, c2, pControl, [tint])
+	[#] Curve(batch, p1, p2, pControl, col, [tint])
+	[#] Curve(batch, p1, c1, p2, c2, pControl, [tint])
 
 	[#] Rect(pos, size, col, [tint])				
 	[#] Rect(pos, size, colTL, colTR, colBL, colBR, [tint])	
@@ -343,6 +348,50 @@ namespace olc
 			const olc::vf2d& p2, 
 			const olc::Pixel col = olc::Colour::WHITE,
 			const olc::Pixel tint = olc::Colour::WHITE);
+
+// === 3-Point Curves ===
+
+		// Draws a single pixel wide 3pt curve into a batch
+		const LineBatch& Curve(
+			olc::LineBatch& batch,
+			const olc::vf2d& pStart,
+			const olc::vf2d& pEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel col = olc::Colour::WHITE,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+		// Draws a single pixel wide 3pt curve with a gradient into a batch	
+		const LineBatch& Curve(
+			olc::LineBatch& batch,
+			const olc::vf2d& pStart,
+			const olc::Pixel cStart,
+			const olc::vf2d& pEnd,
+			const olc::Pixel cEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+		// Draws a single pixel wide 3pt curve with a gradient		
+		const GPUTask& Curve(
+			const olc::vf2d& pStart,
+			const olc::Pixel cStart,
+			const olc::vf2d& pEnd,
+			const olc::Pixel cEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+		// Draws a single pixel wide 3pt curve		
+		const GPUTask& Curve(
+			const olc::vf2d& pStart,
+			const olc::vf2d& pEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel col = olc::Colour::WHITE,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+
 
 // === Rectangles ===
 

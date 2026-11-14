@@ -3047,6 +3047,50 @@ namespace olc
 			const olc::Pixel col = olc::Colour::WHITE,
 			const olc::Pixel tint = olc::Colour::WHITE);
 
+// === 3-Point Curves ===
+
+		// Draws a single pixel wide 3pt curve into a batch
+		const LineBatch& Curve(
+			olc::LineBatch& batch,
+			const olc::vf2d& pStart,
+			const olc::vf2d& pEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel col = olc::Colour::WHITE,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+		// Draws a single pixel wide 3pt curve with a gradient into a batch	
+		const LineBatch& Curve(
+			olc::LineBatch& batch,
+			const olc::vf2d& pStart,
+			const olc::Pixel cStart,
+			const olc::vf2d& pEnd,
+			const olc::Pixel cEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+		// Draws a single pixel wide 3pt curve with a gradient		
+		const GPUTask& Curve(
+			const olc::vf2d& pStart,
+			const olc::Pixel cStart,
+			const olc::vf2d& pEnd,
+			const olc::Pixel cEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+		// Draws a single pixel wide 3pt curve		
+		const GPUTask& Curve(
+			const olc::vf2d& pStart,
+			const olc::vf2d& pEnd,
+			const olc::vf2d& pControl,
+			const olc::Pixel col = olc::Colour::WHITE,
+			const olc::Pixel tint = olc::Colour::WHITE,
+			const int32_t facets = OLC_DEFAULT_CIRCLE_FACETS);
+
+
+
 // === Rectangles ===
 
 		// Draws a multiple colour rectangle, with linear colour interpolation, into a batch
@@ -18645,6 +18689,33 @@ const GPUTask& Draw::Line(const olc::vf2d& p1, const olc::Pixel c1, const olc::v
 		)));
 }
 
+const GPUTask& olc::Draw::Curve(const olc::vf2d& pStart, const olc::Pixel cStart, const olc::vf2d& pEnd, const olc::Pixel cEnd, const olc::vf2d& pControl, const olc::Pixel tint, const int32_t facets)
+{
+	PrepareTargetForHW();
+
+	const float fStep = 1.0f / float(facets-1);
+	std::vector<olc::vf2d> vPoints(facets);
+	std::vector<olc::Pixel> vColours(facets);
+
+	for (int32_t i = 0; i < facets; i++)
+	{
+		float t = float(i) * fStep;
+		vPoints[i] = transformAffine.forwardRound<float>((1 - t) * (1 - t) * pStart + 2 * (1 - t) * t * pControl + t * t * pEnd);
+		vColours[i] = olc::PixelLerp(cStart, cEnd, t);
+	}
+
+	return vecGPUTasks.data.emplace_back(std::move(
+		TaskDrawLine(
+			vPoints,
+			vColours,
+			tint
+		)));
+}
+
+const GPUTask& olc::Draw::Curve(const olc::vf2d& pStart, const olc::vf2d& pEnd, const olc::vf2d& pControl, const olc::Pixel col, const olc::Pixel tint, const int32_t facets)
+{
+	return Curve(pStart, col, pEnd, col, pControl, tint, facets);
+}
 
 const GPUTask& olc::Draw::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col, const olc::Pixel tint)
 {
@@ -19487,6 +19558,33 @@ const LineBatch& olc::Draw::Line(olc::LineBatch& batch, const olc::vf2d& p1, con
 	const olc::vf2d a2 = transformAffine.forwardRound(p2);
 	batch.task.vertexBuffer[idx + 0] = { {a1.x, a1.y, 1.0f, 1.0f}, c1.blend(tint), {0, 0}, {0, 0}, {0, 0}, {0, 0} };
 	batch.task.vertexBuffer[idx + 1] = { {a2.x, a2.y, 1.0f, 1.0f}, c2.blend(tint), {0, 0}, {0, 0}, {0, 0}, {0, 0} };
+	return batch;
+}
+
+const LineBatch& olc::Draw::Curve(olc::LineBatch& batch, const olc::vf2d& pStart, const olc::vf2d& pEnd, const olc::vf2d& pControl, const olc::Pixel col, const olc::Pixel tint, const int32_t facets)
+{
+	return Curve(batch, pStart, col, pEnd, col, pControl, tint, facets);
+}
+
+const LineBatch& olc::Draw::Curve(olc::LineBatch& batch, const olc::vf2d& pStart, const olc::Pixel cStart, const olc::vf2d& pEnd, const olc::Pixel cEnd, const olc::vf2d& pControl, const olc::Pixel tint, const int32_t facets)
+{
+	const float fStep = 1.0f / float(facets-1);
+	olc::vf2d p1, p2;
+	olc::Pixel c1, c2;
+
+	p1 = pStart;
+	c1 = cStart;
+
+	for (int32_t i = 1; i < facets; i++)
+	{
+		float t = float(i) * fStep;
+		p2 = transformAffine.forwardRound<float>((1 - t) * (1 - t) * pStart + 2 * (1 - t) * t * pControl + t * t * pEnd);
+		c2 = olc::PixelLerp(cStart, cEnd, t);
+		Line(batch, p1, c1, p2, c2, tint);
+		p1 = p2;
+		c1 = c2;
+	}
+
 	return batch;
 }
 

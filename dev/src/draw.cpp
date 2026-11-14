@@ -535,6 +535,33 @@ const GPUTask& Draw::Line(const olc::vf2d& p1, const olc::Pixel c1, const olc::v
 		)));
 }
 
+const GPUTask& olc::Draw::Curve(const olc::vf2d& pStart, const olc::Pixel cStart, const olc::vf2d& pEnd, const olc::Pixel cEnd, const olc::vf2d& pControl, const olc::Pixel tint, const int32_t facets)
+{
+	PrepareTargetForHW();
+
+	const float fStep = 1.0f / float(facets-1);
+	std::vector<olc::vf2d> vPoints(facets);
+	std::vector<olc::Pixel> vColours(facets);
+
+	for (int32_t i = 0; i < facets; i++)
+	{
+		float t = float(i) * fStep;
+		vPoints[i] = transformAffine.forwardRound<float>((1 - t) * (1 - t) * pStart + 2 * (1 - t) * t * pControl + t * t * pEnd);
+		vColours[i] = olc::PixelLerp(cStart, cEnd, t);
+	}
+
+	return vecGPUTasks.data.emplace_back(std::move(
+		TaskDrawLine(
+			vPoints,
+			vColours,
+			tint
+		)));
+}
+
+const GPUTask& olc::Draw::Curve(const olc::vf2d& pStart, const olc::vf2d& pEnd, const olc::vf2d& pControl, const olc::Pixel col, const olc::Pixel tint, const int32_t facets)
+{
+	return Curve(pStart, col, pEnd, col, pControl, tint, facets);
+}
 
 const GPUTask& olc::Draw::Rect(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col, const olc::Pixel tint)
 {
